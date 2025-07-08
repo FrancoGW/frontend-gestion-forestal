@@ -2746,24 +2746,8 @@ export function WorkProgressForm({
         })
       }
 
-      // Antes de enviar, buscar el supervisor asignado y agregar supervisorId
-      let supervisorId = null;
-      try {
-        const supervisors = await supervisorsAPI.getAll();
-        const myProviderId = workOrder.cod_empres || workOrder.proveedorId;
-        for (const supervisor of supervisors) {
-          if (Array.isArray(supervisor.proveedoresAsignados)) {
-            if (supervisor.proveedoresAsignados.some((p) => p.proveedorId === myProviderId)) {
-              supervisorId = supervisor._id;
-              break;
-            }
-          }
-        }
-      } catch (e) {
-        console.error("Error obteniendo supervisor para avance:", e);
-      }
-      // Agregar el supervisorId al submitData
-      submitData.supervisorId = supervisorId;
+      // Agregar el supervisorId desde la orden de trabajo
+      submitData.supervisorId = workOrder.supervisor_id || null;
 
       const result = await onSubmit(submitData)
 

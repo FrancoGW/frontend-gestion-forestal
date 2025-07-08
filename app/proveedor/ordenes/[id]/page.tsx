@@ -124,21 +124,25 @@ export default function ProviderOrderDetailPage({ params }: { params: { id: stri
     if (!user) return { success: false, error: "Usuario no autenticado" }
 
     try {
-      // Buscar el supervisor asignado a este proveedor
-      let supervisorId = null;
-      try {
-        const supervisors = await supervisorsAPI.getAll();
-        const myProviderId = user.providerId;
-        for (const supervisor of supervisors) {
-          if (Array.isArray(supervisor.proveedoresAsignados)) {
-            if (supervisor.proveedoresAsignados.some((p) => p.proveedorId === myProviderId)) {
-              supervisorId = supervisor._id;
-              break;
+      // Usar el supervisor_id de la orden de trabajo
+      let supervisorId = workOrder.supervisor_id || null;
+      
+      // Si no hay supervisor_id en la orden, buscar el supervisor asignado a este proveedor como fallback
+      if (!supervisorId) {
+        try {
+          const supervisors = await supervisorsAPI.getAll();
+          const myProviderId = user.providerId;
+          for (const supervisor of supervisors) {
+            if (Array.isArray(supervisor.proveedoresAsignados)) {
+              if (supervisor.proveedoresAsignados.some((p) => p.proveedorId === myProviderId)) {
+                supervisorId = supervisor._id;
+                break;
+              }
             }
           }
+        } catch (e) {
+          console.error("Error obteniendo supervisores para avance:", e);
         }
-      } catch (e) {
-        console.error("Error obteniendo supervisores para avance:", e);
       }
 
       // Asegurarnos de que la actividad no esté vacía

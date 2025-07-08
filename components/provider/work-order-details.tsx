@@ -117,7 +117,7 @@ interface WorkOrderDetailsProps {
 }
 
 export function WorkOrderDetails({ workOrder }: WorkOrderDetailsProps) {
-  // Función para renderizar un rodal de forma segura
+  // Función para renderizar un rodal de forma segura y mostrar número y hectáreas
   const renderRodal = (rodal: any, index: number) => {
     // Si el rodal es un string, mostrarlo directamente
     if (typeof rodal === "string") {
@@ -126,19 +126,36 @@ export function WorkOrderDetails({ workOrder }: WorkOrderDetailsProps) {
 
     // Si el rodal es un objeto, extraer y mostrar sus propiedades
     if (rodal && typeof rodal === "object") {
-      const numero = rodal.numero || `#${index + 1}`
-      const hectareas = rodal.hectareas ? formatHectareas(rodal.hectareas) : ""
-
+      // Buscar el número de rodal (cod_rodal, numero, o id)
+      const numero = rodal.cod_rodal || rodal.numero || rodal.id || `#${index + 1}`;
+      // Buscar la superficie (supha, hectareas, superficie)
+      const hectareas = rodal.supha || rodal.hectareas || rodal.superficie || 0;
+      // Formatear superficie
+      const hectareasFmt = `${parseFloat(hectareas).toFixed(1)} ha`;
       return (
         <li key={`rodal-${index}`}>
-          Rodal {numero} {hectareas && `- ${hectareas}`}
+          Rodal {numero} - {hectareasFmt}
         </li>
-      )
+      );
     }
 
     // Fallback para cualquier otro caso
-    return <li key={`rodal-${index}`}>Rodal #{index + 1}</li>
-  }
+    return <li key={`rodal-${index}`}>Rodal #{index + 1}</li>;
+  };
+
+  // Calcular el total de hectáreas de los rodales
+  const totalHectareasRodales = (workOrder.rodales || []).reduce((sum, rodal) => {
+    let hectareas = 0;
+    if (rodal) {
+      if (typeof rodal === "object") {
+        hectareas = parseFloat(rodal.supha || rodal.hectareas || rodal.superficie || 0);
+      } else if (typeof rodal === "string") {
+        // Si es string, no se suma
+        hectareas = 0;
+      }
+    }
+    return sum + (isNaN(hectareas) ? 0 : hectareas);
+  }, 0);
 
   return (
     <Card>
@@ -198,18 +215,15 @@ export function WorkOrderDetails({ workOrder }: WorkOrderDetailsProps) {
               {workOrder.rodales.map((rodal, index) => renderRodal(rodal, index))}
             </ul>
           ) : (
-            <p className="text-muted-foreground">No hay rodales especificados</p>
+            <p className="text-muted-foreground">Sin rodales</p>
           )}
         </div>
 
-        {/* Total */}
-        <div className="mt-4 pt-4 border-t">
-          <div className="flex justify-between">
-            <span className="font-semibold">Total:</span>
-            <span className="font-semibold">{formatHectareas(workOrder.totalHectareas)}</span>
-          </div>
+        {/* Total de hectáreas */}
+        <div className="flex justify-end mt-6 text-lg font-semibold">
+          Total: {totalHectareasRodales.toFixed(1)} ha
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

@@ -275,6 +275,7 @@ export function useProviderOrders() {
       proveedorAsignado: capitalizeFirstLetter(apiOrder.empresa || ""),
       proveedorId: proveedorId,
       cod_empres: proveedorId,
+      supervisor_id: apiOrder.supervisor_id || apiOrder.supervisorId || null,
       mapaUrl: "/forest-canopy-map.png",
       ubicacionUrl: `https://maps.google.com/?q=-27.${Math.floor(Math.random() * 9000) + 1000},-55.${
         Math.floor(Math.random() * 9000) + 1000

@@ -16,6 +16,8 @@ export interface WorkOrder {
   // Nuevos campos para unidades de medida
   unidadMedida?: string
   cantidadNumerica?: number
+  // Campo para el supervisor asignado
+  supervisor_id?: number
 }
 
 // Función para determinar la unidad y cantidad correcta según la actividad
