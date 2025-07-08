@@ -1,0 +1,564 @@
+[{
+  "_id": {
+    "$oid": "686b144324db80408d45bc11"
+  },
+  "nombre": "Administrador",
+  "apellido": "Sistema",
+  "email": "admin@sistema.com",
+  "password": "admin",
+  "rol": "admin",
+  "activo": true,
+  "fechaCreacion": "2024-01-01T00:00:00.000Z"
+},
+{
+  "_id": {
+    "$oid": "686b144324db80408d45bc12"
+  },
+  "nombre": "Alejandro",
+  "apellido": "Wayer",
+  "email": "alejandro.wayer@supervisor.com",
+  "password": "123",
+  "rol": "supervisor",
+  "activo": true,
+  "fechaCreacion": "2024-01-01T00:00:00.000Z"
+},
+{
+  "_id": {
+    "$oid": "686b144324db80408d45bc13"
+  },
+  "nombre": "Armando",
+  "apellido": "Gamboa",
+  "email": "armando.gamboa@supervisor.com",
+  "password": "123",
+  "rol": "supervisor",
+  "activo": true,
+  "fechaCreacion": "2024-01-01T00:00:00.000Z"
+},
+{
+  "_id": {
+    "$oid": "686b144324db80408d45bc14"
+  },
+  "nombre": "Beatriz",
+  "apellido": "Reitano",
+  "email": "beatriz.reitano@supervisor.com",
+  "password": "123",
+  "rol": "supervisor",
+  "activo": true,
+  "fechaCreacion": "2024-01-01T00:00:00.000Z"
+},
+{
+  "_id": {
+    "$oid": "686b144324db80408d45bc15"
+  },
+  "nombre": "Carlos",
+  "apellido": "Bardelli",
+  "email": "carlos.bardelli@supervisor.com",
+  "password": "123",
+  "rol": "supervisor",
+  "activo": true,
+  "fechaCreacion": "2024-01-01T00:00:00.000Z"
+},
+{
+  "_id": {
+    "$oid": "686b144324db80408d45bc16"
+  },
+  "nombre": "Cecilia",
+  "apellido": "Pizzini",
+  "email": "cecilia.pizzini@supervisor.com",
+  "password": "123",
+  "rol": "supervisor",
+  "activo": true,
+  "fechaCreacion": "2024-01-01T00:00:00.000Z"
+},
+{
+  "_id": {
+    "$oid": "686b144324db80408d45bc17"
+  },
+  "nombre": "Diego",
+  "apellido": "Nonino",
+  "email": "diego.nonino@supervisor.com",
+  "password": "123",
+  "rol": "supervisor",
+  "activo": true,
+  "fechaCreacion": "2024-01-01T00:00:00.000Z"
+},
+{
+  "_id": {
+    "$oid": "686b144324db80408d45bc18"
+  },
+  "nombre": "Fabio",
+  "apellido": "Cancian",
+  "email": "fabio.cancian@supervisor.com",
+  "password": "123",
+  "rol": "supervisor",
+  "activo": true,
+  "fechaCreacion": "2024-01-01T00:00:00.000Z"
+},
+{
+  "_id": {
+    "$oid": "686b144324db80408d45bc19"
+  },
+  "nombre": "Fernando",
+  "apellido": "Doval",
+  "email": "fernando.doval@supervisor.com",
+  "password": "123",
+  "rol": "supervisor",
+  "activo": true,
+  "fechaCreacion": "2024-01-01T00:00:00.000Z"
+},
+{
+  "_id": {
+    "$oid": "686b144324db80408d45bc1a"
+  },
+  "nombre": "Gabriel",
+  "apellido": "Cardozo",
+  "email": "gabriel.cardozo@supervisor.com",
+  "password": "123",
+  "rol": "supervisor",
+  "activo": true,
+  "fechaCreacion": "2024-01-01T00:00:00.000Z"
+},
+{
+  "_id": {
+    "$oid": "686b144324db80408d45bc1b"
+  },
+  "nombre": "Gonzalo",
+  "apellido": "Álvarez",
+  "email": "gonzalo.alvarez@supervisor.com",
+  "password": "123",
+  "rol": "supervisor",
+  "activo": true,
+  "fechaCreacion": "2024-01-01T00:00:00.000Z"
+},
+{
+  "_id": {
+    "$oid": "686b144324db80408d45bc1c"
+  },
+  "nombre": "Helian",
+  "apellido": "Lytwyn",
+  "email": "helian.lytwyn@supervisor.com",
+  "password": "123",
+  "rol": "supervisor",
+  "activo": true,
+  "fechaCreacion": "2024-01-01T00:00:00.000Z"
+},
+{
+  "_id": {
+    "$oid": "686b144324db80408d45bc1d"
+  },
+  "nombre": "Javier",
+  "apellido": "Avendano",
+  "email": "javier.avendano@supervisor.com",
+  "password": "123",
+  "rol": "supervisor",
+  "activo": true,
+  "fechaCreacion": "2024-01-01T00:00:00.000Z"
+},
+{
+  "_id": {
+    "$oid": "686b144324db80408d45bc1e"
+  },
+  "nombre": "Luis",
+  "apellido": "Arriola",
+  "email": "luis.arriola@supervisor.com",
+  "password": "123",
+  "rol": "supervisor",
+  "activo": true,
+  "fechaCreacion": "2024-01-01T00:00:00.000Z"
+},
+{
+  "_id": {
+    "$oid": "686b144324db80408d45bc1f"
+  },
+  "nombre": "Martín",
+  "apellido": "Álvarez",
+  "email": "martin.alvarez@supervisor.com",
+  "password": "123",
+  "rol": "supervisor",
+  "activo": true,
+  "fechaCreacion": "2024-01-01T00:00:00.000Z"
+},
+{
+  "_id": {
+    "$oid": "686b144324db80408d45bc20"
+  },
+  "nombre": "Martin",
+  "apellido": "Spriegel",
+  "email": "martin.spriegel@supervisor.com",
+  "password": "123",
+  "rol": "supervisor",
+  "activo": true,
+  "fechaCreacion": "2024-01-01T00:00:00.000Z"
+},
+{
+  "_id": {
+    "$oid": "686b144324db80408d45bc21"
+  },
+  "nombre": "Paula",
+  "apellido": "Montenegro",
+  "email": "paula.montenegro@supervisor.com",
+  "password": "123",
+  "rol": "supervisor",
+  "activo": true,
+  "fechaCreacion": "2024-01-01T00:00:00.000Z"
+},
+{
+  "_id": {
+    "$oid": "686b144324db80408d45bc22"
+  },
+  "nombre": "Santiago",
+  "apellido": "Gouin",
+  "email": "santiago.gouin@supervisor.com",
+  "password": "123",
+  "rol": "supervisor",
+  "activo": true,
+  "fechaCreacion": "2024-01-01T00:00:00.000Z"
+},
+{
+  "_id": {
+    "$oid": "686b144324db80408d45bc23"
+  },
+  "nombre": "Ulises",
+  "apellido": "Cosoli",
+  "email": "ulises.cosoli@supervisor.com",
+  "password": "123",
+  "rol": "supervisor",
+  "activo": true,
+  "fechaCreacion": "2024-01-01T00:00:00.000Z"
+},
+{
+  "_id": {
+    "$oid": "686b144324db80408d45bc24"
+  },
+  "nombre": "FORESTADORA DEL URUGUAY SRL",
+  "apellido": "",
+  "email": "contacto@forestadorauruguay.com",
+  "password": "123",
+  "rol": "provider",
+  "cuit": "30-12345678-9",
+  "telefono": "11-2345-6789",
+  "activo": true,
+  "fechaCreacion": "2024-01-01T00:00:00.000Z"
+},
+{
+  "_id": {
+    "$oid": "686b144324db80408d45bc25"
+  },
+  "nombre": "EL OMBU S.R.L.",
+  "apellido": "",
+  "email": "contacto@elombu.com",
+  "password": "123",
+  "rol": "provider",
+  "cuit": "30-98765432-1",
+  "telefono": "11-8765-4321",
+  "activo": true,
+  "fechaCreacion": "2024-01-01T00:00:00.000Z"
+},
+{
+  "_id": {
+    "$oid": "686b144324db80408d45bc26"
+  },
+  "nombre": "RAMON OMAR KAUFFMANN",
+  "apellido": "",
+  "email": "contacto@kauffmann.com",
+  "password": "123",
+  "rol": "provider",
+  "cuit": "30-34567890-1",
+  "telefono": "11-3456-7890",
+  "activo": true,
+  "fechaCreacion": "2024-01-01T00:00:00.000Z"
+},
+{
+  "_id": {
+    "$oid": "686b144324db80408d45bc27"
+  },
+  "nombre": "WISEFOR S.R.L.",
+  "apellido": "",
+  "email": "contacto@wisefor.com",
+  "password": "123",
+  "rol": "provider",
+  "cuit": "30-56789012-3",
+  "telefono": "11-5678-9012",
+  "activo": true,
+  "fechaCreacion": "2024-01-01T00:00:00.000Z"
+},
+{
+  "_id": {
+    "$oid": "686b144324db80408d45bc28"
+  },
+  "nombre": "ARROSER SRL",
+  "apellido": "",
+  "email": "contacto@arroser.com",
+  "password": "123",
+  "rol": "provider",
+  "cuit": "30-45678901-2",
+  "telefono": "11-4567-8901",
+  "activo": true,
+  "fechaCreacion": "2024-01-01T00:00:00.000Z"
+},
+{
+  "_id": {
+    "$oid": "686b144324db80408d45bc29"
+  },
+  "nombre": "LOGISTICA S.R.L.",
+  "apellido": "",
+  "email": "contacto@logistica.com",
+  "password": "123",
+  "rol": "provider",
+  "cuit": "30-56789012-3",
+  "telefono": "11-5678-9012",
+  "activo": true,
+  "fechaCreacion": "2024-01-01T00:00:00.000Z"
+},
+{
+  "_id": {
+    "$oid": "686b144324db80408d45bc2a"
+  },
+  "nombre": "CIDEA SRL",
+  "apellido": "",
+  "email": "contacto@cidea.com",
+  "password": "123",
+  "rol": "provider",
+  "cuit": "30-23456789-0",
+  "telefono": "11-2345-6789",
+  "activo": true,
+  "fechaCreacion": "2024-01-01T00:00:00.000Z"
+},
+{
+  "_id": {
+    "$oid": "686b144324db80408d45bc2b"
+  },
+  "nombre": "FACCON SRL",
+  "apellido": "",
+  "email": "contacto@faccon.com",
+  "password": "123",
+  "rol": "provider",
+  "cuit": "30-78901234-5",
+  "telefono": "11-7890-1234",
+  "activo": true,
+  "fechaCreacion": "2024-01-01T00:00:00.000Z"
+},
+{
+  "_id": {
+    "$oid": "686b144324db80408d45bc2c"
+  },
+  "nombre": "HECTOR J BONIFACIO REBORATTI",
+  "apellido": "",
+  "email": "contacto@reboratti.com",
+  "password": "123",
+  "rol": "provider",
+  "cuit": "30-67890123-4",
+  "telefono": "11-6789-0123",
+  "activo": true,
+  "fechaCreacion": "2024-01-01T00:00:00.000Z"
+},
+{
+  "_id": {
+    "$oid": "686b144324db80408d45bc2d"
+  },
+  "nombre": "OSCAR JOSE IRUSTA",
+  "apellido": "",
+  "email": "contacto@irusta.com",
+  "password": "123",
+  "rol": "provider",
+  "cuit": "30-89012345-6",
+  "telefono": "11-8901-2345",
+  "activo": true,
+  "fechaCreacion": "2024-01-01T00:00:00.000Z"
+},
+{
+  "_id": {
+    "$oid": "686b144324db80408d45bc2e"
+  },
+  "nombre": "JUAN ROMERO",
+  "apellido": "",
+  "email": "contacto@juanromero.com",
+  "password": "123",
+  "rol": "provider",
+  "cuit": "30-01234567-8",
+  "telefono": "11-0123-4567",
+  "activo": true,
+  "fechaCreacion": "2024-01-01T00:00:00.000Z"
+},
+{
+  "_id": {
+    "$oid": "686b144324db80408d45bc2f"
+  },
+  "nombre": "GLASMANN A.Y GLASMANN F.S.H",
+  "apellido": "",
+  "email": "contacto@glasmann.com",
+  "password": "123",
+  "rol": "provider",
+  "cuit": "30-12345678-9",
+  "telefono": "11-1234-5678",
+  "activo": true,
+  "fechaCreacion": "2024-01-01T00:00:00.000Z"
+},
+{
+  "_id": {
+    "$oid": "686b144324db80408d45bc30"
+  },
+  "nombre": "ROQUE DANIEL COLINA",
+  "apellido": "",
+  "email": "contacto@colina.com",
+  "password": "123",
+  "rol": "provider",
+  "cuit": "30-15678901-2",
+  "telefono": "11-5678-9012",
+  "activo": true,
+  "fechaCreacion": "2024-01-01T00:00:00.000Z"
+},
+{
+  "_id": {
+    "$oid": "686b144324db80408d45bc31"
+  },
+  "nombre": "JUAN IGNACIO DE ZAN",
+  "apellido": "",
+  "email": "contacto@dezan.com",
+  "password": "123",
+  "rol": "provider",
+  "cuit": "30-16789012-3",
+  "telefono": "11-6789-0123",
+  "activo": true,
+  "fechaCreacion": "2024-01-01T00:00:00.000Z"
+},
+{
+  "_id": {
+    "$oid": "686b144324db80408d45bc32"
+  },
+  "nombre": "JHEISON ROY STEINHORST",
+  "apellido": "",
+  "email": "contacto@steinhorst.com",
+  "password": "123",
+  "rol": "provider",
+  "cuit": "30-17890123-4",
+  "telefono": "11-7890-1234",
+  "activo": true,
+  "fechaCreacion": "2024-01-01T00:00:00.000Z"
+},
+{
+  "_id": {
+    "$oid": "686b144324db80408d45bc33"
+  },
+  "nombre": "TRENOR SRL",
+  "apellido": "",
+  "email": "contacto@trenor.com",
+  "password": "123",
+  "rol": "provider",
+  "cuit": "30-18901234-5",
+  "telefono": "11-8901-2345",
+  "activo": true,
+  "fechaCreacion": "2024-01-01T00:00:00.000Z"
+},
+{
+  "_id": {
+    "$oid": "686b144324db80408d45bc34"
+  },
+  "nombre": "EXCAVACIONES PASTORI S.R.L.",
+  "apellido": "",
+  "email": "contacto@pastori.com",
+  "password": "123",
+  "rol": "provider",
+  "cuit": "30-19012345-6",
+  "telefono": "11-9012-3456",
+  "activo": true,
+  "fechaCreacion": "2024-01-01T00:00:00.000Z"
+},
+{
+  "_id": {
+    "$oid": "686b144324db80408d45bc35"
+  },
+  "nombre": "GREGORIO RAMON ZAMBON",
+  "apellido": "",
+  "email": "contacto@zambon.com",
+  "password": "123",
+  "rol": "provider",
+  "cuit": "30-20123456-7",
+  "telefono": "11-0123-4567",
+  "activo": true,
+  "fechaCreacion": "2024-01-01T00:00:00.000Z"
+},
+{
+  "_id": {
+    "$oid": "686b144324db80408d45bc36"
+  },
+  "nombre": "FERNANDO FRANCISCO SOMMA",
+  "apellido": "",
+  "email": "contacto@somma.com",
+  "password": "123",
+  "rol": "provider",
+  "cuit": "30-21234567-8",
+  "telefono": "11-1234-5678",
+  "activo": true,
+  "fechaCreacion": "2024-01-01T00:00:00.000Z"
+},
+{
+  "_id": {
+    "$oid": "686b144324db80408d45bc37"
+  },
+  "nombre": "JR CONSTRUCTORA SA",
+  "apellido": "",
+  "email": "contacto@jrconstructora.com",
+  "password": "123",
+  "rol": "provider",
+  "cuit": "30-24567890-1",
+  "telefono": "11-4567-8901",
+  "activo": true,
+  "fechaCreacion": "2024-01-01T00:00:00.000Z"
+},
+{
+  "_id": {
+    "$oid": "686b144324db80408d45bc38"
+  },
+  "nombre": "CASTELFIDARDO SA",
+  "apellido": "",
+  "email": "contacto@castelfidardo.com",
+  "password": "123",
+  "rol": "provider",
+  "cuit": "30-26789012-3",
+  "telefono": "11-6789-0123",
+  "activo": true,
+  "fechaCreacion": "2024-01-01T00:00:00.000Z"
+},
+{
+  "_id": {
+    "$oid": "686b144324db80408d45bc39"
+  },
+  "nombre": "FLORESTA SA",
+  "apellido": "",
+  "email": "contacto@floresta.com",
+  "password": "123",
+  "rol": "provider",
+  "cuit": "30-27890123-4",
+  "telefono": "11-7890-1234",
+  "activo": true,
+  "fechaCreacion": "2024-01-01T00:00:00.000Z"
+},
+{
+  "_id": {
+    "$oid": "686b144324db80408d45bc3a"
+  },
+  "nombre": "FORESTAL PIRAY GUAZU SRL",
+  "apellido": "",
+  "email": "contacto@pirayguazu.com",
+  "password": "123",
+  "rol": "provider",
+  "cuit": "30-28901234-5",
+  "telefono": "11-8901-2345",
+  "activo": true,
+  "fechaCreacion": "2024-01-01T00:00:00.000Z"
+},
+{
+  "_id": {
+    "$oid": "686b144324db80408d45bc3b"
+  },
+  "nombre": "GRINAC MOVIMIENTOS DE SUELOS SRL",
+  "apellido": "",
+  "email": "contacto@grinac.com",
+  "password": "123",
+  "rol": "provider",
+  "cuit": "30-29012345-6",
+  "telefono": "11-9012-3456",
+  "activo": true,
+  "fechaCreacion": "2024-01-01T00:00:00.000Z"
+}]
