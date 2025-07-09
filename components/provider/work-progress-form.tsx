@@ -779,15 +779,27 @@ export function WorkProgressForm({
           <Select
             value={formData.cuadrilla || ""}
             onValueChange={(newValue) => {
-              const cuadrillaSeleccionada = cuadrillas.find((c) => {
+              // Buscar la cuadrilla por nombre o por ID
+              let cuadrillaSeleccionada = cuadrillas.find((c) => {
                 const nombre = c.nombre || c.descripcion || ""
                 return nombre === newValue
               })
+              // Si no se encuentra por nombre, buscar por ID (por si acaso)
+              if (!cuadrillaSeleccionada) {
+                cuadrillaSeleccionada = cuadrillas.find((c) => {
+                  const id = c._id || c.id || c.idcuadrilla || ""
+                  return id === newValue
+                })
+              }
               if (cuadrillaSeleccionada) {
-                const id =
-                  cuadrillaSeleccionada._id || cuadrillaSeleccionada.id || cuadrillaSeleccionada.idcuadrilla || ""
+                const id = cuadrillaSeleccionada._id || cuadrillaSeleccionada.id || cuadrillaSeleccionada.idcuadrilla || ""
+                const nombre = cuadrillaSeleccionada.nombre || cuadrillaSeleccionada.descripcion || `Cuadrilla ${id}`
                 handleInputChange("cuadrillaId", String(id))
-                handleInputChange("cuadrilla", newValue)
+                handleInputChange("cuadrilla", nombre)
+              } else {
+                // Si no se encuentra, limpiar ambos campos
+                handleInputChange("cuadrillaId", "")
+                handleInputChange("cuadrilla", "")
               }
             }}
           >
@@ -1185,15 +1197,27 @@ export function WorkProgressForm({
           <Select
             value={formData.cuadrilla || ""}
             onValueChange={(newValue) => {
-              const cuadrillaSeleccionada = cuadrillas.find((c) => {
+              // Buscar la cuadrilla por nombre o por ID
+              let cuadrillaSeleccionada = cuadrillas.find((c) => {
                 const nombre = c.nombre || c.descripcion || ""
                 return nombre === newValue
               })
+              // Si no se encuentra por nombre, buscar por ID (por si acaso)
+              if (!cuadrillaSeleccionada) {
+                cuadrillaSeleccionada = cuadrillas.find((c) => {
+                  const id = c._id || c.id || c.idcuadrilla || ""
+                  return id === newValue
+                })
+              }
               if (cuadrillaSeleccionada) {
-                const id =
-                  cuadrillaSeleccionada._id || cuadrillaSeleccionada.id || cuadrillaSeleccionada.idcuadrilla || ""
+                const id = cuadrillaSeleccionada._id || cuadrillaSeleccionada.id || cuadrillaSeleccionada.idcuadrilla || ""
+                const nombre = cuadrillaSeleccionada.nombre || cuadrillaSeleccionada.descripcion || `Cuadrilla ${id}`
                 handleInputChange("cuadrillaId", String(id))
-                handleInputChange("cuadrilla", newValue)
+                handleInputChange("cuadrilla", nombre)
+              } else {
+                // Si no se encuentra, limpiar ambos campos
+                handleInputChange("cuadrillaId", "")
+                handleInputChange("cuadrilla", "")
               }
             }}
           >
@@ -1510,15 +1534,27 @@ export function WorkProgressForm({
           <Select
             value={formData.cuadrilla || ""}
             onValueChange={(newValue) => {
-              const cuadrillaSeleccionada = cuadrillas.find((c) => {
+              // Buscar la cuadrilla por nombre o por ID
+              let cuadrillaSeleccionada = cuadrillas.find((c) => {
                 const nombre = c.nombre || c.descripcion || ""
                 return nombre === newValue
               })
+              // Si no se encuentra por nombre, buscar por ID (por si acaso)
+              if (!cuadrillaSeleccionada) {
+                cuadrillaSeleccionada = cuadrillas.find((c) => {
+                  const id = c._id || c.id || c.idcuadrilla || ""
+                  return id === newValue
+                })
+              }
               if (cuadrillaSeleccionada) {
-                const id =
-                  cuadrillaSeleccionada._id || cuadrillaSeleccionada.id || cuadrillaSeleccionada.idcuadrilla || ""
+                const id = cuadrillaSeleccionada._id || cuadrillaSeleccionada.id || cuadrillaSeleccionada.idcuadrilla || ""
+                const nombre = cuadrillaSeleccionada.nombre || cuadrillaSeleccionada.descripcion || `Cuadrilla ${id}`
                 handleInputChange("cuadrillaId", String(id))
-                handleInputChange("cuadrilla", newValue)
+                handleInputChange("cuadrilla", nombre)
+              } else {
+                // Si no se encuentra, limpiar ambos campos
+                handleInputChange("cuadrillaId", "")
+                handleInputChange("cuadrilla", "")
               }
             }}
           >
@@ -1869,15 +1905,27 @@ export function WorkProgressForm({
           <Select
             value={formData.cuadrilla || ""}
             onValueChange={(newValue) => {
-              const cuadrillaSeleccionada = cuadrillas.find((c) => {
+              // Buscar la cuadrilla por nombre o por ID
+              let cuadrillaSeleccionada = cuadrillas.find((c) => {
                 const nombre = c.nombre || c.descripcion || ""
                 return nombre === newValue
               })
+              // Si no se encuentra por nombre, buscar por ID (por si acaso)
+              if (!cuadrillaSeleccionada) {
+                cuadrillaSeleccionada = cuadrillas.find((c) => {
+                  const id = c._id || c.id || c.idcuadrilla || ""
+                  return id === newValue
+                })
+              }
               if (cuadrillaSeleccionada) {
-                const id =
-                  cuadrillaSeleccionada._id || cuadrillaSeleccionada.id || cuadrillaSeleccionada.idcuadrilla || ""
+                const id = cuadrillaSeleccionada._id || cuadrillaSeleccionada.id || cuadrillaSeleccionada.idcuadrilla || ""
+                const nombre = cuadrillaSeleccionada.nombre || cuadrillaSeleccionada.descripcion || `Cuadrilla ${id}`
                 handleInputChange("cuadrillaId", String(id))
-                handleInputChange("cuadrilla", newValue)
+                handleInputChange("cuadrilla", nombre)
+              } else {
+                // Si no se encuentra, limpiar ambos campos
+                handleInputChange("cuadrillaId", "")
+                handleInputChange("cuadrilla", "")
               }
             }}
           >
@@ -2197,15 +2245,27 @@ export function WorkProgressForm({
           <Select
             value={formData.cuadrilla || ""}
             onValueChange={(newValue) => {
-              const cuadrillaSeleccionada = cuadrillas.find((c) => {
+              // Buscar la cuadrilla por nombre o por ID
+              let cuadrillaSeleccionada = cuadrillas.find((c) => {
                 const nombre = c.nombre || c.descripcion || ""
                 return nombre === newValue
               })
+              // Si no se encuentra por nombre, buscar por ID (por si acaso)
+              if (!cuadrillaSeleccionada) {
+                cuadrillaSeleccionada = cuadrillas.find((c) => {
+                  const id = c._id || c.id || c.idcuadrilla || ""
+                  return id === newValue
+                })
+              }
               if (cuadrillaSeleccionada) {
-                const id =
-                  cuadrillaSeleccionada._id || cuadrillaSeleccionada.id || cuadrillaSeleccionada.idcuadrilla || ""
+                const id = cuadrillaSeleccionada._id || cuadrillaSeleccionada.id || cuadrillaSeleccionada.idcuadrilla || ""
+                const nombre = cuadrillaSeleccionada.nombre || cuadrillaSeleccionada.descripcion || `Cuadrilla ${id}`
                 handleInputChange("cuadrillaId", String(id))
-                handleInputChange("cuadrilla", newValue)
+                handleInputChange("cuadrilla", nombre)
+              } else {
+                // Si no se encuentra, limpiar ambos campos
+                handleInputChange("cuadrillaId", "")
+                handleInputChange("cuadrilla", "")
               }
             }}
           >
@@ -2442,15 +2502,27 @@ export function WorkProgressForm({
           <Select
             value={formData.cuadrilla || ""}
             onValueChange={(newValue) => {
-              const cuadrillaSeleccionada = cuadrillas.find((c) => {
+              // Buscar la cuadrilla por nombre o por ID
+              let cuadrillaSeleccionada = cuadrillas.find((c) => {
                 const nombre = c.nombre || c.descripcion || ""
                 return nombre === newValue
               })
+              // Si no se encuentra por nombre, buscar por ID (por si acaso)
+              if (!cuadrillaSeleccionada) {
+                cuadrillaSeleccionada = cuadrillas.find((c) => {
+                  const id = c._id || c.id || c.idcuadrilla || ""
+                  return id === newValue
+                })
+              }
               if (cuadrillaSeleccionada) {
-                const id =
-                  cuadrillaSeleccionada._id || cuadrillaSeleccionada.id || cuadrillaSeleccionada.idcuadrilla || ""
+                const id = cuadrillaSeleccionada._id || cuadrillaSeleccionada.id || cuadrillaSeleccionada.idcuadrilla || ""
+                const nombre = cuadrillaSeleccionada.nombre || cuadrillaSeleccionada.descripcion || `Cuadrilla ${id}`
                 handleInputChange("cuadrillaId", String(id))
-                handleInputChange("cuadrilla", newValue)
+                handleInputChange("cuadrilla", nombre)
+              } else {
+                // Si no se encuentra, limpiar ambos campos
+                handleInputChange("cuadrillaId", "")
+                handleInputChange("cuadrilla", "")
               }
             }}
           >
@@ -2748,6 +2820,23 @@ export function WorkProgressForm({
 
       // Agregar el supervisorId desde la orden de trabajo
       submitData.supervisorId = workOrder.supervisor_id || null;
+
+      // Siempre guardar el nombre y el ID de la cuadrilla, para todas las plantillas
+      submitData.cuadrilla = formData.cuadrilla || ""
+      submitData.cuadrillaId = formData.cuadrillaId || ""
+      submitData.cuadrillaNombre = formData.cuadrilla || ""
+
+      // Siempre incluir campos de sistema en el avance
+      submitData.predio = formData.predio || workOrder?.campo || ""
+      submitData.numeroOrden = workOrder?.numero || workOrder?.id || ""
+      submitData.ordenTrabajoId = workOrder?.id || ""
+      submitData.proveedorId = workOrder?.proveedorId || workOrder?.proveedor_id || ""
+      submitData.proveedorNombre = workOrder?.proveedor || workOrder?.proveedorNombre || ""
+      submitData.campo = workOrder?.campo || ""
+      // ... puedes agregar aquí otros campos de sistema relevantes ...
+
+      // Log para debug
+      console.log("Avance enviado:", submitData)
 
       const result = await onSubmit(submitData)
 

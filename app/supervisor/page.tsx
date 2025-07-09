@@ -16,10 +16,35 @@ import { useAuth } from "@/hooks/use-auth"
 import * as XLSX from "xlsx"
 import { getCuadrillaName } from "@/utils/getCuadrillaName"
 import type { AvanceExtendido } from "@/types/AvanceExtendido"
+import { useCuadrillas } from "@/hooks/use-cuadrillas"
+
+type DatosTablaItem = {
+  id: string;
+  fecha: string;
+  predio: string;
+  ordenTrabajo: string;
+  rodal: string;
+  actividad: string;
+  estado: string;
+  cantidadHA: number;
+  subtotal: number;
+  proveedor: string;
+  proveedorId?: string;
+  esProgresivo: boolean;
+  indicadorProgreso: string;
+  numeroAvance: number;
+  totalAvances: number;
+  observaciones: string;
+  cuadrilla: string;
+  cuadrillaId?: string;
+  cuadrillaNombre?: string;
+  jornada: number;
+};
 
 export default function SupervisorDashboard() {
   const { user } = useAuth()
   const { supervisor, proveedores, ordenes, avances, loading, error, refetch } = useSupervisorData()
+  const { cuadrillas } = useCuadrillas();
 
   // Estados para los filtros
   const [fechaDesde, setFechaDesde] = useState("")
@@ -130,6 +155,7 @@ export default function SupervisorDashboard() {
     /* ------------------------------------------------------------------ */
     const excelData = datosTabla.map((item) => ({
       "FECHA REGISTRO": new Date(item.fecha).toLocaleDateString("es-AR"),
+      PROVEEDOR: item.proveedor,
       PREDIOS: item.predio,
       "ORDEN TR": item.ordenTrabajo,
       RODAL: item.rodal,
@@ -138,13 +164,8 @@ export default function SupervisorDashboard() {
       ESTADO: item.estado,
       "CANTIDAD (HA)": item.cantidadHA.toFixed(2).replace(".", ","),
       SUBTOTAL: item.subtotal.toFixed(0),
-      PROVEEDOR: item.proveedor,
       OBSERVACIONES: item.observaciones,
-      CUADRILLA: getCuadrillaName({
-        cuadrilla: item.cuadrilla,
-        cuadrillaId: item.cuadrillaId,
-        cuadrillaNombre: item.cuadrillaNombre,
-      } as AvanceExtendido),
+      CUADRILLA: item.cuadrillaNombre || item.cuadrilla || "Sin cuadrilla",
       JORNADA: item.jornada,
     }))
 
@@ -310,7 +331,7 @@ export default function SupervisorDashboard() {
     }
 
     // Procesar avances progresivos
-    const avancesProgresivos = []
+    const avancesProgresivos: DatosTablaItem[] = []
 
     // Agrupar por clave base (predio-orden-rodal-actividad) para identificar trabajos relacionados
     const gruposPorClave = new Map()
@@ -328,7 +349,7 @@ export default function SupervisorDashboard() {
     // Procesar cada grupo para mostrar avances progresivos
     gruposPorClave.forEach((grupo, claveBase) => {
       // Ordenar por fecha para mostrar progresión temporal
-      grupo.sort((a, b) => {
+      grupo.sort((a: any, b: any) => {
         const fechaA = new Date(a.fecha || a.fechaRegistro || new Date())
         const fechaB = new Date(b.fecha || b.fechaRegistro || new Date())
         return fechaA.getTime() - fechaB.getTime()
@@ -337,29 +358,34 @@ export default function SupervisorDashboard() {
       // Determinar si hay avances progresivos (múltiples registros para la misma tarea)
       const tieneAvancesProgresivos = grupo.length > 1
 
-      grupo.forEach((avance, index) => {
+      grupo.forEach((avance: any, index: number) => {
         const estado = avance.estado || "Pendiente"
         const indicadorProgreso = `${index + 1}/${grupo.length}`
-
+        // Buscar el nombre del proveedor por proveedorId
+        const proveedorObj = proveedores.find((p) => String(p.id) === String(avance.proveedorId))
+        const proveedorNombre = proveedorObj ? proveedorObj.nombre : String(avance.proveedor || avance.proveedorId || "Sin especificar")
+        // Usar cuadrillaNombre si existe, si no cuadrilla, si no 'Sin cuadrilla'
+        let cuadrillaNombre = avance.cuadrillaNombre || avance.cuadrilla || "Sin cuadrilla"
         avancesProgresivos.push({
           id: avance._id || avance.id || `${claveBase}-${index}`,
           fecha: avance.fecha || avance.fechaRegistro || new Date().toISOString().split("T")[0],
-          predio: String(avance.predio || "Sin especificar"),
+          predio: String(avance.predio || avance.campo || "Sin especificar"),
           ordenTrabajo: String(avance.numeroOrden || avance.ordenTrabajoId),
           rodal: String(avance.rodal || "Sin especificar"),
           actividad: String(avance.actividad || "Sin especificar"),
           estado: String(estado),
-          cantidadHA: Number(avance.superficie) || 0,
-          subtotal: Number(avance.superficie) || 0,
-          proveedor: String(avance.proveedor || "Sin especificar"),
+          cantidadHA: Number(avance.superficie ?? 0),
+          subtotal: Number(avance.superficie ?? 0),
+          proveedor: proveedorNombre,
+          proveedorId: avance.proveedorId ? String(avance.proveedorId) : undefined,
           esProgresivo: tieneAvancesProgresivos,
           indicadorProgreso,
           numeroAvance: index + 1,
           totalAvances: grupo.length,
           observaciones: String(avance.observaciones || ""),
           cuadrilla: String(avance.cuadrilla || ""),
-          cuadrillaId: avance.cuadrillaId,
-          cuadrillaNombre: avance.cuadrillaNombre,
+          cuadrillaId: avance.cuadrillaId ? String(avance.cuadrillaId) : undefined,
+          cuadrillaNombre: cuadrillaNombre,
           jornada: Number(avance.jornada) || 0,
         })
       })
@@ -381,6 +407,8 @@ export default function SupervisorDashboard() {
     ordenSeleccionada,
     estadoSeleccionado,
     actividadSeleccionada,
+    proveedores,
+    cuadrillas,
   ])
 
   // Calcular totales
@@ -675,6 +703,7 @@ export default function SupervisorDashboard() {
               <TableHeader>
                 <TableRow className="bg-blue-50">
                   <TableHead className="font-bold bg-green-200">FECHA REGISTRO</TableHead>
+                  <TableHead className="font-bold bg-pink-200">PROVEEDOR</TableHead>
                   <TableHead className="font-bold bg-yellow-200">PREDIOS</TableHead>
                   <TableHead className="font-bold bg-blue-200">ORDEN TR</TableHead>
                   <TableHead className="font-bold bg-blue-200">RODAL</TableHead>
@@ -688,14 +717,14 @@ export default function SupervisorDashboard() {
               <TableBody>
                 {datosTabla.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                       No se encontraron registros con los filtros aplicados
                     </TableCell>
                   </TableRow>
                 ) : (
-                  datosTabla.map((item, index) => (
+                  datosTabla.map((item, index: number) => (
                     <TableRow
-                      key={item.id}
+                      key={String(item.id)}
                       className={`hover:bg-gray-50 ${
                         item.esProgresivo
                           ? item.numeroAvance === 1
@@ -705,6 +734,7 @@ export default function SupervisorDashboard() {
                       }`}
                     >
                       <TableCell className="text-sm">{new Date(item.fecha).toLocaleDateString("es-AR")}</TableCell>
+                      <TableCell className="font-medium">{item.proveedor}</TableCell>
                       <TableCell className="font-medium">{item.predio}</TableCell>
                       <TableCell>{item.ordenTrabajo}</TableCell>
                       <TableCell>{item.rodal}</TableCell>
@@ -740,7 +770,7 @@ export default function SupervisorDashboard() {
                 )}
                 {datosTabla.length > 0 && (
                   <TableRow className="bg-gray-100 font-bold">
-                    <TableCell colSpan={7} className="text-right">
+                    <TableCell colSpan={8} className="text-right">
                       TOTALES:
                     </TableCell>
                     <TableCell className="text-right">{totales.totalHA.toFixed(2)}</TableCell>
