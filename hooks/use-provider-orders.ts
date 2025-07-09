@@ -445,7 +445,7 @@ export function useProviderOrders() {
 
         // Transformar y filtrar por proveedor
         const transformedOrders = allOrdersData.map((order: any) => mapOrderFromAPI(order))
-       
+
         const filteredOrders = transformedOrders.filter((order: any) => {
           const orderProviderId =
             typeof order.cod_empres === "number"
@@ -453,10 +453,10 @@ export function useProviderOrders() {
               : typeof order.cod_empres === "string"
                 ? Number.parseInt(order.cod_empres, 10)
                 : 0
-         
+
           return orderProviderId === providerId
         })
-       
+
         if (filteredOrders.length === 0) {
           setOrders([])
           setError("No se encontraron órdenes asignadas a este proveedor.")

@@ -171,46 +171,46 @@ export function useAuth() {
         console.log("🔄 Intentando con usuarios de emergencia...")
         
         // SEGUNDO: Si falla la base de datos, usar usuarios de emergencia
-        const emergencyUser = EMERGENCY_USERS.find((u) => u.email === email && u.password === password)
+      const emergencyUser = EMERGENCY_USERS.find((u) => u.email === email && u.password === password)
 
-        if (emergencyUser) {
+      if (emergencyUser) {
           console.log("✅ Autenticación exitosa con usuario de emergencia")
           
-          const user: User = {
-            id: emergencyUser.id,
-            nombre: emergencyUser.nombre,
-            apellido: emergencyUser.apellido,
-            email: emergencyUser.email,
-            rol: emergencyUser.rol,
-            activo: emergencyUser.activo,
-            cuit: emergencyUser.cuit,
-            telefono: emergencyUser.telefono,
-          }
-
-          // Agregar IDs específicos según el rol como NÚMEROS
-          if (user.rol === "provider") {
-            user.providerId = Number.parseInt(user.id, 10)
-          } else if (user.rol === "supervisor") {
-            user.supervisorId = Number.parseInt(user.id, 10)
-          }
-
-          // Guardar en sessionStorage y estado
-          saveUserToStorage(user)
-          setAuthState({
-            user,
-            isAuthenticated: true,
-            loading: false,
-            error: null,
-          })
-
-          return true
+        const user: User = {
+          id: emergencyUser.id,
+          nombre: emergencyUser.nombre,
+          apellido: emergencyUser.apellido,
+          email: emergencyUser.email,
+          rol: emergencyUser.rol,
+          activo: emergencyUser.activo,
+          cuit: emergencyUser.cuit,
+          telefono: emergencyUser.telefono,
         }
 
-        setAuthState((prev) => ({
-          ...prev,
+        // Agregar IDs específicos según el rol como NÚMEROS
+        if (user.rol === "provider") {
+          user.providerId = Number.parseInt(user.id, 10)
+        } else if (user.rol === "supervisor") {
+          user.supervisorId = Number.parseInt(user.id, 10)
+        }
+
+        // Guardar en sessionStorage y estado
+        saveUserToStorage(user)
+        setAuthState({
+          user,
+          isAuthenticated: true,
           loading: false,
-          error: "Credenciales incorrectas",
-        }))
+          error: null,
+        })
+
+          return true
+      }
+
+      setAuthState((prev) => ({
+        ...prev,
+        loading: false,
+        error: "Credenciales incorrectas",
+      }))
 
         return false
       }
@@ -263,7 +263,7 @@ export function useAuth() {
             error: null,
           })
         } else {
-          setAuthState({
+            setAuthState({
             user: null,
             isAuthenticated: false,
             loading: false,

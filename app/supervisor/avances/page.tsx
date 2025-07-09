@@ -166,6 +166,7 @@ export default function SupervisorAvancesPage() {
     avances.forEach((avance) => {
       const orden = ordenesMap.get(avance.ordenTrabajoId)
       if (orden) {
+        console.log('Avance:', avance, 'Orden:', orden);
         const avanceDetallado: AvanceDetallado = {
           id: avance._id || avance.id || Math.random().toString(),
           ordenId: avance.ordenTrabajoId,
@@ -186,7 +187,7 @@ export default function SupervisorAvancesPage() {
           especie: avance.especie,
           estado: avance.estado,
           proveedorId: orden.proveedorId,
-          proveedorNombre: orden.proveedor,
+          proveedorNombre: avance.proveedorNombre || orden.proveedor,
         }
 
         orden.avances.push(avanceDetallado)
@@ -503,7 +504,7 @@ export default function SupervisorAvancesPage() {
             <div className="space-y-2">
               <Label htmlFor="proveedor">Proveedor</Label>
               <Select value={selectedProveedor} onValueChange={setSelectedProveedor}>
-                <SelectTrigger id="proveedor">
+                <SelectTrigger>
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
@@ -519,7 +520,7 @@ export default function SupervisorAvancesPage() {
             <div className="space-y-2">
               <Label htmlFor="estado">Estado</Label>
               <Select value={selectedEstado} onValueChange={setSelectedEstado}>
-                <SelectTrigger id="estado">
+                <SelectTrigger>
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
@@ -536,7 +537,7 @@ export default function SupervisorAvancesPage() {
             <div className="space-y-2">
               <Label htmlFor="actividad">Actividad</Label>
               <Select value={selectedActividad} onValueChange={setSelectedActividad}>
-                <SelectTrigger id="actividad">
+                <SelectTrigger>
                   <SelectValue placeholder="Todas" />
                 </SelectTrigger>
                 <SelectContent>
@@ -731,6 +732,7 @@ export default function SupervisorAvancesPage() {
                                 <TableHead className="font-semibold">Personal</TableHead>
                                 <TableHead className="font-semibold">Jornada</TableHead>
                                 <TableHead className="font-semibold">Observaciones</TableHead>
+                                <TableHead className="font-semibold">Proveedor</TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -774,6 +776,7 @@ export default function SupervisorAvancesPage() {
                                       <span className="text-muted-foreground">-</span>
                                     )}
                                   </TableCell>
+                                  <TableCell>{avance.proveedorNombre || orden.proveedor || "Sin asignar"}</TableCell>
                                 </TableRow>
                               ))}
                             </TableBody>

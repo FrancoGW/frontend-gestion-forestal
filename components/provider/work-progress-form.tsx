@@ -19,6 +19,7 @@ import { cuadrillasAPI, avancesTrabajoAPI } from "@/lib/api-client"
 import { viverosAPI, especiesAPI, clonesAPI } from "@/lib/api-client"
 import { useMalezasProductos } from "@/hooks/use-malezas-productos"
 import { supervisorsAPI } from "@/lib/api-client"
+import { useProviders } from "@/hooks/use-providers"
 
 interface WorkProgressFormProps {
   workOrder: WorkOrder
@@ -63,6 +64,7 @@ export function WorkProgressForm({
   isEditing = false,
 }: WorkProgressFormProps) {
   const { user } = useAuth()
+  const { providers } = useProviders();
 
   // Hook para productos de malezas - INTEGRACIÓN DINÁMICA
   const {
@@ -2831,7 +2833,20 @@ export function WorkProgressForm({
       submitData.numeroOrden = workOrder?.numero || workOrder?.id || ""
       submitData.ordenTrabajoId = workOrder?.id || ""
       submitData.proveedorId = workOrder?.proveedorId || workOrder?.proveedor_id || ""
-      submitData.proveedorNombre = workOrder?.proveedor || workOrder?.proveedorNombre || ""
+      // Buscar el nombre del proveedor en el array de providers
+      const proveedorId = workOrder?.proveedorId || workOrder?.proveedor_id || ""
+      let proveedorNombre = ""
+      if (proveedorId && providers && providers.length > 0) {
+        const found = providers.find(p => String(p.id) === String(proveedorId))
+        if (found) {
+          proveedorNombre = found.nombre
+        }
+      }
+      // Fallbacks si no se encuentra
+      if (!proveedorNombre) {
+        proveedorNombre = workOrder?.proveedor || workOrder?.proveedorNombre || workOrder?.proveedor_id || (proveedorId ? String(proveedorId) : "Sin asignar")
+      }
+      submitData.proveedorNombre = proveedorNombre
       submitData.campo = workOrder?.campo || ""
       // ... puedes agregar aquí otros campos de sistema relevantes ...
 

@@ -359,11 +359,19 @@ export default function SupervisorDashboard() {
       const tieneAvancesProgresivos = grupo.length > 1
 
       grupo.forEach((avance: any, index: number) => {
+        console.log('Avance dashboard:', avance);
         const estado = avance.estado || "Pendiente"
         const indicadorProgreso = `${index + 1}/${grupo.length}`
-        // Buscar el nombre del proveedor por proveedorId
-        const proveedorObj = proveedores.find((p) => String(p.id) === String(avance.proveedorId))
-        const proveedorNombre = proveedorObj ? proveedorObj.nombre : String(avance.proveedor || avance.proveedorId || "Sin especificar")
+        // En el mapeo de avances progresivos (dentro de datosTabla):
+        // Reemplazar la lógica de proveedorNombre por:
+        let proveedorNombre = "Sin asignar";
+        if (avance.proveedorNombre) {
+          proveedorNombre = String(avance.proveedorNombre);
+        } else if (avance.proveedor) {
+          proveedorNombre = String(avance.proveedor);
+        } else if (avance.proveedorId) {
+          proveedorNombre = String(avance.proveedorId);
+        }
         // Usar cuadrillaNombre si existe, si no cuadrilla, si no 'Sin cuadrilla'
         let cuadrillaNombre = avance.cuadrillaNombre || avance.cuadrilla || "Sin cuadrilla"
         avancesProgresivos.push({

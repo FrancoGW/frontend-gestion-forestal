@@ -64,6 +64,7 @@ export interface AvanceData {
   proveedor?: string
   empresa?: string
   proveedorId?: number
+  proveedorNombre?: string
 }
 
 export function useSupervisorData() {
@@ -353,10 +354,11 @@ export function useSupervisorData() {
             estado: avance.estado || "Pendiente",
             proveedor: avance.proveedor || orden.proveedor,
             proveedorId: avance.proveedorId || orden.proveedorId,
+            proveedorNombre: avance.proveedorNombre || "",
           }
           return avanceTransformado
         })
-
+     
       setAvances(avancesTransformados)
       return avancesTransformados
     } catch (err) {
