@@ -65,8 +65,8 @@ export function LoginForm() {
     <div className="min-h-screen flex items-center justify-center bg-white p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="flex justify-center pb-2">
-          <div className="w-64 h-24 relative">
-            <Image src="/logo.png" alt="Logo Forestal Argentina" fill className="object-contain" priority />
+          <div className="w-full h-24 flex items-center justify-center">
+            <span className="text-3xl font-bold text-green-700">Sistema Forestal</span>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
