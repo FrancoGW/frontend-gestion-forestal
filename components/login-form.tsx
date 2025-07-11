@@ -59,17 +59,14 @@ export function LoginForm() {
     }
   }
 
-  const fillCredentials = (userEmail: string, userPassword: string) => {
-    setEmail(userEmail)
-    setPassword(userPassword)
-  }
+
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-white p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="flex justify-center pb-2">
           <div className="w-64 h-24 relative">
-            <Image src="/logo-forestal.svg" alt="Logo Forestal Argentina" fill className="object-contain" priority />
+            <Image src="/logo.png" alt="Logo Forestal Argentina" fill className="object-contain" priority />
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -137,110 +134,7 @@ export function LoginForm() {
             </Button>
           </form>
 
-          <div className="space-y-2">
-            <p className="text-sm text-gray-600 text-center">Usuarios de prueba:</p>
-            <div className="grid grid-cols-1 gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => fillCredentials("cecilia.pizzini@supervisor.com", "123")}
-                disabled={isLoading}
-                className="text-xs"
-              >
-                👩‍💼 Supervisor: Cecilia Pizzini
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => fillCredentials("alejandro.wayer@supervisor.com", "123")}
-                disabled={isLoading}
-                className="text-xs"
-              >
-                👨‍💼 Supervisor: Alejandro Wayer
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => fillCredentials("diego.nonino@supervisor.com", "123")}
-                disabled={isLoading}
-                className="text-xs"
-              >
-                👨‍💼 Supervisor: Diego Nonino
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => fillCredentials("martin.alvarez@supervisor.com", "123")}
-                disabled={isLoading}
-                className="text-xs"
-              >
-                👨‍💼 Supervisor: Martín Álvarez
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => fillCredentials("admin@sistema.com", "admin")}
-                disabled={isLoading}
-                className="text-xs"
-              >
-                👨‍💻 Admin: Sistema
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => fillCredentials("contacto@kauffmann.com", "123")}
-                disabled={isLoading}
-                className="text-xs"
-              >
-                🏢 Proveedor: Kauffmann
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => fillCredentials("contacto@wisefor.com", "123")}
-                disabled={isLoading}
-                className="text-xs"
-              >
-                🏢 Proveedor: WISEFOR
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => fillCredentials("contacto@logistica.com", "123")}
-                disabled={isLoading}
-                className="text-xs"
-              >
-                🏢 Proveedor: Logística
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => fillCredentials("contacto@forestadorauruguay.com", "123")}
-                disabled={isLoading}
-                className="text-xs"
-              >
-                🏢 Proveedor: Forestadora Uruguay
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => fillCredentials("contacto@elombu.com", "123")}
-                disabled={isLoading}
-                className="text-xs"
-              >
-                🏢 Proveedor: El Ombu
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => fillCredentials("contacto@arroser.com", "123")}
-                disabled={isLoading}
-                className="text-xs"
-              >
-                🏢 Proveedor: Arroser
-              </Button>
-            </div>
-          </div>
+
         </CardContent>
       </Card>
     </div>
