@@ -275,54 +275,41 @@ export default function ProviderOrderDetailPage({ params }: { params: { id: stri
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <Button variant="ghost" className="flex gap-1" onClick={() => router.back()}>
-          <ArrowLeft className="h-4 w-4" />
-          Volver
-        </Button>
+    <div className="w-full px-4 md:px-8 lg:px-16 max-w-4xl mx-auto py-8">
+      <div className="space-y-6">
+        <div>
+          <Button variant="ghost" className="flex gap-1" onClick={() => router.back()}>
+            <ArrowLeft className="h-4 w-4" />
+            Volver
+          </Button>
 
-        <h1 className="text-3xl font-bold tracking-tight mt-4">Orden de Trabajo #{workOrder.numero}</h1>
-        <p className="text-muted-foreground">
-          {workOrder.actividad} - {workOrder.campo}
-        </p>
+          <h1 className="text-3xl font-bold tracking-tight mt-4">Orden de Trabajo #{workOrder.numero}</h1>
+          <p className="text-muted-foreground">
+            {workOrder.actividad} - {workOrder.campo}
+          </p>
+        </div>
+
+        <div className="mb-8 mt-4"><WorkOrderDetails workOrder={workOrder} /></div>
+
+        <div className="flex justify-between">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefreshProgress}
+            disabled={isLoadingProgress}
+            className="mb-2"
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isLoadingProgress ? "animate-spin" : ""}`} />
+            {isLoadingProgress ? "Cargando..." : "Actualizar avances"}
+          </Button>
+          <Button asChild>
+            <Link href="/proveedor/avances">
+              Ver Avances
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </Link>
+          </Button>
+        </div>
       </div>
-
-      <WorkOrderDetails workOrder={workOrder} />
-
-      <div className="flex justify-between">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleRefreshProgress}
-          disabled={isLoadingProgress}
-          className="mb-2"
-        >
-          <RefreshCw className={`h-4 w-4 mr-2 ${isLoadingProgress ? "animate-spin" : ""}`} />
-          {isLoadingProgress ? "Cargando..." : "Actualizar avances"}
-        </Button>
-        <Button asChild>
-          <Link href={`/proveedor/ordenes/${orderId}/avances`}>
-            Ver Avances
-            <ArrowRight className="h-4 w-4 ml-2" />
-          </Link>
-        </Button>
-      </div>
-
-      <Card>
-        <CardContent>
-          <WorkProgressForm
-            workOrder={workOrder}
-            onSubmit={handleSubmitProgress}
-            totalWorkedArea={orderProgress.reduce((sum, progress) => sum + (progress.superficie || 0), 0)}
-            getWorkedAreaForRodal={(rodalNumero) => {
-              return orderProgress
-                .filter((progress) => progress.rodal === rodalNumero)
-                .reduce((sum, progress) => sum + (progress.superficie || 0), 0)
-            }}
-          />
-        </CardContent>
-      </Card>
     </div>
   )
 }

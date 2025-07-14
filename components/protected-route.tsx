@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/use-auth"
 
 interface ProtectedRouteProps {
   children: React.ReactNode
-  allowedRoles?: ("admin" | "supervisor" | "provider")[]
+  allowedRoles?: ("admin" | "supervisor" | "provider" | "jda")[]
   redirectTo?: string
 }
 

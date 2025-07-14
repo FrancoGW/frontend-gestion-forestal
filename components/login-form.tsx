@@ -48,6 +48,9 @@ export function LoginForm() {
           case "provider":
             router.push("/proveedor")
             break
+          case "jda":
+            router.push("/jda")
+            break
           default:
             router.push("/admin")
         }
