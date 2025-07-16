@@ -73,18 +73,7 @@ export default function JdaDashboard() {
       }
     })
 
-    // Agregar proveedores asignados al JDA (si existen)
-    if (jda && Array.isArray(jda.proveedoresAsignados)) {
-      jda.proveedoresAsignados.forEach((p) => {
-        const key = `${p.proveedorId}-${p.nombre}`
-        if (!proveedoresMap.has(key)) {
-          proveedoresMap.set(key, {
-            id: p.proveedorId,
-            nombre: p.nombre || `Proveedor ${p.proveedorId}`,
-          })
-        }
-      })
-    }
+
 
     // Agregar proveedores que aparecen en los avances, pero solo si no existen ya
     avances.forEach((avance) => {
@@ -109,35 +98,39 @@ export default function JdaDashboard() {
   const todosLosSupervisores = useMemo(() => {
     const supervisoresMap = new Map()
 
-    // Agregar supervisores del array principal
+    // Agregar supervisores del array principal (solo si tienen nombre real)
     supervisores.forEach((supervisor) => {
-      const key = `${supervisor.id}-${supervisor.nombre}`
-      if (!supervisoresMap.has(key)) {
-        supervisoresMap.set(key, {
-          id: String(supervisor.id),
-          nombre: supervisor.nombre || `Supervisor ${supervisor.id}`,
-        })
+      if (supervisor.nombre && supervisor.nombre.trim() !== "") {
+        const key = `${supervisor.id}-${supervisor.nombre}`
+        if (!supervisoresMap.has(key)) {
+          supervisoresMap.set(key, {
+            id: String(supervisor.id),
+            nombre: supervisor.nombre,
+          })
+        }
       }
     })
 
-    // Agregar supervisores asignados al JDA (si existen)
+    // Agregar supervisores asignados al JDA (solo si tienen nombre real)
     if (jda && Array.isArray(jda.supervisoresAsignados)) {
       jda.supervisoresAsignados.forEach((s) => {
-        const key = `${s.supervisorId}-${s.nombre}`
-        if (!supervisoresMap.has(key)) {
-          supervisoresMap.set(key, {
-            id: String(s.supervisorId),
-            nombre: s.nombre || `Supervisor ${s.supervisorId}`,
-          })
+        if (s.nombre && s.nombre.trim() !== "" && !s.nombre.includes("Supervisor ")) {
+          const key = `${s.supervisorId}-${s.nombre}`
+          if (!supervisoresMap.has(key)) {
+            supervisoresMap.set(key, {
+              id: String(s.supervisorId),
+              nombre: s.nombre,
+            })
+          }
         }
       })
     }
 
-    // Agregar supervisores que aparecen en los avances, pero solo si no existen ya
+    // Agregar supervisores que aparecen en los avances, pero solo si tienen nombre real
     avances.forEach((avance) => {
       const supervisorId = avance.supervisorId;
-      if (supervisorId) {
-        const supervisorNombre = avance.supervisorNombre || `Supervisor ${supervisorId}`;
+      if (supervisorId && avance.supervisorNombre && avance.supervisorNombre.trim() !== "" && !avance.supervisorNombre.includes("Supervisor ")) {
+        const supervisorNombre = avance.supervisorNombre;
         const key = `${supervisorId}-${supervisorNombre}`;
         const existeNombre = Array.from(supervisoresMap.values()).some((s) => s.nombre === supervisorNombre);
         if (!supervisoresMap.has(key) && !existeNombre) {
@@ -195,7 +188,7 @@ export default function JdaDashboard() {
   // Función para obtener el nombre del supervisor seleccionado
   const getNombreSupervisorSeleccionado = () => {
     if (supervisorSeleccionado === "all") return "Todos los supervisores"
-    const supervisor = supervisores.find((s) => String(s.id) === supervisorSeleccionado)
+    const supervisor = todosLosSupervisores.find((s) => String(s.id) === supervisorSeleccionado)
     return supervisor ? supervisor.nombre : "Seleccionar supervisor"
   }
 
@@ -211,36 +204,30 @@ export default function JdaDashboard() {
     /* ------------------------------------------------------------------ */
     const excelData = datosTabla.map((item) => ({
       "FECHA REGISTRO": new Date(item.fecha).toLocaleDateString("es-AR"),
-      SUPERVISOR: item.supervisor,
-      PROVEEDOR: item.proveedor,
-      PREDIOS: item.predio,
       "ORDEN TR": item.ordenTrabajo,
+      SUPERVISOR: item.supervisor,
+      PREDIOS: item.predio,
       RODAL: item.rodal,
       ACTIVIDAD: item.actividad,
-      PROGRESO: item.indicadorProgreso,
-      ESTADO: item.estado,
-      "CANTIDAD (HA)": item.cantidadHA.toFixed(2).replace(".", ","),
-      SUBTOTAL: item.subtotal.toFixed(0),
-      OBSERVACIONES: item.observaciones,
+      PROVEEDOR: item.proveedor,
       CUADRILLA: item.cuadrillaNombre || item.cuadrilla || "Sin cuadrilla",
-      JORNADA: item.jornada,
+      "CANTIDAD (HA)": item.cantidadHA.toFixed(2).replace(".", ","),
+      ESTADO: item.estado,
+      JORNALES: item.jornada,
     }))
 
     excelData.push({
       "FECHA REGISTRO": "",
+      "ORDEN TR": "",
       SUPERVISOR: "",
       PREDIOS: "",
-      "ORDEN TR": "",
       RODAL: "",
       ACTIVIDAD: "",
-      PROGRESO: "",
-      ESTADO: "TOTALES:",
-      "CANTIDAD (HA)": totales.totalHA.toFixed(2).replace(".", ","),
-      SUBTOTAL: totales.totalSubtotal.toFixed(0),
       PROVEEDOR: "",
-      OBSERVACIONES: "",
       CUADRILLA: "",
-      JORNADA: "",
+      "CANTIDAD (HA)": totales.totalHA.toFixed(2).replace(".", ","),
+      ESTADO: "TOTALES:",
+      JORNALES: 0,
     })
 
     /* ------------------------------------------------------------------ */
@@ -254,19 +241,16 @@ export default function JdaDashboard() {
     /* ------------------------------------------------------------------ */
     const columnWidths = [
       { wch: 12 }, // FECHA REGISTRO
-      { wch: 15 }, // SUPERVISOR
-      { wch: 20 }, // PROVEEDOR
-      { wch: 15 }, // PREDIOS
       { wch: 10 }, // ORDEN TR
+      { wch: 15 }, // SUPERVISOR
+      { wch: 15 }, // PREDIOS
       { wch: 8 },  // RODAL
       { wch: 20 }, // ACTIVIDAD
-      { wch: 10 }, // PROGRESO
-      { wch: 12 }, // ESTADO
-      { wch: 12 }, // CANTIDAD (HA)
-      { wch: 10 }, // SUBTOTAL
-      { wch: 30 }, // OBSERVACIONES
+      { wch: 20 }, // PROVEEDOR
       { wch: 15 }, // CUADRILLA
-      { wch: 8 },  // JORNADA
+      { wch: 12 }, // CANTIDAD (HA)
+      { wch: 12 }, // ESTADO
+      { wch: 8 },  // JORNALES
     ]
     ws["!cols"] = columnWidths
 
@@ -708,25 +692,22 @@ export default function JdaDashboard() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Fecha</TableHead>
-                  <TableHead>Supervisor</TableHead>
-                  <TableHead>Proveedor</TableHead>
-                  <TableHead>Predio</TableHead>
                   <TableHead>Orden</TableHead>
+                  <TableHead>Supervisor</TableHead>
+                  <TableHead>Predio</TableHead>
                   <TableHead>Rodal</TableHead>
                   <TableHead>Actividad</TableHead>
-                  <TableHead>Progreso</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead className="text-right">HA</TableHead>
-                  <TableHead className="text-right">Subtotal</TableHead>
-                  <TableHead>Observaciones</TableHead>
+                  <TableHead>Proveedor</TableHead>
                   <TableHead>Cuadrilla</TableHead>
-                  <TableHead>Jornada</TableHead>
+                  <TableHead className="text-right">Ha</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead>Jornales</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {datosTabla.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={14} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
                       No hay avances que coincidan con los filtros seleccionados
                     </TableCell>
                   </TableRow>
@@ -734,25 +715,22 @@ export default function JdaDashboard() {
                   datosTabla.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell>{new Date(item.fecha).toLocaleDateString("es-AR")}</TableCell>
+                      <TableCell>{item.ordenTrabajo}</TableCell>
                       <TableCell>
                         <Badge variant="secondary" className="text-xs">
                           {item.supervisor}
                         </Badge>
                       </TableCell>
+                      <TableCell>{item.predio}</TableCell>
+                      <TableCell>{item.rodal}</TableCell>
+                      <TableCell>{item.actividad}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className="text-xs">
                           {item.proveedor}
                         </Badge>
                       </TableCell>
-                      <TableCell>{item.predio}</TableCell>
-                      <TableCell>{item.ordenTrabajo}</TableCell>
-                      <TableCell>{item.rodal}</TableCell>
-                      <TableCell>{item.actividad}</TableCell>
-                      <TableCell>
-                        <Badge variant={item.esProgresivo ? "default" : "secondary"} className="text-xs">
-                          {item.indicadorProgreso}
-                        </Badge>
-                      </TableCell>
+                      <TableCell>{item.cuadrillaNombre}</TableCell>
+                      <TableCell className="text-right">{item.cantidadHA.toFixed(2)}</TableCell>
                       <TableCell>
                         <Badge
                           variant={
@@ -773,12 +751,6 @@ export default function JdaDashboard() {
                           {item.estado}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right">{item.cantidadHA.toFixed(2)}</TableCell>
-                      <TableCell className="text-right">{item.subtotal.toFixed(0)}</TableCell>
-                      <TableCell className="max-w-xs truncate" title={item.observaciones}>
-                        {item.observaciones}
-                      </TableCell>
-                      <TableCell>{item.cuadrillaNombre}</TableCell>
                       <TableCell>{item.jornada}</TableCell>
                     </TableRow>
                   ))
