@@ -5,6 +5,7 @@ import type React from "react"
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import * as XLSX from "xlsx"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,6 +16,26 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useWorkOrders } from "@/hooks/use-work-orders"
 import { AlertCircle, FileSpreadsheet, Search, RefreshCcw } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { workOrdersAPI } from "@/lib/api-client"
+
+// Función para traer todas las órdenes paginando
+async function fetchAllWorkOrders(): Promise<any[]> {
+  let pagina = 1
+  let todasLasOrdenes: any[] = []
+  let totalPaginas = 1
+  do {
+    const response = await workOrdersAPI.getAll({ pagina, limite: 100 })
+    const ordenes = response.ordenes || response.data || []
+    todasLasOrdenes = todasLasOrdenes.concat(ordenes)
+    totalPaginas = response.paginacion?.paginas || 1
+    // Log para depuración
+    console.log(`Página ${pagina} de ${totalPaginas}, órdenes recibidas: ${ordenes.length}, total acumulado: ${todasLasOrdenes.length}`)
+    pagina++
+  } while (pagina <= totalPaginas)
+  // Log final para depuración
+  console.log(`Total de órdenes obtenidas: ${todasLasOrdenes.length}`)
+  return todasLasOrdenes
+}
 
 export default function WorkOrdersPage() {
   const router = useRouter()
@@ -31,6 +52,7 @@ export default function WorkOrdersPage() {
     retryConnection,
     performSearch,
     clearSearch,
+    rawWorkOrders,
   } = useWorkOrders()
 
   const [localSearchQuery, setLocalSearchQuery] = useState("")
@@ -51,6 +73,39 @@ export default function WorkOrdersPage() {
     if (!value.trim()) {
       clearSearch()
     }
+  }
+
+  const handleExport = async () => {
+    const allOrders = await fetchAllWorkOrders()
+    const dataToExport = allOrders.flatMap((order: any) => {
+      const rodales = order.rodales && order.rodales.length > 0 ? order.rodales : [{}]
+      const insumos = order.insumos && order.insumos.length > 0 ? order.insumos : [{}]
+      const ambiental = order.ambiental && order.ambiental.length > 0 ? order.ambiental : [{}]
+
+      const maxRows = Math.max(rodales.length, insumos.length, ambiental.length)
+      const rows = []
+
+      for (let i = 0; i < maxRows; i++) {
+        rows.push({
+          ...order,
+          "Rodal Codigo": rodales[i]?.cod_rodal || "",
+          "Rodal Uso": rodales[i]?.tipo_uso || "",
+          "Rodal Especie": rodales[i]?.especie || "",
+          "Rodal Supha": rodales[i]?.supha || "",
+          "Insumo Nombre": insumos[i]?.insumo || "",
+          "Insumo Dosis": insumos[i]?.dosis || "",
+          "Aspecto Ambiental": ambiental[i]?.aspecto || "",
+          "Riesgo Ambiental": ambiental[i]?.riesgo ?? "",
+        })
+      }
+
+      return rows
+    })
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport)
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Ordenes de Trabajo")
+    XLSX.writeFile(workbook, "ordenes_de_trabajo.xlsx")
   }
 
   // Filtrar órdenes según la pestaña activa (solo si no estamos buscando)
@@ -133,15 +188,21 @@ export default function WorkOrdersPage() {
       </div>
 
       <div className="flex flex-col sm:flex-row justify-between gap-4">
-        {!isSearching && (
-          <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>
-            <TabsList>
-              <TabsTrigger value="all">Todas</TabsTrigger>
-              <TabsTrigger value="assigned">Asignadas</TabsTrigger>
-              <TabsTrigger value="unassigned">Sin Asignar</TabsTrigger>
-            </TabsList>
-          </Tabs>
-        )}
+        <div className="flex gap-2">
+          {!isSearching && (
+            <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>
+              <TabsList>
+                <TabsTrigger value="all">Todas</TabsTrigger>
+                <TabsTrigger value="assigned">Asignadas</TabsTrigger>
+                <TabsTrigger value="unassigned">Sin Asignar</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          )}
+          <Button onClick={handleExport} variant="outline" className="flex items-center gap-2">
+            <FileSpreadsheet className="h-4 w-4" />
+            Exportar a Excel
+          </Button>
+        </div>
 
         <form onSubmit={handleSearch} className="flex w-full sm:w-auto gap-2">
           <div className="relative">
@@ -232,7 +293,7 @@ export default function WorkOrdersPage() {
             </Table>
           </div>
 
-          {!isSearching && pagination.totalPages > 1 && (
+          {/* {!isSearching && pagination.totalPages > 1 && (
             <Pagination className="mt-8">
               <PaginationContent>
                 {pagination.currentPage > 1 && (
@@ -269,7 +330,7 @@ export default function WorkOrdersPage() {
                 )}
               </PaginationContent>
             </Pagination>
-          )}
+          )} */}
         </>
       )}
     </div>

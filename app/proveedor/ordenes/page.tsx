@@ -134,8 +134,8 @@ export default function ProviderOrdersPage() {
     addWorkProgress,
   } = useProviderWorkData()
 
-  const [statusFilter, setStatusFilter] = useState<WorkOrderStatus | "todas">("todas")
-  const [searchTerm, setSearchTerm] = useState("")
+  const [orderIdSearch, setOrderIdSearch] = useState("")
+  const [rodalSearch, setRodalSearch] = useState("")
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [updatedOrders, setUpdatedOrders] = useState<Record<number, WorkOrderStatus>>({})
   const { toast } = useToast()
@@ -182,7 +182,7 @@ export default function ProviderOrdersPage() {
 
   // Manejar el envío del formulario de avance
   const handleSubmitProgress = useCallback(
-    async (progressData) => {
+    async (progressData: any) => {
       if (!selectedOrderId) return { success: false, error: "Orden no seleccionada" }
 
       const result = await addWorkProgress(selectedOrderId, progressData)
@@ -212,42 +212,17 @@ export default function ProviderOrdersPage() {
     [selectedOrderId, addWorkProgress, updateOrderStatus, forceRefresh],
   )
 
-  // Filtrar órdenes por estado y término de búsqueda
-  const filteredOrders = orders.filter((order) => {
-    // Mapear estados numéricos a estados de texto para el filtrado
-    let orderStatus = order.estado
-    if (typeof order.estado === "number") {
-      switch (order.estado) {
-        case 0:
-          orderStatus = "emitida"
-          break
-        case 1:
-          orderStatus = "progreso"
-          break
-        case 2:
-          orderStatus = "revision"
-          break
-        case 3:
-          orderStatus = "finalizado"
-          break
-        default:
-          orderStatus = "emitida"
-      }
-    }
-
-    // Si la orden ha sido actualizada, usar el nuevo estado
-    if (updatedOrders[order.id]) {
-      orderStatus = updatedOrders[order.id]
-    }
-
-    const matchesStatus = statusFilter === "todas" || orderStatus === statusFilter
-    const matchesSearch =
-      searchTerm === "" ||
-      (order.numero && order.numero.toString().toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (order.actividad && order.actividad.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (order.campo && order.campo.toLowerCase().includes(searchTerm.toLowerCase()))
-
-    return matchesStatus && matchesSearch
+  // Filtrar órdenes por ID de orden y por rodal
+  const filteredOrders = orders.filter((order: any) => {
+    const matchesOrderId =
+      !orderIdSearch || (order.numero && String(order.numero).toLowerCase() === orderIdSearch.toLowerCase())
+    const matchesRodal =
+      !rodalSearch ||
+      (order.rodales && Array.isArray(order.rodales) && order.rodales.some((r: any) => {
+        const rodalNum = r.numero ?? r.nombre ?? ''
+        return rodalNum && String(rodalNum).toLowerCase().includes(rodalSearch.toLowerCase())
+      }))
+    return matchesOrderId && matchesRodal
   })
 
   // Obtener la orden seleccionada
@@ -310,39 +285,27 @@ export default function ProviderOrdersPage() {
       </div>
 
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as WorkOrderStatus | "todas")}>
-          <TabsList className="grid grid-cols-2 lg:grid-cols-5 w-full lg:w-auto">
-            <TabsTrigger value="todas" className="text-xs lg:text-sm">
-              Todas ({orders.length})
-            </TabsTrigger>
-            <TabsTrigger value="emitida" className="text-xs lg:text-sm">
-              Emitidas ({orders.filter((o) => (updatedOrders[o.id] || o.estado) === "emitida" || o.estado === 0).length}
-              )
-            </TabsTrigger>
-            <TabsTrigger value="progreso" className="text-xs lg:text-sm">
-              En Progreso (
-              {orders.filter((o) => (updatedOrders[o.id] || o.estado) === "progreso" || o.estado === 1).length})
-            </TabsTrigger>
-            <TabsTrigger value="revision" className="text-xs lg:text-sm">
-              En Revisión (
-              {orders.filter((o) => (updatedOrders[o.id] || o.estado) === "revision" || o.estado === 2).length})
-            </TabsTrigger>
-            <TabsTrigger value="finalizado" className="text-xs lg:text-sm">
-              Finalizadas (
-              {orders.filter((o) => (updatedOrders[o.id] || o.estado) === "finalizado" || o.estado === 3).length})
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-
-        <div className="relative w-full lg:w-auto">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Buscar órdenes..."
-            className="pl-8 w-full lg:w-[250px]"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+        <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+          <div className="relative w-full sm:w-auto">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Buscar por ID de orden..."
+              className="pl-8 w-full sm:w-[200px]"
+              value={orderIdSearch}
+              onChange={(e) => setOrderIdSearch(e.target.value)}
+            />
+          </div>
+          <div className="relative w-full sm:w-auto">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Buscar por Rodal..."
+              className="pl-8 w-full sm:w-[200px]"
+              value={rodalSearch}
+              onChange={(e) => setRodalSearch(e.target.value)}
+            />
+          </div>
         </div>
       </div>
 
@@ -361,16 +324,15 @@ export default function ProviderOrdersPage() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <p className="text-muted-foreground text-center">
-              No hay órdenes de trabajo {statusFilter !== "todas" ? `en estado ${statusFilter}` : ""}.
-              {searchTerm && " Prueba a cambiar el término de búsqueda."}
+              No hay órdenes de trabajo que coincidan con los filtros.
             </p>
-            {(searchTerm || statusFilter !== "todas") && (
+            {(orderIdSearch || rodalSearch) && (
               <Button
                 variant="outline"
                 className="mt-4 bg-transparent"
                 onClick={() => {
-                  setSearchTerm("")
-                  setStatusFilter("todas")
+                  setOrderIdSearch("")
+                  setRodalSearch("")
                 }}
               >
                 Limpiar filtros
@@ -389,6 +351,7 @@ export default function ProviderOrdersPage() {
                   <TableHead className="w-[120px] px-4 py-4">Fecha</TableHead>
                   <TableHead className="w-[180px] px-4 py-4">Campo</TableHead>
                   <TableHead className="px-4 py-4">Actividad</TableHead>
+                  <TableHead className="px-4 py-4">Rodales</TableHead>
                   <TableHead className="w-[140px] px-4 py-4">Cantidad</TableHead>
                   <TableHead className="w-[140px] px-4 py-4">Estado</TableHead>
                   <TableHead className="w-[200px] px-4 py-4">Progreso</TableHead>
@@ -404,9 +367,7 @@ export default function ProviderOrdersPage() {
                   const currentStatus = updatedOrders[order.id] || order.estado
                   const canAddProgress =
                     currentStatus === "emitida" ||
-                    currentStatus === "progreso" ||
-                    currentStatus === 0 ||
-                    currentStatus === 1
+                    currentStatus === "progreso"
                   const statusConf = getStatusConfig(currentStatus)
                   const StatusIcon = statusConf.icon
 
@@ -434,6 +395,21 @@ export default function ProviderOrdersPage() {
                         </div>
                       </TableCell>
                       <TableCell className="px-4 py-4">{order.actividad || "Sin actividad"}</TableCell>
+                      <TableCell className="px-4 py-4">
+                        {Array.isArray(order.rodales) && order.rodales?.length > 0
+                          ? order.rodales.map((r: any, idx: number) => {
+                              const rodalNum = r.numero ?? r.nombre ?? ''
+                              const hect = r.hectareas ?? r.superficie ?? ''
+                              const isMatch = rodalSearch && rodalNum && String(rodalNum).toLowerCase() === rodalSearch.toLowerCase();
+                              return (
+                                <span key={idx} style={isMatch ? { background: '#bbf7d0', color: '#166534', borderRadius: '4px', padding: '0 4px' } : {}}>
+                                  {rodalNum}{hect ? ` (${hect} ha)` : ''}
+                                  {idx < order.rodales.length - 1 ? ', ' : ''}
+                                </span>
+                              );
+                            })
+                          : "Sin rodales"}
+                      </TableCell>
                       <TableCell className="px-4 py-4">{displayText}</TableCell>
                       <TableCell className="px-4 py-4">
                         <Badge className={`flex items-center gap-1 px-3 py-1 ${statusConf.color}`}>
@@ -493,9 +469,7 @@ export default function ProviderOrdersPage() {
               const currentStatus = updatedOrders[order.id] || order.estado
               const canAddProgress =
                 currentStatus === "emitida" ||
-                currentStatus === "progreso" ||
-                currentStatus === 0 ||
-                currentStatus === 1
+                currentStatus === "progreso"
               const statusConf = getStatusConfig(currentStatus)
               const StatusIcon = statusConf.icon
 
@@ -529,6 +503,22 @@ export default function ProviderOrdersPage() {
                     {/* Actividad */}
                     <div className="text-sm">
                       <span className="font-medium">Actividad:</span> {order.actividad || "Sin actividad"}
+                    </div>
+                    {/* Rodales */}
+                    <div className="text-sm">
+                      <span className="font-medium">Rodales:</span> {Array.isArray(order.rodales) && order.rodales?.length > 0
+                        ? order.rodales.map((r: any, idx: number) => {
+                            const rodalNum = r.numero ?? r.nombre ?? ''
+                            const hect = r.hectareas ?? r.superficie ?? ''
+                            const isMatch = rodalSearch && rodalNum && String(rodalNum).toLowerCase() === rodalSearch.toLowerCase();
+                            return (
+                              <span key={idx} style={isMatch ? { background: '#bbf7d0', color: '#166534', borderRadius: '4px', padding: '0 4px' } : {}}>
+                                {rodalNum}{hect ? ` (${hect} ha)` : ''}
+                                {idx < order.rodales.length - 1 ? ', ' : ''}
+                              </span>
+                            );
+                          })
+                        : "Sin rodales"}
                     </div>
 
                     {/* Cantidad */}
