@@ -779,6 +779,77 @@ const DEFAULT_TEMPLATES: ActivityTemplate[] = [
     ],
     activo: true,
   },
+  {
+    id: "control-exotica-template",
+    nombre: "CONTROL DE EXOTICA",
+    descripcion: "Plantilla para actividades de control de exótica.",
+    actividadCodigo: "SAP010",
+    categoria: "Control de Plagas",
+    unidad: "Ha",
+    patronesCoincidencia: [
+      "control de exotica", "control de exótica", "exotica", "exótica", "control exoticas", "control de exoticas", "control de exóticas", "exoticas", "exóticas"
+    ],
+    campos: [
+      { id: "estado", nombre: "Estado del Trabajo", tipo: "seleccion", requerido: true, orden: 1, opciones: ["Pendiente", "R7 (terminado)"], descripcion: "Estado del trabajo", esDelSistema: true },
+      { id: "fecha", nombre: "Fecha", tipo: "fecha", requerido: true, orden: 2, esDelSistema: true },
+      { id: "predio", nombre: "Predio", tipo: "texto", requerido: true, orden: 3, esDelSistema: true },
+      { id: "rodal", nombre: "Rodal", tipo: "texto", requerido: true, orden: 4, esDelSistema: true },
+      { id: "actividad", nombre: "Actividad", tipo: "texto", requerido: true, orden: 5, esDelSistema: true },
+      { id: "implemento", nombre: "Implemento", tipo: "seleccion", requerido: true, orden: 6, opciones: ["Machete", "Motisierra"], esDelSistema: true },
+      { id: "operarios", nombre: "Operarios", tipo: "numero", requerido: true, orden: 7, esDelSistema: true },
+      { id: "jornales", nombre: "Jornales", tipo: "numero", requerido: true, orden: 8, esDelSistema: true },
+      { id: "observaciones", nombre: "Observaciones", tipo: "textarea", requerido: false, orden: 9, esDelSistema: false },
+    ],
+    activo: true,
+  },
+  {
+    id: "control-regeneracion-exoticas-template",
+    nombre: "CONTROL DE REGENERACION DE EXOTICAS",
+    descripcion: "Plantilla para actividades de control de regeneración de exóticas.",
+    actividadCodigo: "SAP011",
+    categoria: "Control de Plagas",
+    unidad: "Ha",
+    patronesCoincidencia: [
+      "control de regeneracion de exoticas", "control de regeneración de exóticas", "regeneracion de exoticas", "regeneración de exóticas", "control regeneracion exoticas", "control regeneración exóticas", "regeneracion exoticas", "regeneración exóticas",
+      "control generacion de pino", "control generación de pino"
+    ],
+    campos: [
+      { id: "fecha", nombre: "Fecha", tipo: "fecha", requerido: true, orden: 1, esDelSistema: true },
+      { id: "predio", nombre: "Predio", tipo: "texto", requerido: true, orden: 2, esDelSistema: true },
+      { id: "rodal", nombre: "Rodal", tipo: "texto", requerido: true, orden: 3, esDelSistema: true },
+      { id: "actividad", nombre: "Actividad", tipo: "texto", requerido: true, orden: 4, esDelSistema: true },
+      { id: "implemento", nombre: "Implemento", tipo: "seleccion", requerido: true, orden: 5, opciones: ["Tr c/Rolon", "Topa c/Rolon", "Tr c/Rastra", "Macheteo", "Motosierra"], esDelSistema: true },
+      { id: "operarios", nombre: "Operarios", tipo: "numero", requerido: true, orden: 6, esDelSistema: true },
+      { id: "ha", nombre: "HA", tipo: "numero", requerido: true, orden: 7, esDelSistema: true },
+      { id: "estado", nombre: "Estado", tipo: "texto", requerido: true, orden: 8, esDelSistema: true },
+      { id: "jornales", nombre: "Jornales", tipo: "numero", requerido: true, orden: 9, esDelSistema: true },
+      { id: "observaciones", nombre: "Observaciones", tipo: "textarea", requerido: false, orden: 10, esDelSistema: false },
+    ],
+    activo: true,
+  },
+  {
+    id: "manejo-rebrote-template",
+    nombre: "MANEJO REBROTE",
+    descripcion: "Plantilla para actividades de manejo de rebrote.",
+    actividadCodigo: "SAP012",
+    categoria: "Silvicultura",
+    unidad: "Ha",
+    patronesCoincidencia: [
+      "manejo rebrote", "manejo de rebrote", "rebrote", "manejo de rebrotes", "manejo rebrote", "rebrote manejo"
+    ],
+    campos: [
+      { id: "fecha", nombre: "Fecha", tipo: "fecha", requerido: true, orden: 1, esDelSistema: true },
+      { id: "predio", nombre: "Predio", tipo: "texto", requerido: true, orden: 2, esDelSistema: true },
+      { id: "rodal", nombre: "Rodal", tipo: "texto", requerido: true, orden: 3, esDelSistema: true },
+      { id: "actividad", nombre: "Actividad", tipo: "texto", requerido: true, orden: 4, esDelSistema: true },
+      { id: "implemento", nombre: "Implemento", tipo: "seleccion", requerido: true, orden: 5, opciones: ["Machete", "Motisierra", "Guadaña"], esDelSistema: true },
+      { id: "operarios", nombre: "Operarios", tipo: "numero", requerido: true, orden: 6, esDelSistema: true },
+      { id: "ha", nombre: "HA", tipo: "numero", requerido: true, orden: 7, esDelSistema: true },
+      { id: "estado", nombre: "Estado", tipo: "texto", requerido: true, orden: 8, esDelSistema: true },
+      { id: "observaciones", nombre: "Observaciones", tipo: "textarea", requerido: false, orden: 9, esDelSistema: false },
+    ],
+    activo: true,
+  },
 ]
 
 export function useActivityTemplates() {
@@ -795,18 +866,22 @@ export function useActivityTemplates() {
       if (storedTemplates) {
         const parsed = JSON.parse(storedTemplates)
 
-        // Verificar si hay nuevas plantillas predefinidas que no están en localStorage
-        const storedIds = new Set(parsed.map((t: ActivityTemplate) => t.id))
-        const newTemplates = DEFAULT_TEMPLATES.filter((t) => !storedIds.has(t.id))
-
-        if (newTemplates.length > 0) {
-          // Hay nuevas plantillas, combinar con las existentes
-          finalTemplates = [...parsed, ...newTemplates]
-         
-        } else {
-          // No hay nuevas plantillas, usar las almacenadas
-          finalTemplates = parsed
-        }
+        // Sincronizar campos de plantillas existentes por id
+        const mergedTemplates = DEFAULT_TEMPLATES.map((defaultTpl) => {
+          const localTpl = parsed.find((t: ActivityTemplate) => t.id === defaultTpl.id)
+          if (!localTpl) return defaultTpl
+          // Si los campos difieren en cantidad o nombres, usar la versión del código
+          const camposIguales =
+            Array.isArray(localTpl.campos) &&
+            localTpl.campos.length === defaultTpl.campos.length &&
+            localTpl.campos.every((c: any, idx: number) => c.id === defaultTpl.campos[idx].id)
+          if (!camposIguales) return defaultTpl
+          // Si los campos son iguales, usar la versión local (puede tener datos custom)
+          return localTpl
+        })
+        // Agregar plantillas custom que no estén en el código
+        const customTemplates = parsed.filter((t: ActivityTemplate) => !DEFAULT_TEMPLATES.find((dt) => dt.id === t.id))
+        finalTemplates = [...mergedTemplates, ...customTemplates]
       }
 
       // Guardar las plantillas actualizadas
@@ -867,21 +942,14 @@ export function useActivityTemplates() {
         const template = templates.find((t) => t.nombre === templateName && t.activo)
         if (!template) continue
 
-       
-
         const matches = template.patronesCoincidencia.some((patron) => {
           const patronLower = patron.toLowerCase().trim()
-         
-
           // Coincidencia exacta
           if (activityName === patronLower) {
-           
             return true
           }
-
           // Coincidencia por inclusión (la actividad contiene el patrón completo)
           if (activityName.includes(patronLower)) {
-           
             return true
           }
 
@@ -899,7 +967,6 @@ export function useActivityTemplates() {
             ]
             const isQuemasMatch = quemasVariations.some((variation) => activityName.includes(variation.toLowerCase()))
             if (isQuemasMatch) {
-             
               return true
             }
           }
@@ -956,6 +1023,22 @@ export function useActivityTemplates() {
         }
       }
 
+      // 3. TERCERO: Buscar patronesCoincidencia en todas las plantillas activas (para nuevas plantillas)
+      for (const template of templates) {
+        if (!template.activo) continue;
+        const matches = template.patronesCoincidencia.some((patron) => {
+          const patronLower = patron.toLowerCase().trim();
+          if (activityName === patronLower) return true;
+          if (activityName.includes(patronLower)) return true;
+          return false;
+        });
+        if (matches) {
+          return {
+            template: template,
+            specificActivityName: workOrder.actividad,
+          };
+        }
+      }
      
       return {
         template: null,
