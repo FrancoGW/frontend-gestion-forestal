@@ -2881,78 +2881,98 @@ export function WorkProgressForm({
     }
 
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {activeTemplate.campos.map((campo: ActivityField) => (
-          <div key={campo.id} className="space-y-2">
-            <Label htmlFor={campo.id}>
-              {campo.nombre} {campo.requerido && <span className="text-red-500">*</span>}
-            </Label>
+      <>
+        {/* Estado del Trabajo - ESTILO DESTACADO */}
+        <div className="col-span-2 space-y-2 p-4 bg-orange-50 border border-orange-200 rounded-md mb-4">
+          <Label htmlFor="estado-trabajo" className="text-lg font-semibold text-orange-800">
+            Estado del Trabajo <span className="text-red-500">*</span>
+          </Label>
+          <Select
+            value={formData.estado || "Pendiente"}
+            onValueChange={(newValue) => handleInputChange("estado", newValue)}
+          >
+            <SelectTrigger id="estado-trabajo" className="h-12 text-base">
+              <SelectValue placeholder="Seleccionar estado del trabajo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Pendiente">Pendiente</SelectItem>
+              <SelectItem value="R7 (terminado)">R7 (terminado)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {activeTemplate.campos.map((campo: ActivityField) => (
+            <div key={campo.id} className="space-y-2">
+              <Label htmlFor={campo.id}>
+                {campo.nombre} {campo.requerido && <span className="text-red-500">*</span>}
+              </Label>
 
-            {campo.tipo === "texto" && (
-              <Input
-                id={campo.id}
-                type="text"
-                value={formData[campo.id] || ""}
-                onChange={(e) => handleInputChange(campo.id, e.target.value)}
-                placeholder={campo.placeholder}
-                required={campo.requerido}
-              />
-            )}
+              {campo.tipo === "texto" && (
+                <Input
+                  id={campo.id}
+                  type="text"
+                  value={formData[campo.id] || ""}
+                  onChange={(e) => handleInputChange(campo.id, e.target.value)}
+                  placeholder={campo.placeholder}
+                  required={campo.requerido}
+                />
+              )}
 
-            {campo.tipo === "numero" && (
-              <Input
-                id={campo.id}
-                type="number"
-                step={campo.id.includes("superficie") ? "0.0001" : "1"}
-                min="0"
-                value={formData[campo.id] || ""}
-                onChange={(e) => handleInputChange(campo.id, e.target.value)}
-                placeholder={campo.placeholder}
-                required={campo.requerido}
-              />
-            )}
+              {campo.tipo === "numero" && (
+                <Input
+                  id={campo.id}
+                  type="number"
+                  step={campo.id.includes("superficie") ? "0.0001" : "1"}
+                  min="0"
+                  value={formData[campo.id] || ""}
+                  onChange={(e) => handleInputChange(campo.id, e.target.value)}
+                  placeholder={campo.placeholder}
+                  required={campo.requerido}
+                />
+              )}
 
-            {campo.tipo === "fecha" && (
-              <Input
-                id={campo.id}
-                type="date"
-                value={formData[campo.id] || ""}
-                onChange={(e) => handleInputChange(campo.id, e.target.value)}
-                required={campo.requerido}
-              />
-            )}
+              {campo.tipo === "fecha" && (
+                <Input
+                  id={campo.id}
+                  type="date"
+                  value={formData[campo.id] || ""}
+                  onChange={(e) => handleInputChange(campo.id, e.target.value)}
+                  required={campo.requerido}
+                />
+              )}
 
-            {campo.tipo === "seleccion" && (
-              <Select
-                value={formData[campo.id] || ""}
-                onValueChange={(newValue) => handleInputChange(campo.id, newValue)}
-              >
-                <SelectTrigger id={campo.id}>
-                  <SelectValue placeholder={campo.placeholder || `Seleccionar ${campo.nombre.toLowerCase()}`} />
-                </SelectTrigger>
-                <SelectContent>
-                  {campo.opciones?.map((opcion) => (
-                    <SelectItem key={opcion} value={opcion}>
-                      {opcion}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
+              {campo.tipo === "seleccion" && (
+                <Select
+                  value={formData[campo.id] || ""}
+                  onValueChange={(newValue) => handleInputChange(campo.id, newValue)}
+                >
+                  <SelectTrigger id={campo.id}>
+                    <SelectValue placeholder={campo.placeholder || `Seleccionar ${campo.nombre.toLowerCase()}`} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {campo.opciones?.map((opcion) => (
+                      <SelectItem key={opcion} value={opcion}>
+                        {opcion}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
 
-            {campo.tipo === "area" && (
-              <Textarea
-                id={campo.id}
-                value={formData[campo.id] || ""}
-                onChange={(e) => handleInputChange(campo.id, e.target.value)}
-                placeholder={campo.placeholder}
-                className="min-h-[100px]"
-                required={campo.requerido}
-              />
-            )}
-          </div>
-        ))}
-      </div>
+              {campo.tipo === "area" && (
+                <Textarea
+                  id={campo.id}
+                  value={formData[campo.id] || ""}
+                  onChange={(e) => handleInputChange(campo.id, e.target.value)}
+                  placeholder={campo.placeholder}
+                  className="min-h-[100px]"
+                  required={campo.requerido}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+      </>
     )
   }
 
