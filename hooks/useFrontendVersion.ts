@@ -1,3 +1,4 @@
+"use client";
 import { useEffect } from "react"
 
 const FRONTEND_VERSION = "2024-07-09-1" // Cambia este valor en cada deploy relevante
@@ -9,7 +10,7 @@ export function useFrontendVersion() {
       if (lastVersion && lastVersion !== FRONTEND_VERSION) {
         localStorage.clear() // Borra todo el localStorage para evitar inconsistencias
         localStorage.setItem("frontend-version", FRONTEND_VERSION)
-        window.location.reload(true) // Fuerza recarga total para obtener el JS/CSS nuevo
+        window.location.reload() // No hace falta el true
       } else {
         localStorage.setItem("frontend-version", FRONTEND_VERSION)
       }
