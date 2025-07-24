@@ -370,8 +370,18 @@ export function WorkProgressForm({
       !activeTemplate
     ) {
       try {
-
         const result = getTemplateForWorkOrder(workOrder)
+        // LOG DETALLADO DE PLANTILLA
+        console.log("[PLANTILLA][DEBUG] workOrder:", workOrder)
+        console.log("[PLANTILLA][DEBUG] Resultado getTemplateForWorkOrder:", result)
+        console.log("[PLANTILLA][DEBUG] Plantillas cargadas:", templates)
+        // Buscar si la plantilla viene de DEFAULT_TEMPLATES o de localStorage custom
+        const isDefault = Array.isArray(templates) && templates.some(t => t.id === result?.template?.id && t === result.template)
+        if (result.template) {
+          console.log(`[PLANTILLA][DEBUG] Origen de la plantilla '${result.template?.nombre}':`, isDefault ? 'DEFAULT_TEMPLATES (código)' : 'localStorage/custom')
+        } else {
+          console.log("[PLANTILLA][DEBUG] No se encontró plantilla para la orden.")
+        }
 
         if (result.template) {
           setActiveTemplate(result.template)
@@ -2880,33 +2890,146 @@ export function WorkProgressForm({
       )
     }
 
+    // Filtrar campos de sistema
+    const camposSistema = [
+      "estado", "fecha", "predio", "rodal", "cuadrilla"
+    ];
+
     return (
       <>
         {/* Estado del Trabajo - ESTILO DESTACADO */}
-        <div className="col-span-2 space-y-2 p-4 bg-orange-50 border border-orange-200 rounded-md mb-4">
-          <Label htmlFor="estado-trabajo" className="text-lg font-semibold text-orange-800">
-            Estado del Trabajo <span className="text-red-500">*</span>
-          </Label>
-          <Select
-            value={formData.estado || "Pendiente"}
-            onValueChange={(newValue) => handleInputChange("estado", newValue)}
-          >
-            <SelectTrigger id="estado-trabajo" className="h-12 text-base">
-              <SelectValue placeholder="Seleccionar estado del trabajo" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Pendiente">Pendiente</SelectItem>
-              <SelectItem value="R7 (terminado)">R7 (terminado)</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        {activeTemplate.campos.some(c => c.id === "estado") && (
+          <div className="col-span-2 space-y-2 p-4 bg-orange-50 border border-orange-200 rounded-md mb-4">
+            <Label htmlFor="estado-trabajo" className="text-lg font-semibold text-orange-800">
+              Estado del Trabajo <span className="text-red-500">*</span>
+            </Label>
+            <Select
+              value={formData.estado || "Pendiente"}
+              onValueChange={(newValue) => handleInputChange("estado", newValue)}
+            >
+              <SelectTrigger id="estado-trabajo" className="h-12 text-base">
+                <SelectValue placeholder="Seleccionar estado del trabajo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Pendiente">Pendiente</SelectItem>
+                <SelectItem value="R7 (terminado)">R7 (terminado)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {activeTemplate.campos.map((campo: ActivityField) => (
+          {/* Fecha */}
+          {activeTemplate.campos.some(c => c.id === "fecha") && (
+            <div className="space-y-2">
+              <Label htmlFor="fecha">
+                Fecha <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="fecha"
+                type="date"
+                value={formData.fecha || ""}
+                onChange={(e) => handleInputChange("fecha", e.target.value)}
+                required={true}
+              />
+            </div>
+          )}
+          {/* Rodal */}
+          {activeTemplate.campos.some(c => c.id === "rodal") && (
+            <div className="space-y-2">
+              <Label htmlFor="rodal">
+                Rodal <span className="text-red-500">*</span>
+              </Label>
+              <Select value={formData.rodal || ""} onValueChange={(newValue) => handleInputChange("rodal", newValue)}>
+                <SelectTrigger id="rodal">
+                  <SelectValue placeholder="Seleccionar rodal" />
+                </SelectTrigger>
+                <SelectContent>
+                  {workOrder.rodales && workOrder.rodales.length > 0 ? (
+                    workOrder.rodales.map((rodal) => (
+                      <SelectItem key={rodal.numero} value={String(rodal.numero)}>
+                        #{rodal.numero} - Total: {rodal.hectareas} ha
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="sin-rodales">Sin rodales</SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          {/* Predio/Campo */}
+          {activeTemplate.campos.some(c => c.id === "predio") && (
+            <div className="space-y-2">
+              <Label htmlFor="predio">
+                Predio/Campo <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="predio"
+                type="text"
+                value={workOrder?.campo || ""}
+                readOnly
+                disabled
+                className="bg-gray-100 cursor-not-allowed"
+              />
+            </div>
+          )}
+          {/* Cuadrilla */}
+          {activeTemplate.campos.some(c => c.id === "cuadrilla") && (
+            <div className="space-y-2">
+              <Label htmlFor="cuadrilla">
+                Cuadrilla <span className="text-red-500">*</span>
+              </Label>
+              <Select
+                value={formData.cuadrilla || ""}
+                onValueChange={(newValue) => {
+                  let cuadrillaSeleccionada = cuadrillas.find((c) => {
+                    const nombre = c.nombre || c.descripcion || ""
+                    return nombre === newValue
+                  })
+                  if (!cuadrillaSeleccionada) {
+                    cuadrillaSeleccionada = cuadrillas.find((c) => {
+                      const id = c._id || c.id || c.idcuadrilla || ""
+                      return id === newValue
+                    })
+                  }
+                  if (cuadrillaSeleccionada) {
+                    const id = cuadrillaSeleccionada._id || cuadrillaSeleccionada.id || cuadrillaSeleccionada.idcuadrilla || ""
+                    const nombre = cuadrillaSeleccionada.nombre || cuadrillaSeleccionada.descripcion || `Cuadrilla ${id}`
+                    handleInputChange("cuadrillaId", String(id))
+                    handleInputChange("cuadrilla", nombre)
+                  } else {
+                    handleInputChange("cuadrillaId", "")
+                    handleInputChange("cuadrilla", "")
+                  }
+                }}
+              >
+                <SelectTrigger id="cuadrilla">
+                  <SelectValue placeholder="Seleccionar cuadrilla" />
+                </SelectTrigger>
+                <SelectContent>
+                  {cuadrillas && cuadrillas.length > 0 ? (
+                    cuadrillas.map((c) => {
+                      const id = c._id || c.id || c.idcuadrilla || ""
+                      const nombre = c.nombre || c.descripcion || `Cuadrilla ${id}`
+                      return (
+                        <SelectItem key={id} value={nombre}>
+                          {nombre}
+                        </SelectItem>
+                      )
+                    })
+                  ) : (
+                    <SelectItem value="sin-cuadrillas">Sin cuadrillas</SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          {/* Renderizar el resto de los campos que no son de sistema */}
+          {activeTemplate.campos.filter(campo => !camposSistema.includes(campo.id)).map((campo: ActivityField) => (
             <div key={campo.id} className="space-y-2">
               <Label htmlFor={campo.id}>
                 {campo.nombre} {campo.requerido && <span className="text-red-500">*</span>}
               </Label>
-
               {campo.tipo === "texto" && (
                 <Input
                   id={campo.id}
@@ -2917,7 +3040,6 @@ export function WorkProgressForm({
                   required={campo.requerido}
                 />
               )}
-
               {campo.tipo === "numero" && (
                 <Input
                   id={campo.id}
@@ -2930,7 +3052,6 @@ export function WorkProgressForm({
                   required={campo.requerido}
                 />
               )}
-
               {campo.tipo === "fecha" && (
                 <Input
                   id={campo.id}
@@ -2940,7 +3061,6 @@ export function WorkProgressForm({
                   required={campo.requerido}
                 />
               )}
-
               {campo.tipo === "seleccion" && (
                 <Select
                   value={formData[campo.id] || ""}
@@ -2958,8 +3078,7 @@ export function WorkProgressForm({
                   </SelectContent>
                 </Select>
               )}
-
-              {campo.tipo === "area" && (
+              {(campo.tipo === "area" || campo.tipo === "textarea") && (
                 <Textarea
                   id={campo.id}
                   value={formData[campo.id] || ""}
