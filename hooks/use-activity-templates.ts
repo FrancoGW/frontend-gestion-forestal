@@ -855,6 +855,18 @@ const DEFAULT_TEMPLATES: ActivityTemplate[] = [
   },
 ]
 
+const FRONTEND_VERSION = "2024-07-09-1"; // Cambia este valor en cada deploy relevante
+
+try {
+  const lastVersion = localStorage.getItem("frontend-version");
+  if (lastVersion !== FRONTEND_VERSION) {
+    localStorage.removeItem("activity-templates");
+    localStorage.setItem("frontend-version", FRONTEND_VERSION);
+  }
+} catch (e) {
+  // Puede fallar en SSR o navegadores sin localStorage
+}
+
 export function useActivityTemplates() {
   const [templates, setTemplates] = useState<ActivityTemplate[]>([])
   const [loading, setLoading] = useState(true)
