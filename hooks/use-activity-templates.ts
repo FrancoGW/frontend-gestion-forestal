@@ -794,7 +794,7 @@ const DEFAULT_TEMPLATES: ActivityTemplate[] = [
       { id: "fecha", nombre: "Fecha", tipo: "fecha", requerido: true, orden: 2, esDelSistema: true },
       { id: "predio", nombre: "Predio", tipo: "texto", requerido: true, orden: 3, esDelSistema: true },
       { id: "rodal", nombre: "Rodal", tipo: "texto", requerido: true, orden: 4, esDelSistema: true },
-      { id: "actividad", nombre: "Actividad", tipo: "texto", requerido: true, orden: 5, esDelSistema: true },
+      { id: "cuadrilla", nombre: "Cuadrilla", tipo: "seleccion", requerido: true, orden: 5, esDelSistema: true },
       { id: "implemento", nombre: "Implemento", tipo: "seleccion", requerido: true, orden: 6, opciones: ["Machete", "Motisierra"], esDelSistema: true },
       { id: "operarios", nombre: "Operarios", tipo: "numero", requerido: true, orden: 7, esDelSistema: true },
       { id: "jornales", nombre: "Jornales", tipo: "numero", requerido: true, orden: 8, esDelSistema: true },
@@ -803,25 +803,26 @@ const DEFAULT_TEMPLATES: ActivityTemplate[] = [
     activo: true,
   },
   {
-    id: "control-regeneracion-exoticas-template",
-    nombre: "CONTROL DE REGENERACION DE EXOTICAS",
-    descripcion: "Plantilla para actividades de control de regeneración de exóticas.",
+    id: "control-regeneracion-pinos-template",
+    nombre: "CONTROL DE REGENERACION DE PINOS",
+    descripcion: "Plantilla para actividades de control de regeneración de pinos.",
     actividadCodigo: "SAP011",
     categoria: "Control de Plagas",
     unidad: "Ha",
     patronesCoincidencia: [
       "control de regeneracion de exoticas", "control de regeneración de exóticas", "regeneracion de exoticas", "regeneración de exóticas", "control regeneracion exoticas", "control regeneración exóticas", "regeneracion exoticas", "regeneración exóticas",
-      "control generacion de pino", "control generación de pino"
+      "control generacion de pino", "control generación de pino",
+      "CONTROL DE REGENERACION DE PINOS", "control de regeneración de pinos"
     ],
     campos: [
-      { id: "fecha", nombre: "Fecha", tipo: "fecha", requerido: true, orden: 1, esDelSistema: true },
-      { id: "predio", nombre: "Predio", tipo: "texto", requerido: true, orden: 2, esDelSistema: true },
-      { id: "rodal", nombre: "Rodal", tipo: "texto", requerido: true, orden: 3, esDelSistema: true },
-      { id: "actividad", nombre: "Actividad", tipo: "texto", requerido: true, orden: 4, esDelSistema: true },
-      { id: "implemento", nombre: "Implemento", tipo: "seleccion", requerido: true, orden: 5, opciones: ["Tr c/Rolon", "Topa c/Rolon", "Tr c/Rastra", "Macheteo", "Motosierra"], esDelSistema: true },
-      { id: "operarios", nombre: "Operarios", tipo: "numero", requerido: true, orden: 6, esDelSistema: true },
-      { id: "ha", nombre: "HA", tipo: "numero", requerido: true, orden: 7, esDelSistema: true },
-      { id: "estado", nombre: "Estado", tipo: "texto", requerido: true, orden: 8, esDelSistema: true },
+      { id: "estado", nombre: "Estado del Trabajo", tipo: "seleccion", requerido: true, orden: 1, opciones: ["Pendiente", "R7 (terminado)"], descripcion: "Estado del trabajo", esDelSistema: true },
+      { id: "fecha", nombre: "Fecha", tipo: "fecha", requerido: true, orden: 2, esDelSistema: true },
+      { id: "predio", nombre: "Predio", tipo: "texto", requerido: true, orden: 3, esDelSistema: true },
+      { id: "rodal", nombre: "Rodal", tipo: "texto", requerido: true, orden: 4, esDelSistema: true },
+      { id: "cuadrilla", nombre: "Cuadrilla", tipo: "seleccion", requerido: true, orden: 5, esDelSistema: true },
+      { id: "implemento", nombre: "Implemento", tipo: "seleccion", requerido: true, orden: 6, opciones: ["Tr c/Rolon", "Topa c/Rolon", "Tr c/Rastra", "Macheteo", "Motosierra"], esDelSistema: true },
+      { id: "operarios", nombre: "Operarios", tipo: "numero", requerido: true, orden: 7, esDelSistema: true },
+      { id: "ha", nombre: "HA", tipo: "numero", requerido: true, orden: 8, esDelSistema: true },
       { id: "jornales", nombre: "Jornales", tipo: "numero", requerido: true, orden: 9, esDelSistema: true },
       { id: "observaciones", nombre: "Observaciones", tipo: "textarea", requerido: false, orden: 10, esDelSistema: false },
     ],
@@ -838,14 +839,14 @@ const DEFAULT_TEMPLATES: ActivityTemplate[] = [
       "manejo rebrote", "manejo de rebrote", "rebrote", "manejo de rebrotes", "manejo rebrote", "rebrote manejo"
     ],
     campos: [
-      { id: "fecha", nombre: "Fecha", tipo: "fecha", requerido: true, orden: 1, esDelSistema: true },
-      { id: "predio", nombre: "Predio", tipo: "texto", requerido: true, orden: 2, esDelSistema: true },
-      { id: "rodal", nombre: "Rodal", tipo: "texto", requerido: true, orden: 3, esDelSistema: true },
-      { id: "actividad", nombre: "Actividad", tipo: "texto", requerido: true, orden: 4, esDelSistema: true },
-      { id: "implemento", nombre: "Implemento", tipo: "seleccion", requerido: true, orden: 5, opciones: ["Machete", "Motisierra", "Guadaña"], esDelSistema: true },
-      { id: "operarios", nombre: "Operarios", tipo: "numero", requerido: true, orden: 6, esDelSistema: true },
-      { id: "ha", nombre: "HA", tipo: "numero", requerido: true, orden: 7, esDelSistema: true },
-      { id: "estado", nombre: "Estado", tipo: "texto", requerido: true, orden: 8, esDelSistema: true },
+      { id: "estado", nombre: "Estado del Trabajo", tipo: "seleccion", requerido: true, orden: 1, opciones: ["Pendiente", "R7 (terminado)"], descripcion: "Estado del trabajo", esDelSistema: true },
+      { id: "fecha", nombre: "Fecha", tipo: "fecha", requerido: true, orden: 2, esDelSistema: true },
+      { id: "predio", nombre: "Predio", tipo: "texto", requerido: true, orden: 3, esDelSistema: true },
+      { id: "rodal", nombre: "Rodal", tipo: "texto", requerido: true, orden: 4, esDelSistema: true },
+      { id: "cuadrilla", nombre: "Cuadrilla", tipo: "seleccion", requerido: true, orden: 5, esDelSistema: true },
+      { id: "implemento", nombre: "Implemento", tipo: "seleccion", requerido: true, orden: 6, opciones: ["Machete", "Motisierra", "Guadaña"], esDelSistema: true },
+      { id: "operarios", nombre: "Operarios", tipo: "numero", requerido: true, orden: 7, esDelSistema: true },
+      { id: "ha", nombre: "HA", tipo: "numero", requerido: true, orden: 8, esDelSistema: true },
       { id: "observaciones", nombre: "Observaciones", tipo: "textarea", requerido: false, orden: 9, esDelSistema: false },
     ],
     activo: true,
@@ -900,14 +901,18 @@ export function useActivityTemplates() {
   const getTemplateForWorkOrder = useMemo(() => {
     return (workOrder: { actividad: string; actividadCodigo?: string }) => {
       if (!workOrder || !workOrder.actividad) {
-       
         return { template: null, specificActivityName: "" }
       }
 
       const activityName = workOrder.actividad.toLowerCase().trim()
       const activityCode = workOrder.actividadCodigo?.toLowerCase() || ""
 
-     
+      // LOG de depuración
+      console.log("[PLANTILLA] Buscando plantilla para actividad:", workOrder.actividad)
+      console.log("[PLANTILLA] activityName:", activityName)
+      templates.forEach((tpl) => {
+        console.log("[PLANTILLA] Plantilla:", tpl.nombre, "- Patrones:", tpl.patronesCoincidencia)
+      })
 
       // Buscar plantilla que coincida con los patrones - ORDEN ESPECÍFICO MEJORADO
       let matchedTemplate = null
@@ -916,8 +921,11 @@ export function useActivityTemplates() {
       matchedTemplate = templates.find((template) => {
         if (!template.activo) return false
         const templateNameLower = template.nombre.toLowerCase()
-       
-        return activityName === templateNameLower
+        const isMatch = activityName === templateNameLower
+        if (isMatch) {
+          console.log('[MATCH] Coincidencia exacta por nombre:', template.nombre)
+        }
+        return isMatch
       })
 
       if (matchedTemplate) {
@@ -943,68 +951,12 @@ export function useActivityTemplates() {
         if (!template) continue
 
         const matches = template.patronesCoincidencia.some((patron) => {
-          const patronLower = patron.toLowerCase().trim()
-          // Coincidencia exacta
-          if (activityName === patronLower) {
-            return true
-          }
-          // Coincidencia por inclusión (la actividad contiene el patrón completo)
-          if (activityName.includes(patronLower)) {
-            return true
-          }
-
-          // Para quemas controladas, verificar variaciones específicas
-          if (template.nombre === "QUEMAS CONTROLADAS") {
-            const quemasVariations = [
-              "quemas controladas",
-              "quema controlada",
-              "quemas",
-              "quema",
-              "quema prescrita",
-              "quema dirigida",
-              "manejo de fuego",
-              "control de combustible",
-            ]
-            const isQuemasMatch = quemasVariations.some((variation) => activityName.includes(variation.toLowerCase()))
-            if (isQuemasMatch) {
-              return true
-            }
-          }
-
-          // Para control de malezas, verificar variaciones específicas
-          if (template.nombre === "CONTROL DE MALEZAS") {
-            const malezasVariations = [
-              "control de malezas",
-              "control malezas",
-              "malezas",
-              "herbicida",
-              "desmalezado",
-              "control de malezas pre plantacion",
-              "control de malezas post plantacion",
-              "malezas pre plantacion",
-              "malezas post plantacion",
-            ]
-            const isMalezasMatch = malezasVariations.some((variation) => activityName.includes(variation.toLowerCase()))
-            if (isMalezasMatch) {
-
-              return true
-            }
-          }
-
-          // Para plantación, verificar variaciones específicas
-          if (template.nombre === "PLANTACION") {
-            const plantacionVariations = ["plantacion", "plantación", "plantado", "implantacion", "implantación"]
-            const isPlantacionMatch = plantacionVariations.some((variation) =>
-              activityName.includes(variation.toLowerCase()),
-            )
-            if (isPlantacionMatch) {
-              
-              return true
-            }
-          }
-
-          return false
-        })
+          const patronLower = patron.toLowerCase().trim();
+          if (activityName === patronLower) return true;
+          if (activityName.includes(patronLower)) return true;
+          if (patronLower.includes(activityName)) return true;
+          return false;
+        });
 
         // Verificar código de actividad si existe
         const codeMatches =
@@ -1028,9 +980,11 @@ export function useActivityTemplates() {
         if (!template.activo) continue;
         const matches = template.patronesCoincidencia.some((patron) => {
           const patronLower = patron.toLowerCase().trim();
-          if (activityName === patronLower) return true;
-          if (activityName.includes(patronLower)) return true;
-          return false;
+          const isMatch = activityName === patronLower || activityName.includes(patronLower) || patronLower.includes(activityName);
+          if (isMatch) {
+            console.log('[MATCH] Coincidencia por patrón:', patron, 'en plantilla', template.nombre)
+          }
+          return isMatch;
         });
         if (matches) {
           return {
