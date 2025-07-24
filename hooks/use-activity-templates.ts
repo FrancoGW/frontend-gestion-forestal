@@ -1,3 +1,5 @@
+// --- Comentario agregado para forzar redeploy y asegurar que los cambios estén en producción ---
+// Si ves este comentario, el commit de fix de plantilla fue correctamente subido y forzó el redeploy.
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
