@@ -1,7 +1,7 @@
 "use client";
 import { useEffect } from "react"
 
-const FRONTEND_VERSION = "2024-07-09-1" // Cambia este valor en cada deploy relevante
+const FRONTEND_VERSION = "2024-07-11-1" // Cambia este valor en cada deploy relevante
 
 export function useFrontendVersion() {
   useEffect(() => {
