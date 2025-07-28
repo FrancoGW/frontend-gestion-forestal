@@ -10,13 +10,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
-import { FilterIcon, RefreshCw, AlertTriangle, FileSpreadsheet } from "lucide-react"
+import { FilterIcon, RefreshCw, AlertTriangle, FileSpreadsheet, CheckCircle, XCircle, Clock } from "lucide-react"
 import { useSupervisorData } from "@/hooks/use-supervisor-data"
 import { useAuth } from "@/hooks/use-auth"
 import * as XLSX from "xlsx"
 import { getCuadrillaName } from "@/utils/getCuadrillaName"
 import type { AvanceExtendido } from "@/types/AvanceExtendido"
 import { useCuadrillas } from "@/hooks/use-cuadrillas"
+import { useSupervisionState, type EstadoSupervision } from "@/hooks/use-supervision-state"
 
 type DatosTablaItem = {
   id: string;
@@ -45,6 +46,17 @@ export default function SupervisorDashboard() {
   const { user } = useAuth()
   const { supervisor, proveedores, ordenes, avances, loading, error, refetch } = useSupervisorData()
   const { cuadrillas } = useCuadrillas();
+  const { 
+    getPeriodoActual, 
+    getPeriodosDisponibles, 
+    getEstadoSupervision, 
+    getEstadoSupervisionTexto,
+    marcarEstadoSupervision,
+    getAvancesPendientes,
+    getAvancesAprobados,
+    getAvancesRechazados,
+    loading: loadingSupervision
+  } = useSupervisionState(supervisor?.id || user?.id || "")
 
   // Estados para los filtros
   const [fechaDesde, setFechaDesde] = useState("")
@@ -54,6 +66,8 @@ export default function SupervisorDashboard() {
   const [ordenSeleccionada, setOrdenSeleccionada] = useState("")
   const [estadoSeleccionado, setEstadoSeleccionado] = useState("")
   const [actividadSeleccionada, setActividadSeleccionada] = useState("")
+  const [periodoSeleccionado, setPeriodoSeleccionado] = useState("actual")
+  const [estadoSupervisionSeleccionado, setEstadoSupervisionSeleccionado] = useState("all")
 
   // Obtener todos los proveedores únicos de las órdenes (no solo los que están en el array proveedores)
   const todosLosProveedores = useMemo(() => {
@@ -120,6 +134,17 @@ export default function SupervisorDashboard() {
   // Estados únicos
   const todosLosEstados = ["Pendiente", "R7 (terminado)"]
 
+  // Estados de supervisión
+  const estadosSupervision = [
+    { value: "all", label: "Todos los estados" },
+    { value: "pendiente_revision", label: "Pendiente" },
+    { value: "aprobado", label: "Aprobado" },
+    { value: "rechazado", label: "Rechazado" }
+  ]
+
+  // Obtener períodos disponibles
+  const periodosDisponibles = getPeriodosDisponibles()
+
   // Obtener todas las actividades únicas
   const todasLasActividades = useMemo(() => {
     const actividadesSet = new Set()
@@ -162,6 +187,7 @@ export default function SupervisorDashboard() {
       ACTIVIDAD: item.actividad,
       PROGRESO: item.indicadorProgreso,
       ESTADO: item.estado,
+      "ESTADO SUPERVISIÓN": getEstadoSupervisionTexto(getEstadoSupervision(item.id)),
       "CANTIDAD (HA)": item.cantidadHA.toFixed(2).replace(".", ","),
       SUBTOTAL: item.subtotal.toFixed(0),
       OBSERVACIONES: item.observaciones,
@@ -177,6 +203,7 @@ export default function SupervisorDashboard() {
       ACTIVIDAD: "",
       PROGRESO: "",
       ESTADO: "TOTALES:",
+      "ESTADO SUPERVISIÓN": "",
       "CANTIDAD (HA)": totales.totalHA.toFixed(2).replace(".", ","),
       SUBTOTAL: totales.totalSubtotal.toFixed(0),
       PROVEEDOR: "",
@@ -201,6 +228,7 @@ export default function SupervisorDashboard() {
       { wch: 12 },
       { wch: 15 },
       { wch: 15 },
+      { wch: 18 },
       { wch: 12 },
       { wch: 25 },
       { wch: 30 },
@@ -216,6 +244,9 @@ export default function SupervisorDashboard() {
       { CONCEPTO: "Avances Progresivos", VALOR: totales.totalProgresivos },
       { CONCEPTO: "Terminados", VALOR: totales.totalCompletos },
       { CONCEPTO: "Pendientes", VALOR: totales.totalPendientes },
+      { CONCEPTO: "Pendientes Revisión", VALOR: totales.totalPendientesRevision },
+      { CONCEPTO: "Aprobados", VALOR: totales.totalAprobados },
+      { CONCEPTO: "Rechazados", VALOR: totales.totalRechazados },
       { CONCEPTO: "Órdenes Únicas", VALOR: totales.ordenesUnicas },
       { CONCEPTO: "Proveedores Únicos", VALOR: totales.proveedoresUnicos },
     ]
@@ -289,19 +320,45 @@ export default function SupervisorDashboard() {
     setOrdenSeleccionada("")
     setEstadoSeleccionado("")
     setActividadSeleccionada("")
+    setPeriodoSeleccionado("actual")
+    setEstadoSupervisionSeleccionado("all")
   }
 
   // Datos filtrados y procesados para la tabla con lógica de avances progresivos
   const datosTabla = useMemo(() => {
+    console.log('Total avances disponibles:', avances.length)
+    console.log('Período seleccionado:', periodoSeleccionado)
+    
     let avancesFiltrados = [...avances]
 
-    // Filtrar por fecha
-    if (fechaDesde) {
-      avancesFiltrados = avancesFiltrados.filter((avance) => avance.fecha >= fechaDesde)
+    // Filtrar por período - solo si no es "actual" (que muestra todos)
+    if (periodoSeleccionado !== "actual" && periodoSeleccionado !== "personalizado") {
+      const periodoSeleccionadoObj = periodosDisponibles.find(p => {
+        if (periodoSeleccionado === "anterior") return p.nombre.includes("Anterior")
+        if (periodoSeleccionado === "siguiente") return p.nombre.includes("Siguiente")
+        return false
+      })
+      
+      if (periodoSeleccionadoObj) {
+        const desdeStr = periodoSeleccionadoObj.desde.toISOString().split('T')[0]
+        const hastaStr = periodoSeleccionadoObj.hasta.toISOString().split('T')[0]
+        avancesFiltrados = avancesFiltrados.filter((avance) => {
+          const avanceFecha = avance.fecha || avance.fechaRegistro || new Date().toISOString().split('T')[0]
+          return avanceFecha >= desdeStr && avanceFecha <= hastaStr
+        })
+      }
+    } else if (periodoSeleccionado === "personalizado") {
+      // Filtrar por fecha personalizada
+      if (fechaDesde) {
+        avancesFiltrados = avancesFiltrados.filter((avance) => avance.fecha >= fechaDesde)
+      }
+      if (fechaHasta) {
+        avancesFiltrados = avancesFiltrados.filter((avance) => avance.fecha <= fechaHasta)
+      }
     }
-    if (fechaHasta) {
-      avancesFiltrados = avancesFiltrados.filter((avance) => avance.fecha <= fechaHasta)
-    }
+    // Si es "actual", no filtrar por fecha (mostrar todos)
+    
+    console.log('Avances después del filtro de período:', avancesFiltrados.length)
 
     // Filtrar por proveedor
     if (proveedorSeleccionado && proveedorSeleccionado !== "all" && proveedorSeleccionado !== "") {
@@ -399,8 +456,19 @@ export default function SupervisorDashboard() {
       })
     })
 
+    // Filtrar por estado de supervisión
+    let avancesFiltradosPorSupervision = avancesProgresivos
+    if (estadoSupervisionSeleccionado && estadoSupervisionSeleccionado !== "all") {
+      avancesFiltradosPorSupervision = avancesProgresivos.filter((item) => {
+        const estadoSupervision = getEstadoSupervision(item.id)
+        return estadoSupervision === estadoSupervisionSeleccionado
+      })
+    }
+
+    console.log('Avances progresivos finales:', avancesFiltradosPorSupervision.length)
+
     // Ordenar por predio, luego por orden, luego por rodal, luego por fecha
-    return avancesProgresivos.sort((a, b) => {
+    return avancesFiltradosPorSupervision.sort((a, b) => {
       if (a.predio !== b.predio) return a.predio.localeCompare(b.predio)
       if (a.ordenTrabajo !== b.ordenTrabajo) return a.ordenTrabajo.localeCompare(b.ordenTrabajo)
       if (a.rodal !== b.rodal) return a.rodal.localeCompare(b.rodal)
@@ -410,11 +478,15 @@ export default function SupervisorDashboard() {
     avances,
     fechaDesde,
     fechaHasta,
+    periodoSeleccionado,
+    periodosDisponibles,
     proveedorSeleccionado,
     rodalSeleccionado,
     ordenSeleccionada,
     estadoSeleccionado,
     actividadSeleccionada,
+    estadoSupervisionSeleccionado,
+    getEstadoSupervision,
     proveedores,
     cuadrillas,
   ])
@@ -432,6 +504,11 @@ export default function SupervisorDashboard() {
     const totalCompletos = datosTabla.filter((item) => item.estado === "R7 (terminado)").length
     const totalPendientes = datosTabla.filter((item) => item.estado === "Pendiente").length
 
+    // Contar por estado de supervisión
+    const totalPendientesRevision = datosTabla.filter((item) => getEstadoSupervision(item.id) === "pendiente_revision").length
+    const totalAprobados = datosTabla.filter((item) => getEstadoSupervision(item.id) === "aprobado").length
+    const totalRechazados = datosTabla.filter((item) => getEstadoSupervision(item.id) === "rechazado").length
+
     // Contar órdenes únicas
     const ordenesUnicas = new Set(datosTabla.map((item) => item.ordenTrabajo)).size
 
@@ -445,10 +522,13 @@ export default function SupervisorDashboard() {
       totalProgresivos,
       totalCompletos,
       totalPendientes,
+      totalPendientesRevision,
+      totalAprobados,
+      totalRechazados,
       ordenesUnicas,
       proveedoresUnicos,
     }
-  }, [datosTabla])
+  }, [datosTabla, getEstadoSupervision])
 
   if (loading) {
     return (
@@ -505,32 +585,53 @@ export default function SupervisorDashboard() {
           <CardDescription>Selecciona los criterios para filtrar los datos</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4 items-end mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-9 gap-4 items-end mb-4">
             <div className="space-y-2">
-              <Label htmlFor="fecha-desde" className="text-sm font-medium bg-yellow-200 px-2 py-1 rounded">
-                Desde
+              <Label htmlFor="periodo" className="text-sm font-medium bg-blue-200 px-2 py-1 rounded">
+                Período
               </Label>
-              <Input
-                id="fecha-desde"
-                type="date"
-                value={fechaDesde}
-                onChange={(e) => setFechaDesde(e.target.value)}
-                className="w-full"
-              />
+              <Select value={periodoSeleccionado} onValueChange={setPeriodoSeleccionado}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar período" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="anterior">Período Anterior</SelectItem>
+                  <SelectItem value="actual">Período Actual</SelectItem>
+                  <SelectItem value="siguiente">Período Siguiente</SelectItem>
+                  <SelectItem value="personalizado">Fechas Personalizadas</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="fecha-hasta" className="text-sm font-medium bg-yellow-200 px-2 py-1 rounded">
-                Hasta
-              </Label>
-              <Input
-                id="fecha-hasta"
-                type="date"
-                value={fechaHasta}
-                onChange={(e) => setFechaHasta(e.target.value)}
-                className="w-full"
-              />
-            </div>
+            {periodoSeleccionado === "personalizado" && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="fecha-desde" className="text-sm font-medium bg-yellow-200 px-2 py-1 rounded">
+                    Desde
+                  </Label>
+                  <Input
+                    id="fecha-desde"
+                    type="date"
+                    value={fechaDesde}
+                    onChange={(e) => setFechaDesde(e.target.value)}
+                    className="w-full"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="fecha-hasta" className="text-sm font-medium bg-yellow-200 px-2 py-1 rounded">
+                    Hasta
+                  </Label>
+                  <Input
+                    id="fecha-hasta"
+                    type="date"
+                    value={fechaHasta}
+                    onChange={(e) => setFechaHasta(e.target.value)}
+                    className="w-full"
+                  />
+                </div>
+              </>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="proveedor" className="text-sm font-medium bg-yellow-200 px-2 py-1 rounded">
@@ -624,6 +725,24 @@ export default function SupervisorDashboard() {
                 </SelectContent>
               </Select>
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="estado-supervision" className="text-sm font-medium bg-red-200 px-2 py-1 rounded">
+                Estado Supervisión
+              </Label>
+              <Select value={estadoSupervisionSeleccionado} onValueChange={setEstadoSupervisionSeleccionado}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar estado" />
+                </SelectTrigger>
+                <SelectContent>
+                  {estadosSupervision.map((estado) => (
+                    <SelectItem key={estado.value} value={estado.value}>
+                      {estado.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="flex gap-2 justify-end">
@@ -639,16 +758,28 @@ export default function SupervisorDashboard() {
       </Card>
 
       {/* Resumen de filtros aplicados */}
-      {(fechaDesde ||
-        fechaHasta ||
+      {(periodoSeleccionado !== "actual" ||
+        (periodoSeleccionado === "personalizado" && (fechaDesde || fechaHasta)) ||
         proveedorSeleccionado ||
         rodalSeleccionado ||
         ordenSeleccionada ||
         estadoSeleccionado ||
-        actividadSeleccionada) && (
+        actividadSeleccionada ||
+        estadoSupervisionSeleccionado !== "all") && (
         <div className="flex flex-wrap gap-2">
-          {fechaDesde && <Badge variant="secondary">Desde: {new Date(fechaDesde).toLocaleDateString("es-AR")}</Badge>}
-          {fechaHasta && <Badge variant="secondary">Hasta: {new Date(fechaHasta).toLocaleDateString("es-AR")}</Badge>}
+          {periodoSeleccionado !== "actual" && (
+            <Badge variant="secondary">
+              Período: {periodoSeleccionado === "anterior" ? "Anterior" : 
+                       periodoSeleccionado === "siguiente" ? "Siguiente" : 
+                       periodoSeleccionado === "personalizado" ? "Personalizado" : "Actual"}
+            </Badge>
+          )}
+          {periodoSeleccionado === "personalizado" && fechaDesde && (
+            <Badge variant="secondary">Desde: {new Date(fechaDesde).toLocaleDateString("es-AR")}</Badge>
+          )}
+          {periodoSeleccionado === "personalizado" && fechaHasta && (
+            <Badge variant="secondary">Hasta: {new Date(fechaHasta).toLocaleDateString("es-AR")}</Badge>
+          )}
           {proveedorSeleccionado && proveedorSeleccionado !== "all" && (
             <Badge variant="secondary">
               Proveedor: {proveedores.find((p) => String(p.id) === proveedorSeleccionado)?.nombre}
@@ -666,28 +797,71 @@ export default function SupervisorDashboard() {
           {actividadSeleccionada && actividadSeleccionada !== "all" && (
             <Badge variant="secondary">Actividad: {actividadSeleccionada}</Badge>
           )}
+          {estadoSupervisionSeleccionado && estadoSupervisionSeleccionado !== "all" && (
+            <Badge variant="secondary">
+              Estado Supervisión: {estadosSupervision.find(e => e.value === estadoSupervisionSeleccionado)?.label}
+            </Badge>
+          )}
         </div>
       )}
 
-      {/* Información de debug para proveedores */}
-      <Card className="bg-gray-50">
-        <CardContent className="p-4">
-          <p className="text-sm text-gray-600">
-            Debug Supervisor {supervisor?.nombre}: {proveedores.length} proveedores | {todosLosRodales.length}{" "}
-            rodales | {todasLasOrdenes.length} órdenes | {avances.length} avances totales | {totales.totalProgresivos}{" "}
-            progresivos
-          </p>
-          <p className="text-xs text-gray-500 mt-1">
-            Proveedores asignados: {proveedores.map((p) => p.nombre).join(", ")}
-          </p>
-          <p className="text-xs text-gray-500 mt-1">
-            Avances por proveedor:{" "}
-            {proveedores
-              .map((p) => `${p.nombre}: ${avances.filter((a) => String(a.proveedor) === String(p.nombre)).length}`)
-              .join(", ")}
-          </p>
-        </CardContent>
-      </Card>
+      {/* Estadísticas rápidas */}
+      <div className="grid grid-cols-1 md:grid-cols-9 gap-4">
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-blue-600">{totales.totalRegistros}</div>
+            <div className="text-sm text-muted-foreground">Registros</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-green-600">{totales.totalHA.toFixed(1)}</div>
+            <div className="text-sm text-muted-foreground">Total Hectáreas</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-orange-600">{totales.totalProgresivos}</div>
+            <div className="text-sm text-muted-foreground">Avances Progresivos</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-green-600">{totales.totalCompletos}</div>
+            <div className="text-sm text-muted-foreground">Terminados</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-yellow-600">{totales.totalPendientes}</div>
+            <div className="text-sm text-muted-foreground">Pendientes</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-yellow-600">{totales.totalPendientesRevision}</div>
+            <div className="text-sm text-muted-foreground">Pendientes Revisión</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-green-600">{totales.totalAprobados}</div>
+            <div className="text-sm text-muted-foreground">Aprobados</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-red-600">{totales.totalRechazados}</div>
+            <div className="text-sm text-muted-foreground">Rechazados</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-purple-600">{totales.ordenesUnicas}</div>
+            <div className="text-sm text-muted-foreground">Órdenes Únicas</div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Tabla de datos */}
       <Card>
@@ -718,6 +892,7 @@ export default function SupervisorDashboard() {
                   <TableHead className="font-bold bg-blue-200">ACTIVIDAD</TableHead>
                   <TableHead className="font-bold bg-orange-200">PROGRESO</TableHead>
                   <TableHead className="font-bold bg-purple-200">ESTADO</TableHead>
+                  <TableHead className="font-bold bg-red-200">ESTADO SUPERVISIÓN</TableHead>
                   <TableHead className="font-bold bg-blue-200 text-right">CANTIDAD (HA)</TableHead>
                   <TableHead className="font-bold bg-blue-400 text-white text-right">SUBTOTAL</TableHead>
                 </TableRow>
@@ -725,7 +900,7 @@ export default function SupervisorDashboard() {
               <TableBody>
                 {datosTabla.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
                       No se encontraron registros con los filtros aplicados
                     </TableCell>
                   </TableRow>
@@ -771,6 +946,36 @@ export default function SupervisorDashboard() {
                           {item.estado}
                         </Badge>
                       </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Select
+                            value={getEstadoSupervision(item.id)}
+                            onValueChange={(value) => 
+                              marcarEstadoSupervision(item.id, value as EstadoSupervision)
+                            }
+                          >
+                            <SelectTrigger className="w-36">
+                              <SelectValue>
+                                {getEstadoSupervisionTexto(getEstadoSupervision(item.id))}
+                              </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent className="w-36">
+                              <SelectItem value="pendiente_revision" className="flex items-center gap-2">
+                                <Clock className="h-4 w-4 text-yellow-600" />
+                                <span>Pendiente</span>
+                              </SelectItem>
+                              <SelectItem value="aprobado" className="flex items-center gap-2">
+                                <CheckCircle className="h-4 w-4 text-green-600" />
+                                <span>Aprobado</span>
+                              </SelectItem>
+                              <SelectItem value="rechazado" className="flex items-center gap-2">
+                                <XCircle className="h-4 w-4 text-red-600" />
+                                <span>Rechazado</span>
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </TableCell>
                       <TableCell className="text-right">{item.cantidadHA.toFixed(1)}</TableCell>
                       <TableCell className="text-right bg-blue-100 font-medium">{item.subtotal.toFixed(0)}</TableCell>
                     </TableRow>
@@ -778,7 +983,7 @@ export default function SupervisorDashboard() {
                 )}
                 {datosTabla.length > 0 && (
                   <TableRow className="bg-gray-100 font-bold">
-                    <TableCell colSpan={8} className="text-right">
+                    <TableCell colSpan={9} className="text-right">
                       TOTALES:
                     </TableCell>
                     <TableCell className="text-right">{totales.totalHA.toFixed(2)}</TableCell>
@@ -791,45 +996,6 @@ export default function SupervisorDashboard() {
         </CardContent>
       </Card>
 
-      {/* Estadísticas rápidas */}
-      <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-blue-600">{totales.totalRegistros}</div>
-            <div className="text-sm text-muted-foreground">Registros</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-green-600">{totales.totalHA.toFixed(1)}</div>
-            <div className="text-sm text-muted-foreground">Total Hectáreas</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-orange-600">{totales.totalProgresivos}</div>
-            <div className="text-sm text-muted-foreground">Avances Progresivos</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-green-600">{totales.totalCompletos}</div>
-            <div className="text-sm text-muted-foreground">Terminados</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-yellow-600">{totales.totalPendientes}</div>
-            <div className="text-sm text-muted-foreground">Pendientes</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-purple-600">{totales.ordenesUnicas}</div>
-            <div className="text-sm text-muted-foreground">Órdenes Únicas</div>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   )
 }

@@ -304,14 +304,21 @@ export function useSupervisorData() {
 
       // Obtener el ID del supervisor logueado
       const supervisorId = getSupervisorIdFromEmail(user?.email || "")
+      console.log('Email del usuario:', user?.email)
+      console.log('Supervisor ID encontrado:', supervisorId)
+      console.log('Total avances antes del filtro:', avancesData.length)
+      
       if (!supervisorId) {
+        console.log('No se encontró supervisorId, devolviendo array vacío')
         setAvances([])
         return []
       }
 
       // Filtrar avances por supervisorId
-      const avancesTransformados = avancesData
-        .filter((avance: any) => Number(avance.supervisorId) === supervisorId)
+      const avancesFiltrados = avancesData.filter((avance: any) => Number(avance.supervisorId) === supervisorId)
+      console.log('Avances después del filtro por supervisorId:', avancesFiltrados.length)
+      
+      const avancesTransformados = avancesFiltrados
         .map((avance: any) => {
           const ordenId = Number(avance.ordenTrabajoId)
           let orden = ordenesData.find((o) => o.id === ordenId)
