@@ -5,15 +5,11 @@ import { useProviderOrders } from "@/hooks/use-provider-orders"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   Calendar,
   ArrowRight,
   PlusCircle,
-  Send,
-  Clock,
-  CheckCircle2,
   MapPin,
   Search,
   FileText,
@@ -26,7 +22,6 @@ import { WorkProgressForm } from "@/components/provider/work-progress-form"
 import type { WorkOrderStatus } from "@/types/work-order"
 import { getOrderQuantityAndUnit } from "@/types/work-order"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Progress } from "@/components/ui/progress"
 import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useToast } from "@/hooks/use-toast"
@@ -58,63 +53,7 @@ const formatQuantity = (quantity: number | string | undefined | null, unit: stri
   }
 }
 
-// Actualizar la configuración de estilos para cada estado
-const statusConfig = {
-  emitida: {
-    label: "Emitida",
-    color: "bg-purple-100 text-purple-800",
-    icon: Send,
-    description: "Orden recibida, pendiente de iniciar",
-  },
-  progreso: {
-    label: "En Progreso",
-    color: "bg-yellow-100 text-yellow-800",
-    icon: Clock,
-    description: "Trabajo en curso",
-  },
-  revision: {
-    label: "En Revisión",
-    color: "bg-blue-100 text-blue-800",
-    icon: CheckCircle2,
-    description: "Trabajo en revisión",
-  },
-  finalizado: {
-    label: "Finalizada",
-    color: "bg-green-100 text-green-800",
-    icon: CheckCircle2,
-    description: "Trabajo completado",
-  },
-  desconocido: {
-    label: "Desconocido",
-    color: "bg-gray-100 text-gray-800",
-    icon: Clock,
-    description: "Estado desconocido",
-  },
-}
 
-// Función auxiliar para obtener la configuración de estado
-function getStatusConfig(estado: WorkOrderStatus | number | undefined) {
-  if (estado === undefined) return statusConfig.desconocido
-
-  // Si es un número, convertirlo a texto
-  if (typeof estado === "number") {
-    switch (estado) {
-      case 0:
-        return statusConfig.emitida
-      case 1:
-        return statusConfig.progreso
-      case 2:
-        return statusConfig.revision
-      case 3:
-        return statusConfig.finalizado
-      default:
-        return statusConfig.desconocido
-    }
-  }
-
-  // Si es texto, usar directamente
-  return statusConfig[estado] || statusConfig.desconocido
-}
 
 export default function ProviderOrdersPage() {
   const {
@@ -353,23 +292,16 @@ export default function ProviderOrdersPage() {
                   <TableHead className="px-4 py-4">Actividad</TableHead>
                   <TableHead className="px-4 py-4">Rodales</TableHead>
                   <TableHead className="w-[140px] px-4 py-4">Cantidad</TableHead>
-                  <TableHead className="w-[140px] px-4 py-4">Estado</TableHead>
-                  <TableHead className="w-[200px] px-4 py-4">Progreso</TableHead>
                   <TableHead className="w-[200px] text-right px-6 py-4">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredOrders.map((order) => {
                   const { quantity, unit, displayText } = getOrderQuantityAndUnit(order)
-                  const totalWorkedArea = orderProgress[order.id] || 0
-                  const progressPercentage =
-                    quantity > 0 ? Math.min(Math.round((totalWorkedArea / quantity) * 100), 100) : 0
                   const currentStatus = updatedOrders[order.id] || order.estado
                   const canAddProgress =
                     currentStatus === "emitida" ||
                     currentStatus === "progreso"
-                  const statusConf = getStatusConfig(currentStatus)
-                  const StatusIcon = statusConf.icon
 
                   return (
                     <TableRow key={order.id} className="h-16">
@@ -411,23 +343,6 @@ export default function ProviderOrdersPage() {
                           : "Sin rodales"}
                       </TableCell>
                       <TableCell className="px-4 py-4">{displayText}</TableCell>
-                      <TableCell className="px-4 py-4">
-                        <Badge className={`flex items-center gap-1 px-3 py-1 ${statusConf.color}`}>
-                          <StatusIcon className="h-3.5 w-3.5" />
-                          <span>{statusConf.label}</span>
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="px-4 py-4">
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between text-xs">
-                            <span>
-                              {formatQuantity(totalWorkedArea, unit)} / {formatQuantity(quantity, unit)} {unit}
-                            </span>
-                            <span>{progressPercentage}%</span>
-                          </div>
-                          <Progress value={progressPercentage} className="h-2" />
-                        </div>
-                      </TableCell>
                       <TableCell className="text-right px-6 py-4">
                         <div className="flex justify-end gap-2">
                           {canAddProgress && (
@@ -463,29 +378,20 @@ export default function ProviderOrdersPage() {
           <div className="lg:hidden space-y-4">
             {filteredOrders.map((order) => {
               const { quantity, unit, displayText } = getOrderQuantityAndUnit(order)
-              const totalWorkedArea = orderProgress[order.id] || 0
-              const progressPercentage =
-                quantity > 0 ? Math.min(Math.round((totalWorkedArea / quantity) * 100), 100) : 0
               const currentStatus = updatedOrders[order.id] || order.estado
               const canAddProgress =
                 currentStatus === "emitida" ||
                 currentStatus === "progreso"
-              const statusConf = getStatusConfig(currentStatus)
-              const StatusIcon = statusConf.icon
 
               return (
                 <Card key={order.id} className="p-6">
                   <div className="space-y-4">
-                    {/* Header con número y estado */}
+                    {/* Header con número */}
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <FileText className="h-4 w-4 text-muted-foreground" />
                         <span className="font-medium">{order.numero || "Sin número"}</span>
                       </div>
-                      <Badge className={`flex items-center gap-1 px-2 py-1 ${statusConf.color}`}>
-                        <StatusIcon className="h-3 w-3" />
-                        <span className="text-xs">{statusConf.label}</span>
-                      </Badge>
                     </div>
 
                     {/* Información básica */}
@@ -524,18 +430,6 @@ export default function ProviderOrdersPage() {
                     {/* Cantidad */}
                     <div className="text-sm">
                       <span className="font-medium">Cantidad:</span> {displayText}
-                    </div>
-
-                    {/* Progreso */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="font-medium">Progreso:</span>
-                        <span>
-                          {formatQuantity(totalWorkedArea, unit)} / {formatQuantity(quantity, unit)} {unit} (
-                          {progressPercentage}%)
-                        </span>
-                      </div>
-                      <Progress value={progressPercentage} className="h-2" />
                     </div>
 
                     {/* Acciones */}
