@@ -49,6 +49,18 @@ export default function SupervisorDashboard() {
   const { supervisor, proveedores, ordenes, avances, loading, error, refetch } = useSupervisorData()
   const { cuadrillas } = useCuadrillas();
   
+  // Función helper para formatear fechas en zona horaria de Argentina
+  const formatearFechaArgentina = (fechaString: string): string => {
+    try {
+      const fecha = new Date(fechaString);
+      // Ajustar para zona horaria de Argentina (UTC-3)
+      const fechaArgentina = new Date(fecha.getTime() + (3 * 60 * 60 * 1000));
+      return fechaArgentina.toLocaleDateString("es-AR");
+    } catch (error) {
+      return new Date(fechaString).toLocaleDateString("es-AR");
+    }
+  };
+  
   // Obtener las órdenes originales (con rodales) desde la API
   const [ordenesOriginales, setOrdenesOriginales] = useState<any[]>([])
   
@@ -56,22 +68,36 @@ export default function SupervisorDashboard() {
   useEffect(() => {
     const cargarOrdenesOriginales = async () => {
       try {
-        const response = await workOrdersAPI.getAll()
-        let ordenesData = []
+        // Cargar todas las páginas de órdenes
+        let pagina = 1
+        let todasLasOrdenes: any[] = []
+        let totalPaginas = 1
         
-        if (response) {
-          if (Array.isArray(response)) {
-            ordenesData = response
-          } else if (response.data && Array.isArray(response.data)) {
-            ordenesData = response.data
-          } else if (response.ordenes && Array.isArray(response.ordenes)) {
-            ordenesData = response.ordenes
-          } else if (response.results && Array.isArray(response.results)) {
-            ordenesData = response.results
+        do {
+          const response = await workOrdersAPI.getAll({ pagina, limite: 100 })
+          let ordenesData = []
+          
+          if (response) {
+            if (Array.isArray(response)) {
+              ordenesData = response
+            } else if (response.data && Array.isArray(response.data)) {
+              ordenesData = response.data
+            } else if (response.ordenes && Array.isArray(response.ordenes)) {
+              ordenesData = response.ordenes
+            } else if (response.results && Array.isArray(response.results)) {
+              ordenesData = response.results
+            }
           }
-        }
+          
+          todasLasOrdenes = todasLasOrdenes.concat(ordenesData)
+          totalPaginas = response.paginacion?.paginas || 1
+          pagina++
+        } while (pagina <= totalPaginas)
         
-        setOrdenesOriginales(ordenesData)
+        console.log('📋 Órdenes originales cargadas:', todasLasOrdenes.length)
+        console.log('📋 Ejemplo de orden:', todasLasOrdenes[0])
+        
+        setOrdenesOriginales(todasLasOrdenes)
       } catch (error) {
         console.error('Error cargando órdenes originales:', error)
       }
@@ -212,7 +238,7 @@ export default function SupervisorDashboard() {
     /* 1 ▸ Preparar datos en formato JSON → hoja de Excel                 */
     /* ------------------------------------------------------------------ */
     const excelData = datosTabla.map((item) => ({
-      "FECHA REGISTRO": new Date(item.fecha).toLocaleDateString("es-AR"),
+      "FECHA REGISTRO": formatearFechaArgentina(item.fecha),
       PROVEEDOR: item.proveedor,
       PREDIOS: item.predio,
       "ORDEN TR": item.ordenTrabajo,
@@ -452,7 +478,12 @@ export default function SupervisorDashboard() {
       const tieneAvancesProgresivos = grupo.length > 1
 
       grupo.forEach((avance: any, index: number) => {
-        console.log('Avance dashboard:', avance);
+        console.log('🔍 Procesando avance:', {
+          numeroOrden: avance.numeroOrden,
+          ordenTrabajoId: avance.ordenTrabajoId,
+          rodal: avance.rodal,
+          predio: avance.predio
+        });
         const estado = avance.estado || "Pendiente"
         const indicadorProgreso = `${index + 1}/${grupo.length}`
         // En el mapeo de avances progresivos (dentro de datosTabla):
@@ -469,21 +500,51 @@ export default function SupervisorDashboard() {
         let cuadrillaNombre = avance.cuadrillaNombre || avance.cuadrilla || "Sin cuadrilla"
         
         // Buscar la orden de trabajo correspondiente en las órdenes originales
-        const orden = ordenesOriginales.find(
-          (o) => String(o._id) === String(avance.numeroOrden || avance.ordenTrabajoId) ||
-                 String(o.numero) === String(avance.numeroOrden || avance.ordenTrabajoId)
-        );
+        // El avance.numeroOrden contiene el _id de la orden de trabajo
+        const orden = ordenesOriginales.find((o) => {
+          const ordenId = String(o._id || "");
+          const avanceOrdenId = String(avance.numeroOrden || avance.ordenTrabajoId || "");
+          
+          return ordenId === avanceOrdenId;
+        });
         
         // Buscar el rodal correspondiente dentro de la orden
         let rodalHa = undefined;
         if (orden && Array.isArray(orden.rodales)) {
-          const rodalObj = orden.rodales.find(
-            (r) => String(r.cod_rodal) === String(avance.rodal)
-          );
+          const rodalObj = orden.rodales.find((r: any) => {
+            // Buscar por cod_rodal que es el campo correcto según la estructura
+            const rodalCodigo = String(r.cod_rodal || "");
+            const avanceRodal = String(avance.rodal || "");
+            
+            return rodalCodigo === avanceRodal;
+          });
           
-          if (rodalObj && rodalObj.supha) {
-            rodalHa = Number(rodalObj.supha);
+          if (rodalObj) {
+            // Obtener el valor de supha que contiene las hectáreas
+            rodalHa = Number(rodalObj.supha || 0);
+            
+            // Log para depuración
+            console.log(`✅ Encontrado rodal ${avance.rodal} en orden ${avance.numeroOrden}:`, {
+              rodal: avance.rodal,
+              orden: avance.numeroOrden,
+              rodalHa: rodalHa,
+              rodalObj: rodalObj
+            });
+          } else {
+            // Log para depuración cuando no se encuentra el rodal
+            console.log(`❌ No se encontró rodal ${avance.rodal} en orden ${avance.numeroOrden}`, {
+              rodal: avance.rodal,
+              orden: avance.numeroOrden,
+              ordenRodales: orden.rodales
+            });
           }
+        } else {
+          // Log para depuración cuando no se encuentra la orden
+          console.log(`❌ No se encontró orden para avance:`, {
+            rodal: avance.rodal,
+            orden: avance.numeroOrden,
+            ordenesDisponibles: ordenesOriginales.length
+          });
         }
         
         avancesProgresivos.push({
@@ -623,8 +684,7 @@ export default function SupervisorDashboard() {
         <div>
           <h1 className="text-3xl font-bold text-red-600">VISTA PARA EL SUPERVISOR</h1>
           <p className="text-muted-foreground">
-            Bienvenido, {supervisor?.nombre || user?.nombre || "Supervisor"} | Resumen de avances progresivos por
-            proveedor
+            Bienvenido, {supervisor?.nombre || user?.nombre || "Supervisor"} | Resumen de Avances
           </p>
         </div>
         <Button onClick={refetch} variant="outline" size="sm" disabled={loading}>
@@ -924,7 +984,7 @@ export default function SupervisorDashboard() {
       {/* Tabla de datos */}
       <Card>
         <CardHeader>
-          <CardTitle>Resumen de Avances Progresivos</CardTitle>
+          <CardTitle>Resumen de Avances</CardTitle>
           <CardDescription>
             {loading ? (
               "Cargando datos..."
@@ -974,7 +1034,7 @@ export default function SupervisorDashboard() {
                           : ""
                       }`}
                     >
-                      <TableCell className="text-sm">{new Date(item.fecha).toLocaleDateString("es-AR")}</TableCell>
+                      <TableCell className="text-sm">{formatearFechaArgentina(item.fecha)}</TableCell>
                       <TableCell className="font-medium">{item.proveedor}</TableCell>
                       <TableCell className="font-medium">{item.predio}</TableCell>
                       <TableCell>{item.ordenTrabajo}</TableCell>
