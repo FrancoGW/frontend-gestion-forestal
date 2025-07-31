@@ -220,11 +220,46 @@ export function useProviderWorkData() {
         // Obtener el nombre del proveedor para el registro
         const providerName = user?.nombre || "Proveedor sin nombre"
 
+        // Función para formatear fecha con zona horaria de Argentina
+        const formatDateForArgentina = (dateString: string): string => {
+          try {
+            // Si la fecha ya está en formato YYYY-MM-DD, usarla directamente
+            if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+              return dateString
+            }
+            
+            // Si es una fecha en otro formato, parsearla y formatearla
+            const date = new Date(dateString)
+            if (isNaN(date.getTime())) {
+              // Si no se puede parsear, usar la fecha actual
+              const now = new Date()
+              const year = now.getFullYear()
+              const month = String(now.getMonth() + 1).padStart(2, '0')
+              const day = String(now.getDate()).padStart(2, '0')
+              return `${year}-${month}-${day}`
+            }
+            
+            // Formatear la fecha usando la zona horaria local del navegador
+            const year = date.getFullYear()
+            const month = String(date.getMonth() + 1).padStart(2, '0')
+            const day = String(date.getDate()).padStart(2, '0')
+            
+            return `${year}-${month}-${day}`
+          } catch (error) {
+            console.error("Error al formatear fecha:", error)
+            const now = new Date()
+            const year = now.getFullYear()
+            const month = String(now.getMonth() + 1).padStart(2, '0')
+            const day = String(now.getDate()).padStart(2, '0')
+            return `${year}-${month}-${day}`
+          }
+        }
+
         // Preparar datos para enviar al servidor - INCLUIR TODOS LOS CAMPOS DE LA PLANTILLA
         const serverData = {
           ordenTrabajoId: orderId,
           proveedorId: providerId,
-          fecha: data.fecha,
+          fecha: formatDateForArgentina(data.fecha),
           superficie: Number(data.superficie),
           cuadrillaId: data.cuadrillaId, // Send the cuadrillaId to the API
           cuadrilla: data.cuadrilla, // Also send the name for display
@@ -313,7 +348,7 @@ export function useProviderWorkData() {
             const newEntry: WorkProgressEntry = {
               id: responseId,
               orderId,
-              fecha: data.fecha,
+              fecha: formatDateForArgentina(data.fecha),
               superficie: Number(data.superficie),
               cantidadPlantas: Number(data.cantidadPlantas || 0),
               cuadrilla: data.cuadrilla,

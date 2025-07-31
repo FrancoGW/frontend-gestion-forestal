@@ -655,28 +655,51 @@ export default function JdaDashboard() {
         </CardContent>
       </Card>
 
-      {/* Debug Info */}
-      <Card className="bg-gray-50">
-        <CardContent className="p-4">
-          <p className="text-sm text-gray-600">
-            Debug JDA {jda?.nombre}: {supervisores.length} supervisores | {proveedores.length} proveedores | {todosLosRodales.length}{" "}
-            rodales | {todasLasOrdenes.length} órdenes | {avances.length} avances totales | {totales.totalProgresivos}{" "}
-            progresivos
-          </p>
-          <p className="text-xs text-gray-500 mt-1">
-            Supervisores asignados: {supervisores.map((s) => s.nombre).join(", ")}
-          </p>
-          <p className="text-xs text-gray-500 mt-1">
-            Proveedores asignados: {proveedores.map((p) => p.nombre).join(", ")}
-          </p>
-          <p className="text-xs text-gray-500 mt-1">
-            Avances por supervisor:{" "}
-            {supervisores
-              .map((s) => `${s.nombre}: ${avances.filter((a) => a.supervisorId === parseInt(s.id)).length}`)
-              .join(", ")}
-          </p>
-        </CardContent>
-      </Card>
+      {/* Estadísticas */}
+      <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-blue-600">{totales.totalRegistros}</div>
+            <div className="text-sm text-muted-foreground">Registros</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-green-600">{totales.totalHA.toFixed(1)}</div>
+            <div className="text-sm text-muted-foreground">Total Hectáreas</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-orange-600">{totales.totalProgresivos}</div>
+            <div className="text-sm text-muted-foreground">Avances Progresivos</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-green-600">{totales.totalCompletos}</div>
+            <div className="text-sm text-muted-foreground">Terminados</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-yellow-600">{totales.totalPendientes}</div>
+            <div className="text-sm text-muted-foreground">Pendientes</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-purple-600">{totales.ordenesUnicas}</div>
+            <div className="text-sm text-muted-foreground">Órdenes Únicas</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-indigo-600">{totales.supervisoresUnicos}</div>
+            <div className="text-sm text-muted-foreground">Supervisores</div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Tabla de datos */}
       <Card>
@@ -761,51 +784,6 @@ export default function JdaDashboard() {
         </CardContent>
       </Card>
 
-      {/* Estadísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-blue-600">{totales.totalRegistros}</div>
-            <div className="text-sm text-muted-foreground">Registros</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-green-600">{totales.totalHA.toFixed(1)}</div>
-            <div className="text-sm text-muted-foreground">Total Hectáreas</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-orange-600">{totales.totalProgresivos}</div>
-            <div className="text-sm text-muted-foreground">Avances Progresivos</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-green-600">{totales.totalCompletos}</div>
-            <div className="text-sm text-muted-foreground">Terminados</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-yellow-600">{totales.totalPendientes}</div>
-            <div className="text-sm text-muted-foreground">Pendientes</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-purple-600">{totales.ordenesUnicas}</div>
-            <div className="text-sm text-muted-foreground">Órdenes Únicas</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-indigo-600">{totales.supervisoresUnicos}</div>
-            <div className="text-sm text-muted-foreground">Supervisores</div>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   )
 }

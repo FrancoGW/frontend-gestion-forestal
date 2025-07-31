@@ -411,7 +411,6 @@ export const avancesTrabajoAPI = {
         ordenTrabajoId: data.ordenTrabajoId,
         proveedorId: data.proveedorId,
         fecha: data.fecha,
-        superficie: data.superficie,
         cuadrillaId: data.cuadrillaId, // Ensure we're sending cuadrillaId
         rodal: data.rodal,
         actividad: data.actividad,
@@ -429,39 +428,51 @@ export const avancesTrabajoAPI = {
         rodalEnsayo: data.rodalEnsayo || false,
         // ✅ NUEVO: Asegurar que el estado se envíe correctamente
         estado: data.estado || "Pendiente",
-        // Incluir campos dinámicos de la plantilla
-        ...Object.keys(data).reduce((acc, key) => {
-          const mappedFields = [
-            "ordenTrabajoId",
-            "proveedorId",
-            "fecha",
-            "superficie",
-            "cuadrillaId",
-            "cuadrilla", // Include cuadrilla name too
-            "rodal",
-            "actividad",
-            "cantPersonal",
-            "jornada",
-            "observaciones",
-            "vivero",
-            "especie",
-            "clon",
-            "cantidadPlantas",
-            "altura_poda",
-            "predio",
-            "seccion",
-            "rodalEnsayo",
-            "estado", // ✅ NUEVO: Incluir estado en la lista de campos mapeados
-          ]
-
-          if (!mappedFields.includes(key) && data[key] !== undefined && data[key] !== null && data[key] !== "") {
-            acc[key] = data[key]
-          }
-          return acc
-        }, {}),
       }
 
-      const response = await apiClient.post("/api/avancesTrabajos", simplifiedData)
+      // Agregar superficie solo si está definida y es válida
+      if (data.superficie !== undefined && data.superficie !== null && data.superficie !== "" && !isNaN(Number(data.superficie))) {
+        simplifiedData.superficie = Number(data.superficie)
+      }
+
+      // Incluir campos dinámicos de la plantilla
+      const dynamicFields = Object.keys(data).reduce((acc, key) => {
+        const mappedFields = [
+          "ordenTrabajoId",
+          "proveedorId",
+          "fecha",
+          "superficie",
+          "cuadrillaId",
+          "cuadrilla", // Include cuadrilla name too
+          "rodal",
+          "actividad",
+          "cantPersonal",
+          "jornada",
+          "observaciones",
+          "vivero",
+          "especie",
+          "clon",
+          "cantidadPlantas",
+          "altura_poda",
+          "predio",
+          "seccion",
+          "rodalEnsayo",
+          "estado", // ✅ NUEVO: Incluir estado en la lista de campos mapeados
+        ]
+
+        if (!mappedFields.includes(key) && data[key] !== undefined && data[key] !== null && data[key] !== "") {
+          acc[key] = data[key]
+        }
+        return acc
+      }, {})
+
+      // Combinar los datos base con los campos dinámicos
+      const finalData = {
+        ...simplifiedData,
+        ...dynamicFields
+      }
+
+      const response = await apiClient.post("/api/avancesTrabajos", finalData)
       return response.data
     } catch (error) {
       console.error("Error en avancesTrabajoAPI.create:", error.message)

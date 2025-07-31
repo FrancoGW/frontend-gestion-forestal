@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -18,6 +18,7 @@ import { getCuadrillaName } from "@/utils/getCuadrillaName"
 import type { AvanceExtendido } from "@/types/AvanceExtendido"
 import { useCuadrillas } from "@/hooks/use-cuadrillas"
 import { useSupervisionState, type EstadoSupervision } from "@/hooks/use-supervision-state"
+import { workOrdersAPI } from "@/lib/api-client"
 
 type DatosTablaItem = {
   id: string;
@@ -40,12 +41,44 @@ type DatosTablaItem = {
   cuadrillaId?: string;
   cuadrillaNombre?: string;
   jornada: number;
+  rodalHa?: number; // Added for GIS HA
 };
 
 export default function SupervisorDashboard() {
   const { user } = useAuth()
   const { supervisor, proveedores, ordenes, avances, loading, error, refetch } = useSupervisorData()
   const { cuadrillas } = useCuadrillas();
+  
+  // Obtener las órdenes originales (con rodales) desde la API
+  const [ordenesOriginales, setOrdenesOriginales] = useState<any[]>([])
+  
+  // Cargar órdenes originales al montar el componente
+  useEffect(() => {
+    const cargarOrdenesOriginales = async () => {
+      try {
+        const response = await workOrdersAPI.getAll()
+        let ordenesData = []
+        
+        if (response) {
+          if (Array.isArray(response)) {
+            ordenesData = response
+          } else if (response.data && Array.isArray(response.data)) {
+            ordenesData = response.data
+          } else if (response.ordenes && Array.isArray(response.ordenes)) {
+            ordenesData = response.ordenes
+          } else if (response.results && Array.isArray(response.results)) {
+            ordenesData = response.results
+          }
+        }
+        
+        setOrdenesOriginales(ordenesData)
+      } catch (error) {
+        console.error('Error cargando órdenes originales:', error)
+      }
+    }
+    cargarOrdenesOriginales()
+  }, [])
+  
   const { 
     getPeriodoActual, 
     getPeriodosDisponibles, 
@@ -189,6 +222,7 @@ export default function SupervisorDashboard() {
       ESTADO: item.estado,
       "ESTADO SUPERVISIÓN": getEstadoSupervisionTexto(getEstadoSupervision(item.id)),
       "CANTIDAD (HA)": item.cantidadHA.toFixed(2).replace(".", ","),
+      "GIS HA": item.rodalHa ? item.rodalHa.toFixed(2).replace(".", ",") : "-",
       SUBTOTAL: item.subtotal.toFixed(0),
       OBSERVACIONES: item.observaciones,
       CUADRILLA: item.cuadrillaNombre || item.cuadrilla || "Sin cuadrilla",
@@ -205,11 +239,12 @@ export default function SupervisorDashboard() {
       ESTADO: "TOTALES:",
       "ESTADO SUPERVISIÓN": "",
       "CANTIDAD (HA)": totales.totalHA.toFixed(2).replace(".", ","),
+      "GIS HA": "",
       SUBTOTAL: totales.totalSubtotal.toFixed(0),
       PROVEEDOR: "",
       OBSERVACIONES: "",
       CUADRILLA: "",
-      JORNADA: "",
+      JORNADA: 0,
     })
 
     /* ------------------------------------------------------------------ */
@@ -230,6 +265,7 @@ export default function SupervisorDashboard() {
       { wch: 15 },
       { wch: 18 },
       { wch: 12 },
+      { wch: 10 },
       { wch: 25 },
       { wch: 30 },
       { wch: 15 },
@@ -431,6 +467,25 @@ export default function SupervisorDashboard() {
         }
         // Usar cuadrillaNombre si existe, si no cuadrilla, si no 'Sin cuadrilla'
         let cuadrillaNombre = avance.cuadrillaNombre || avance.cuadrilla || "Sin cuadrilla"
+        
+        // Buscar la orden de trabajo correspondiente en las órdenes originales
+        const orden = ordenesOriginales.find(
+          (o) => String(o._id) === String(avance.numeroOrden || avance.ordenTrabajoId) ||
+                 String(o.numero) === String(avance.numeroOrden || avance.ordenTrabajoId)
+        );
+        
+        // Buscar el rodal correspondiente dentro de la orden
+        let rodalHa = undefined;
+        if (orden && Array.isArray(orden.rodales)) {
+          const rodalObj = orden.rodales.find(
+            (r) => String(r.cod_rodal) === String(avance.rodal)
+          );
+          
+          if (rodalObj && rodalObj.supha) {
+            rodalHa = Number(rodalObj.supha);
+          }
+        }
+        
         avancesProgresivos.push({
           id: avance._id || avance.id || `${claveBase}-${index}`,
           fecha: avance.fecha || avance.fechaRegistro || new Date().toISOString().split("T")[0],
@@ -452,6 +507,7 @@ export default function SupervisorDashboard() {
           cuadrillaId: avance.cuadrillaId ? String(avance.cuadrillaId) : undefined,
           cuadrillaNombre: cuadrillaNombre,
           jornada: Number(avance.jornada) || 0,
+          rodalHa: rodalHa,
         })
       })
     })
@@ -489,6 +545,8 @@ export default function SupervisorDashboard() {
     getEstadoSupervision,
     proveedores,
     cuadrillas,
+    ordenes,
+    ordenesOriginales,
   ])
 
   // Calcular totales
@@ -884,23 +942,23 @@ export default function SupervisorDashboard() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-blue-50">
-                  <TableHead className="font-bold bg-green-200">FECHA REGISTRO</TableHead>
-                  <TableHead className="font-bold bg-pink-200">PROVEEDOR</TableHead>
-                  <TableHead className="font-bold bg-yellow-200">PREDIOS</TableHead>
-                  <TableHead className="font-bold bg-blue-200">ORDEN TR</TableHead>
-                  <TableHead className="font-bold bg-blue-200">RODAL</TableHead>
-                  <TableHead className="font-bold bg-blue-200">ACTIVIDAD</TableHead>
-                  <TableHead className="font-bold bg-orange-200">PROGRESO</TableHead>
-                  <TableHead className="font-bold bg-purple-200">ESTADO</TableHead>
-                  <TableHead className="font-bold bg-red-200">ESTADO SUPERVISIÓN</TableHead>
-                  <TableHead className="font-bold bg-blue-200 text-right">CANTIDAD (HA)</TableHead>
-                  <TableHead className="font-bold bg-blue-400 text-white text-right">SUBTOTAL</TableHead>
+                  <TableHead className="font-bold bg-green-200">Fech. Registo</TableHead>
+                  <TableHead className="font-bold bg-pink-200">Prov.</TableHead>
+                  <TableHead className="font-bold bg-yellow-200">Predios</TableHead>
+                  <TableHead className="font-bold bg-blue-200">Ord. Tr.</TableHead>
+                  <TableHead className="font-bold bg-blue-200">Rodal</TableHead>
+                  <TableHead className="font-bold bg-blue-200">Act.</TableHead>
+                  <TableHead className="font-bold bg-orange-200">Progreso</TableHead>
+                  <TableHead className="font-bold bg-purple-200">Estado</TableHead>
+                  <TableHead className="font-bold bg-red-200">Esta. Sup</TableHead>
+                  <TableHead className="font-bold bg-blue-200 text-right">Cantidad (ha)</TableHead>
+                  <TableHead className="font-bold bg-blue-200 text-right">Gis. HA</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {datosTabla.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={12} className="text-center py-8 text-muted-foreground">
                       No se encontraron registros con los filtros aplicados
                     </TableCell>
                   </TableRow>
@@ -977,17 +1035,17 @@ export default function SupervisorDashboard() {
                         </div>
                       </TableCell>
                       <TableCell className="text-right">{item.cantidadHA.toFixed(1)}</TableCell>
-                      <TableCell className="text-right bg-blue-100 font-medium">{item.subtotal.toFixed(0)}</TableCell>
+                      <TableCell className="text-right">{item.rodalHa ? item.rodalHa.toFixed(1) : "-"}</TableCell>
                     </TableRow>
                   ))
                 )}
                 {datosTabla.length > 0 && (
                   <TableRow className="bg-gray-100 font-bold">
-                    <TableCell colSpan={9} className="text-right">
+                    <TableCell colSpan={11} className="text-right">
                       TOTALES:
                     </TableCell>
                     <TableCell className="text-right">{totales.totalHA.toFixed(2)}</TableCell>
-                    <TableCell className="text-right bg-blue-200">{totales.totalSubtotal.toFixed(0)}</TableCell>
+                    <TableCell className="text-right bg-blue-200">{/* Total GIS HA */}</TableCell>
                   </TableRow>
                 )}
               </TableBody>

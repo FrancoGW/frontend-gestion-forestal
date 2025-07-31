@@ -85,6 +85,7 @@ export function useJdaData() {
   const getJdaIdFromEmail = (email: string): number | null => {
     const emailToIdMap: { [key: string]: number } = {
       "alejandro@sistema.com": 1234,
+      "stefan@sistema.com": 34,
       // Agregar más mapeos según sea necesario
     }
     return emailToIdMap[email.toLowerCase()] || null

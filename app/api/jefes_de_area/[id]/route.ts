@@ -27,6 +27,33 @@ const jefesDeArea = [
     ],
     "fechaCreacion": "2024-01-15T00:00:00.000Z",
     "ultimaActualizacion": "2024-07-04T00:00:00.000Z"
+  },
+  {
+    "_id": 34,
+    "nombre": "Carlos",
+    "apellido": "Stefan",
+    "email": "stefan@sistema.com",
+    "password": "999",
+    "activo": true,
+    "supervisoresAsignados": [
+      {
+        "nombre": "Cecilia Pizzini",
+        "fechaAsignacion": "2024-01-15T00:00:00.000Z",
+        "supervisorId": 44
+      },
+      {
+        "nombre": "Diego Nonino",
+        "fechaAsignacion": "2024-01-20T00:00:00.000Z",
+        "supervisorId": 56
+      },
+      {
+        "nombre": "Ulises Cosoli",
+        "fechaAsignacion": "2024-02-01T00:00:00.000Z",
+        "supervisorId": 43
+      }
+    ],
+    "fechaCreacion": "2024-01-01T00:00:00.000Z",
+    "ultimaActualizacion": "2024-07-04T00:00:00.000Z"
   }
 ]
 

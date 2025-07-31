@@ -9,7 +9,7 @@ interface User {
   nombre: string
   apellido?: string
   email: string
-  rol: "admin" | "supervisor" | "provider"
+  rol: "admin" | "supervisor" | "provider" | "jda"
   activo: boolean
   providerId?: number
   supervisorId?: number
@@ -33,6 +33,24 @@ const EMERGENCY_USERS = [
     nombre: "Administrador",
     apellido: "Sistema",
     rol: "admin" as const,
+    activo: true,
+  },
+  {
+    id: "1234",
+    email: "alejandro@sistema.com",
+    password: "123",
+    nombre: "Alejandro",
+    apellido: "Wayer",
+    rol: "jda" as const,
+    activo: true,
+  },
+  {
+    id: "34",
+    email: "stefan@sistema.com",
+    password: "999",
+    nombre: "Carlos",
+    apellido: "Stefan",
+    rol: "jda" as const,
     activo: true,
   },
   {

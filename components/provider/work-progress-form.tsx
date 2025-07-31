@@ -11,7 +11,7 @@ import type { WorkOrder } from "@/types/work-order"
 import type { PodaWorkData } from "@/types/provider-work-data"
 import { useActivityTemplates, type ActivityField } from "@/hooks/use-activity-templates"
 import { useAuth } from "@/hooks/use-auth"
-import { format } from "date-fns"
+import { format, parseISO } from "date-fns"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -54,6 +54,49 @@ const isObjectId = (str: string): boolean => {
   return /^[0-9a-fA-F]{24}$/.test(str)
 }
 
+// Función para manejar fechas con zona horaria de Argentina
+const formatDateForArgentina = (dateString: string): string => {
+  try {
+    // Si la fecha ya está en formato YYYY-MM-DD, usarla directamente
+    if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      return dateString
+    }
+    
+    // Si es una fecha en otro formato, parsearla y formatearla
+    const date = new Date(dateString)
+    if (isNaN(date.getTime())) {
+      // Si no se puede parsear, usar la fecha actual
+      return getCurrentDateForArgentina()
+    }
+    
+    // Formatear la fecha usando la zona horaria local del navegador
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    
+    return `${year}-${month}-${day}`
+  } catch (error) {
+    console.error("Error al formatear fecha:", error)
+    return getCurrentDateForArgentina()
+  }
+}
+
+// Función para obtener la fecha actual en formato YYYY-MM-DD para Argentina
+const getCurrentDateForArgentina = (): string => {
+  // Crear una fecha en la zona horaria de Argentina (UTC-3)
+  const now = new Date()
+  
+  // Obtener la fecha actual en la zona horaria local del navegador
+  const localDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  
+  // Convertir a string en formato YYYY-MM-DD
+  const year = localDate.getFullYear()
+  const month = String(localDate.getMonth() + 1).padStart(2, '0')
+  const day = String(localDate.getDate()).padStart(2, '0')
+  
+  return `${year}-${month}-${day}`
+}
+
 export function WorkProgressForm({
   workOrder,
   onSubmit,
@@ -73,8 +116,8 @@ export function WorkProgressForm({
     error: errorMalezasProductos,
   } = useMalezasProductos()
 
-  const [formData, setFormData] = useState<any>({
-    fecha: format(new Date(), "yyyy-MM-dd"),
+  const [formData, setFormData] = useState<Record<string, any>>({
+    fecha: getCurrentDateForArgentina(),
     rodal: "",
     superficie: "",
     cuadrilla: "",
@@ -117,6 +160,11 @@ export function WorkProgressForm({
     tiempoHs: "",
     jornadaHs: "",
     comentarios: "",
+    // Campos específicos para CONTROL DE REGENERACION DE PINOS
+    ha: "",
+    operarios: "",
+    jornales: "",
+    implemento: "",
   })
 
   // Estado para productos dinámicos con unidad de medida
@@ -184,6 +232,12 @@ export function WorkProgressForm({
     if (!templateName) return false
     const name = templateName.toLowerCase()
     return name === "quemas controladas"
+  }
+
+  const isControlRegeneracionTemplate = (templateName?: string) => {
+    if (!templateName) return false
+    const name = templateName.toLowerCase()
+    return name.includes("control de regeneracion") || name.includes("regeneracion")
   }
 
   // Función para calcular tiempo automáticamente
@@ -388,8 +442,8 @@ export function WorkProgressForm({
           setSpecificActivityName(result.specificActivityName)
 
           if (!isEditing) {
-            const initialFormData = {
-              fecha: format(new Date(), "yyyy-MM-dd"),
+            const initialFormData: Record<string, any> = {
+              fecha: getCurrentDateForArgentina(),
               rodal: "",
               superficie: "",
               cuadrilla: "",
@@ -432,25 +486,42 @@ export function WorkProgressForm({
               tiempoHs: "",
               jornadaHs: "",
               comentarios: "",
+              // Campos específicos para CONTROL DE REGENERACION DE PINOS
+              ha: "",
+              operarios: "",
+              jornales: "",
+              implemento: "",
             }
 
             result.template.campos.forEach((campo: ActivityField) => {
-              switch (campo.tipo) {
-                case "numero":
-                  initialFormData[campo.id] = ""
-                  break
-                case "fecha":
-                  initialFormData[campo.id] = format(new Date(), "yyyy-MM-dd")
-                  break
-                case "seleccion":
-                  if (campo.id === "rodal" && hasRodales) {
-                    initialFormData[campo.id] = String(workOrder.rodales[0]?.numero || "")
-                  } else {
+              // Solo asignar valor si no existe ya un valor por defecto
+              if (initialFormData[campo.id] === undefined || initialFormData[campo.id] === "") {
+                switch (campo.tipo) {
+                  case "numero":
                     initialFormData[campo.id] = ""
-                  }
-                  break
-                default:
-                  initialFormData[campo.id] = ""
+                    break
+                  case "fecha":
+                    initialFormData[campo.id] = getCurrentDateForArgentina()
+                    break
+                  case "seleccion":
+                    if (campo.id === "rodal" && hasRodales) {
+                      initialFormData[campo.id] = String(workOrder.rodales[0]?.numero || "")
+                    } else if (campo.id === "estado") {
+                      initialFormData[campo.id] = "Pendiente"
+                    } else {
+                      initialFormData[campo.id] = ""
+                    }
+                    break
+                  case "texto":
+                    if (campo.id === "predio") {
+                      initialFormData[campo.id] = workOrder.campo || ""
+                    } else {
+                      initialFormData[campo.id] = ""
+                    }
+                    break
+                  default:
+                    initialFormData[campo.id] = ""
+                }
               }
             })
 
@@ -490,9 +561,9 @@ export function WorkProgressForm({
       clones.length > 0
     ) {
 
-      const editFormData = {
+      const editFormData: Record<string, any> = {
         fecha: (() => {
-          if (!initialData.fecha) return format(new Date(), "yyyy-MM-dd")
+          if (!initialData.fecha) return getCurrentDateForArgentina()
 
           // Si la fecha ya está en formato YYYY-MM-DD, usarla directamente
           if (typeof initialData.fecha === "string" && initialData.fecha.match(/^\d{4}-\d{2}-\d{2}$/)) {
@@ -510,7 +581,7 @@ export function WorkProgressForm({
           }
 
           // Como fallback, usar fecha actual
-          return format(new Date(), "yyyy-MM-dd")
+          return getCurrentDateForArgentina()
         })(),
         rodal: String(initialData.rodal || ""),
         superficie: String(initialData.superficie || ""),
@@ -650,6 +721,11 @@ export function WorkProgressForm({
         tiempoHs: String(initialData.tiempoHs || ""),
         jornadaHs: String(initialData.jornadaHs || ""),
         comentarios: initialData.comentarios || "",
+        // Campos específicos para CONTROL DE REGENERACION DE PINOS
+        ha: String(initialData.ha || initialData.superficie || ""),
+        operarios: String(initialData.operarios || ""),
+        jornales: String(initialData.jornales || ""),
+        implemento: initialData.implemento || "",
       }
 
       // ✅ CORREGIR: Resolver el nombre de la cuadrilla correctamente
@@ -2652,7 +2728,31 @@ export function WorkProgressForm({
 
   // Función para validar el formulario
   const validateForm = (): boolean => {
-    const requiredFields = ["fecha", "superficie", "cuadrilla", "cantPersonal", "jornada"]
+    let requiredFields: string[] = []
+
+    // Para Control de regeneración de pinos, usar exactamente los campos definidos en la plantilla
+    if (isControlRegeneracionTemplate(activeTemplate?.nombre)) {
+      // Campos específicos para Control de regeneración de pinos
+      requiredFields = ["estado", "fecha", "predio", "rodal", "cuadrilla", "implemento", "operarios", "ha", "jornales"]
+    } else {
+      // Para otras plantillas, usar la lógica existente
+      requiredFields = ["fecha", "cuadrilla"]
+
+      // Agregar cantPersonal solo si está definido en la plantilla
+      if (activeTemplate?.campos?.some(c => c.id === "cantPersonal")) {
+        requiredFields.push("cantPersonal")
+      }
+
+      // Agregar jornada solo si está definido en la plantilla
+      if (activeTemplate?.campos?.some(c => c.id === "jornada")) {
+        requiredFields.push("jornada")
+      }
+
+      // Agregar superficie solo si NO es control de regeneración
+      if (!isControlRegeneracionTemplate(activeTemplate?.nombre)) {
+        requiredFields.push("superficie")
+      }
+    }
 
     // Validaciones específicas por tipo de plantilla
     if (isPlantationTemplate(activeTemplate?.nombre)) {
@@ -2706,34 +2806,46 @@ export function WorkProgressForm({
       requiredFields.push("areaOperarios", "horaR29", "horaR8", "horaR7", "horaR28", "cantPersonal", "jornada")
     }
 
+    // Debug: Log de campos requeridos y valores
+    console.log("[VALIDACIÓN][DEBUG] Campos requeridos:", requiredFields)
+    console.log("[VALIDACIÓN][DEBUG] FormData actual:", formData)
+    
     // Validar campos requeridos
     for (const field of requiredFields) {
       const value = formData[field]
+      console.log(`[VALIDACIÓN][DEBUG] Validando campo '${field}':`, value)
       if (!value || (typeof value === "string" && value.trim() === "")) {
+        console.log(`[VALIDACIÓN][ERROR] Campo '${field}' está vacío o es inválido`)
         setError(`El campo ${field} es requerido`)
         return false
       }
     }
 
-    // Validar superficie
-    const superficie = Number(formData.superficie)
-    if (superficie <= 0) {
-      setError("La superficie debe ser mayor a 0")
-      return false
+    // Validar superficie solo si NO es control de regeneración
+    if (!isControlRegeneracionTemplate(activeTemplate?.nombre)) {
+      const superficie = Number(formData.superficie)
+      if (superficie <= 0) {
+        setError("La superficie debe ser mayor a 0")
+        return false
+      }
     }
 
-    // Validar personal
-    const personal = Number(formData.cantPersonal)
-    if (personal <= 0) {
-      setError("La cantidad de personal debe ser mayor a 0")
-      return false
+    // Validar personal solo si está definido en la plantilla y NO es control de regeneración
+    if (!isControlRegeneracionTemplate(activeTemplate?.nombre) && activeTemplate?.campos?.some(c => c.id === "cantPersonal")) {
+      const personal = Number(formData.cantPersonal)
+      if (personal <= 0) {
+        setError("La cantidad de personal debe ser mayor a 0")
+        return false
+      }
     }
 
-    // Validar jornada
-    const jornada = Number(formData.jornada)
-    if (jornada <= 0 || jornada > 24) {
-      setError("La jornada debe estar entre 1 y 24 horas")
-      return false
+    // Validar jornada solo si está definido en la plantilla y NO es control de regeneración
+    if (!isControlRegeneracionTemplate(activeTemplate?.nombre) && activeTemplate?.campos?.some(c => c.id === "jornada")) {
+      const jornada = Number(formData.jornada)
+      if (jornada <= 0 || jornada > 24) {
+        setError("La jornada debe estar entre 1 y 24 horas")
+        return false
+      }
     }
 
     return true
@@ -2753,14 +2865,46 @@ export function WorkProgressForm({
 
     try {
       // Preparar datos base
-      const submitData: any = {
-        ...formData,
+      let submitData: any = {
         ordenTrabajoId: workOrder.id,
         actividad: specificActivityName || workOrder.actividad,
         usuario: user?.name || user?.email || "Usuario",
-        superficie: Number(formData.superficie),
-        cantPersonal: Number(formData.cantPersonal),
-        jornada: Number(formData.jornada),
+      }
+
+      // Para Control de regeneración de pinos, construir el objeto desde cero
+      if (isControlRegeneracionTemplate(activeTemplate?.nombre)) {
+        submitData = {
+          ...submitData,
+          estado: formData.estado || "Pendiente",
+          fecha: formatDateForArgentina(formData.fecha || getCurrentDateForArgentina()),
+          predio: formData.predio || workOrder?.campo || "",
+          rodal: formData.rodal || "",
+          cuadrilla: formData.cuadrilla || "",
+          cuadrillaId: formData.cuadrillaId || "",
+          implemento: formData.implemento || "",
+          operarios: Number(formData.operarios || 0),
+          ha: Number(formData.ha || 0),
+          superficie: Number(formData.ha || 0), // Mapear ha a superficie para el backend
+          jornales: Number(formData.jornales || 0),
+          observaciones: formData.observaciones || "",
+        }
+      } else {
+        // Para otras plantillas, usar la lógica existente
+        submitData = {
+          ...submitData,
+          ...formData,
+          superficie: Number(formData.superficie)
+        }
+      }
+
+      // Agregar cantPersonal solo si está definido en la plantilla
+      if (activeTemplate?.campos?.some(c => c.id === "cantPersonal")) {
+        submitData.cantPersonal = Number(formData.cantPersonal)
+      }
+
+      // Agregar jornada solo si está definido en la plantilla
+      if (activeTemplate?.campos?.some(c => c.id === "jornada")) {
+        submitData.jornada = Number(formData.jornada)
       }
 
       // Agregar campos específicos según el tipo de plantilla
@@ -2790,7 +2934,7 @@ export function WorkProgressForm({
         submitData.cuadrillaId = formData.cuadrillaId || ""
 
         // Asegurar que los campos base también se incluyan
-        submitData.fecha = formData.fecha || format(new Date(), "yyyy-MM-dd")
+        submitData.fecha = formData.fecha || getCurrentDateForArgentina()
         submitData.superficie = Number(formData.superficie || 0)
         submitData.cantPersonal = Number(formData.cantPersonal || 0)
         submitData.jornada = Number(formData.jornada || 8)
@@ -2861,7 +3005,9 @@ export function WorkProgressForm({
       // ... puedes agregar aquí otros campos de sistema relevantes ...
 
       // Log para debug
-      console.log("Avance enviado:", submitData)
+      console.log("[ENVÍO][DEBUG] Datos del formulario:", formData)
+      console.log("[ENVÍO][DEBUG] Plantilla activa:", activeTemplate?.nombre)
+      console.log("[ENVÍO][DEBUG] Datos a enviar:", submitData)
 
       const result = await onSubmit(submitData)
 
@@ -2966,7 +3112,7 @@ export function WorkProgressForm({
               <Input
                 id="predio"
                 type="text"
-                value={workOrder?.campo || ""}
+                value={formData.predio || workOrder?.campo || ""}
                 readOnly
                 disabled
                 className="bg-gray-100 cursor-not-allowed"

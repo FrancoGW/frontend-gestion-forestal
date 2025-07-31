@@ -165,7 +165,7 @@ export default function ProviderOrderDetailPage({ params }: { params: { id: stri
       }
 
       // Preparar datos completos para enviar al servidor
-      const serverData = {
+      const serverData: any = {
         ordenTrabajoId: workOrder.id,
         proveedorId: user.providerId || 13,
         fecha: progressData.fecha,
@@ -173,7 +173,6 @@ export default function ProviderOrderDetailPage({ params }: { params: { id: stri
         predio: progressData.predio,
         seccion: progressData.seccion || "", // Incluir sección si existe
         rodal: progressData.rodal,
-        superficie: Number(progressData.superficie),
         cantidadPlantas: Number(progressData.cantidadPlantas || 0),
         cuadrilla: progressData.cuadrilla, // ID de la cuadrilla
         cuadrillaNombre: cuadrillaInfo.nombre, // Nombre de la cuadrilla
@@ -189,6 +188,11 @@ export default function ProviderOrderDetailPage({ params }: { params: { id: stri
         clon: progressData.clon || "",
         // Agregar el supervisorId
         supervisorId,
+      }
+
+      // Agregar superficie solo si está definida y no es NaN
+      if (progressData.superficie !== undefined && progressData.superficie !== "" && !isNaN(Number(progressData.superficie))) {
+        serverData.superficie = Number(progressData.superficie)
       }
 
       // Enviar al servidor
