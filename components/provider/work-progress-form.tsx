@@ -1151,12 +1151,52 @@ export function WorkProgressForm({
   const renderPodaForm = () => {
     // Calcular superficie automáticamente basándose en densidad y plantas para PODA
     const calcularSuperficiePoda = () => {
-      const densidad = Number(formData.densidad || 0)
-      const plantas = Number(formData.cantidadPlantas || 0)
+      const densidadRaw = formData.densidad || 0
+      const plantasRaw = formData.cantidadPlantas || 0
+      
+      const densidad = Number(densidadRaw)
+      const plantas = Number(plantasRaw)
 
-      if (densidad > 0 && plantas > 0) {
+      console.log("[CÁLCULO PODA] Valores raw:", { densidadRaw, plantasRaw })
+      console.log("[CÁLCULO PODA] Valores convertidos:", { densidad, plantas })
+      console.log("[CÁLCULO PODA] Tipos:", { 
+        densidadType: typeof densidad, 
+        plantasType: typeof plantas,
+        densidadIsNaN: isNaN(densidad),
+        plantasIsNaN: isNaN(plantas)
+      })
+
+      if (densidad > 0 && plantas > 0 && !isNaN(densidad) && !isNaN(plantas)) {
         const superficie = plantas / densidad
-        handleInputChange("superficie", superficie.toFixed(4))
+        console.log("[CÁLCULO PODA] Cálculo:", `${plantas} ÷ ${densidad} = ${superficie}`)
+        console.log("[CÁLCULO PODA] Resultado:", { 
+          plantas, 
+          densidad, 
+          superficie, 
+          superficieFormateada: superficie.toFixed(4),
+          superficieRedondeada: Math.round(superficie * 10000) / 10000
+        })
+        
+        // Validación adicional para evitar valores incorrectos
+        if (superficie > 1000) {
+          console.warn("[CÁLCULO PODA] ⚠️ Superficie muy alta detectada:", superficie)
+        }
+        
+        // Verificar si el resultado es razonable (entre 0.1 y 1000 ha)
+        if (superficie < 0.1) {
+          console.warn("[CÁLCULO PODA] ⚠️ Superficie muy baja detectada:", superficie)
+        }
+        
+        const superficieFinal = superficie.toFixed(4)
+        console.log("[CÁLCULO PODA] Valor final a guardar:", superficieFinal)
+        handleInputChange("superficie", superficieFinal)
+      } else {
+        console.log("[CÁLCULO PODA] Valores inválidos para cálculo:", { 
+          densidad, 
+          plantas, 
+          densidadValida: densidad > 0 && !isNaN(densidad),
+          plantasValidas: plantas > 0 && !isNaN(plantas)
+        })
       }
     }
 
@@ -1193,7 +1233,9 @@ export function WorkProgressForm({
             value={formData.densidad || ""}
             onChange={(e) => {
               handleInputChange("densidad", e.target.value)
-              // Calcular superficie automáticamente cuando cambia la densidad
+            }}
+            onBlur={() => {
+              // Calcular superficie automáticamente cuando se completa la entrada
               setTimeout(calcularSuperficiePoda, 100)
             }}
             placeholder="Ej: 1111 plantas/ha"
@@ -1370,7 +1412,14 @@ export function WorkProgressForm({
             value={formData.cantidadPlantas || ""}
             onChange={(e) => {
               handleInputChange("cantidadPlantas", e.target.value)
-              // Calcular superficie automáticamente cuando cambian las plantas
+              // Solo calcular cuando el valor esté completo (no en cada dígito)
+              const valor = e.target.value
+              if (valor && valor.length > 0 && !valor.includes("e")) {
+                // Usar onBlur en lugar de setTimeout para evitar cálculos intermedios
+              }
+            }}
+            onBlur={() => {
+              // Calcular superficie solo cuando se completa la entrada
               setTimeout(calcularSuperficiePoda, 100)
             }}
             placeholder="Número de plantas podadas"
@@ -1445,9 +1494,31 @@ export function WorkProgressForm({
         totalPlantas = Number(formData.cantidadPlantines || 0)
       }
 
+      console.log("[CÁLCULO PLANTACIÓN] Valores de entrada:", { 
+        densidad, 
+        totalPlantas, 
+        tipoCarga: formData.tipoCarga,
+        bandejas: formData.cantidadBandejas,
+        plantines: formData.cantidadPlantines 
+      })
+
       if (densidad > 0 && totalPlantas > 0) {
         const superficie = totalPlantas / densidad
+        console.log("[CÁLCULO PLANTACIÓN] Resultado:", { 
+          totalPlantas, 
+          densidad, 
+          superficie, 
+          superficieFormateada: superficie.toFixed(4) 
+        })
+        
+        // Validación adicional para evitar valores incorrectos
+        if (superficie > 1000) {
+          console.warn("[CÁLCULO PLANTACIÓN] ⚠️ Superficie muy alta detectada:", superficie)
+        }
+        
         handleInputChange("superficie", superficie.toFixed(4))
+      } else {
+        console.log("[CÁLCULO PLANTACIÓN] Valores inválidos para cálculo:", { densidad, totalPlantas })
       }
     }
 
@@ -1547,7 +1618,9 @@ export function WorkProgressForm({
             value={formData.densidad || ""}
             onChange={(e) => {
               handleInputChange("densidad", e.target.value)
-              // Calcular superficie automáticamente cuando cambia la densidad
+            }}
+            onBlur={() => {
+              // Calcular superficie automáticamente cuando se completa la entrada
               setTimeout(calcularSuperficie, 100)
             }}
             placeholder="Ej: 1111 plantas/ha"
@@ -1825,7 +1898,9 @@ export function WorkProgressForm({
                   // Calcular total de plantas automáticamente (40 plantas por bandeja)
                   const totalPlantas = bandejas * 40
                   handleInputChange("totalPlantas", totalPlantas.toString())
-                  // Recalcular superficie
+                }}
+                onBlur={() => {
+                  // Recalcular superficie solo cuando se completa la entrada
                   setTimeout(calcularSuperficie, 100)
                 }}
                 placeholder="Número de bandejas"
@@ -1865,7 +1940,9 @@ export function WorkProgressForm({
                 value={formData.cantidadPlantines || ""}
                 onChange={(e) => {
                   handleInputChange("cantidadPlantines", e.target.value)
-                  // Recalcular superficie
+                }}
+                onBlur={() => {
+                  // Recalcular superficie solo cuando se completa la entrada
                   setTimeout(calcularSuperficie, 100)
                 }}
                 placeholder="Número de plantines"
@@ -2720,6 +2797,13 @@ export function WorkProgressForm({
 
   // Función para manejar cambios en los inputs
   const handleInputChange = (field: string, value: string | boolean) => {
+    // Log específico para campos críticos del cálculo
+    if (field === "densidad" || field === "cantidadPlantas" || field === "superficie") {
+      console.log(`[INPUT][${field}] Valor anterior:`, formData[field])
+      console.log(`[INPUT][${field}] Nuevo valor:`, value)
+      console.log(`[INPUT][${field}] Tipo:`, typeof value)
+    }
+    
     setFormData((prev) => ({
       ...prev,
       [field]: value,
@@ -3008,6 +3092,24 @@ export function WorkProgressForm({
       console.log("[ENVÍO][DEBUG] Datos del formulario:", formData)
       console.log("[ENVÍO][DEBUG] Plantilla activa:", activeTemplate?.nombre)
       console.log("[ENVÍO][DEBUG] Datos a enviar:", submitData)
+
+      // ✅ NUEVA VALIDACIÓN: Verificar que la superficie sea correcta
+      if (submitData.superficie && submitData.superficie > 0) {
+        const superficieCalculada = submitData.cantidadPlantas && submitData.densidad 
+          ? submitData.cantidadPlantas / submitData.densidad 
+          : null
+        
+        console.log("[ENVÍO][VALIDACIÓN] Superficie a enviar:", submitData.superficie)
+        console.log("[ENVÍO][VALIDACIÓN] Superficie recalculada:", superficieCalculada)
+        
+        if (superficieCalculada && Math.abs(submitData.superficie - superficieCalculada) > 0.1) {
+          console.warn("[ENVÍO][VALIDACIÓN] ⚠️ Diferencia detectada en superficie:", {
+            enviada: submitData.superficie,
+            calculada: superficieCalculada,
+            diferencia: Math.abs(submitData.superficie - superficieCalculada)
+          })
+        }
+      }
 
       const result = await onSubmit(submitData)
 

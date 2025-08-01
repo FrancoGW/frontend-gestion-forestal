@@ -1,0 +1,714 @@
+"use client"
+
+import { useState, useMemo, useEffect } from "react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Badge } from "@/components/ui/badge"
+import { FilterIcon, RefreshCw, AlertTriangle, FileSpreadsheet, FileText, Calendar, Building, FileDown } from "lucide-react"
+import { useSupervisorData } from "@/hooks/use-supervisor-data"
+import { useAuth } from "@/hooks/use-auth"
+import * as XLSX from "xlsx"
+import { workOrdersAPI } from "@/lib/api-client"
+import jsPDF from "jspdf"
+import autoTable from "jspdf-autotable"
+
+type InformeAvance = {
+  fecha: string;
+  predio: string;
+  rodal: string;
+  actividad: string;
+  haAvanzada: number;
+  subtotal?: number;
+};
+
+type ResumenActividad = {
+  actividad: string;
+  haAvanzada: number;
+};
+
+export default function InformesAvancesPage() {
+  const { user } = useAuth()
+  const { supervisor, proveedores, avances, loading, error, refetch } = useSupervisorData()
+  
+  // Estados para los filtros
+  const [proveedorSeleccionado, setProveedorSeleccionado] = useState("")
+  const [fechaDesde, setFechaDesde] = useState("")
+  const [fechaHasta, setFechaHasta] = useState("")
+  const [generandoInforme, setGenerandoInforme] = useState(false)
+  const [generandoPDF, setGenerandoPDF] = useState(false)
+  
+  // Obtener las órdenes originales (con rodales) desde la API
+  const [ordenesOriginales, setOrdenesOriginales] = useState<any[]>([])
+  
+  // Cargar órdenes originales al montar el componente
+  useEffect(() => {
+    const cargarOrdenesOriginales = async () => {
+      try {
+        let pagina = 1
+        let todasLasOrdenes: any[] = []
+        let totalPaginas = 1
+        
+        do {
+          const response = await workOrdersAPI.getAll({ pagina, limite: 100 })
+          let ordenesData = []
+          
+          if (response) {
+            if (Array.isArray(response)) {
+              ordenesData = response
+            } else if (response.data && Array.isArray(response.data)) {
+              ordenesData = response.data
+            } else if (response.ordenes && Array.isArray(response.ordenes)) {
+              ordenesData = response.ordenes
+            } else if (response.results && Array.isArray(response.results)) {
+              ordenesData = response.results
+            }
+          }
+          
+          todasLasOrdenes = todasLasOrdenes.concat(ordenesData)
+          totalPaginas = response.paginacion?.paginas || 1
+          pagina++
+        } while (pagina <= totalPaginas)
+        
+        setOrdenesOriginales(todasLasOrdenes)
+      } catch (error) {
+        console.error('Error cargando órdenes originales:', error)
+      }
+    }
+    cargarOrdenesOriginales()
+  }, [])
+
+  // Función helper para formatear fechas en zona horaria de Argentina
+  const formatearFechaArgentina = (fechaString: string): string => {
+    try {
+      const fecha = new Date(fechaString);
+      const fechaArgentina = new Date(fecha.getTime() + (3 * 60 * 60 * 1000));
+      return fechaArgentina.toLocaleDateString("es-AR");
+    } catch (error) {
+      return new Date(fechaString).toLocaleDateString("es-AR");
+    }
+  };
+
+  // Función para obtener el nombre del proveedor seleccionado
+  const getNombreProveedorSeleccionado = () => {
+    if (!proveedorSeleccionado || proveedorSeleccionado === "all") {
+      return "Seleccionar EMSEFOR"
+    }
+    const proveedor = proveedores.find((p) => String(p.id) === proveedorSeleccionado)
+    return proveedor ? proveedor.nombre : "EMSEFOR no encontrado"
+  }
+
+  // Datos filtrados para el informe
+  const datosInforme = useMemo(() => {
+    let avancesFiltrados = [...avances]
+
+    // Filtrar por proveedor
+    if (proveedorSeleccionado && proveedorSeleccionado !== "all") {
+      avancesFiltrados = avancesFiltrados.filter((avance) => {
+        return Number(avance.proveedorId) === Number(proveedorSeleccionado)
+      })
+    }
+
+    // Filtrar por fechas
+    if (fechaDesde) {
+      avancesFiltrados = avancesFiltrados.filter((avance) => {
+        const avanceFecha = avance.fecha || avance.fechaRegistro || new Date().toISOString().split('T')[0]
+        return avanceFecha >= fechaDesde
+      })
+    }
+
+    if (fechaHasta) {
+      avancesFiltrados = avancesFiltrados.filter((avance) => {
+        const avanceFecha = avance.fecha || avance.fechaRegistro || new Date().toISOString().split('T')[0]
+        return avanceFecha <= fechaHasta
+      })
+    }
+
+    // Procesar datos para el informe
+    const informeData: InformeAvance[] = []
+
+    avancesFiltrados.forEach((avance) => {
+      // Buscar la orden de trabajo correspondiente
+      const orden = ordenesOriginales.find((o) => {
+        const ordenId = String(o._id || "");
+        const avanceOrdenId = String(avance.numeroOrden || avance.ordenTrabajoId || "");
+        return ordenId === avanceOrdenId;
+      });
+
+      informeData.push({
+        fecha: avance.fecha || avance.fechaRegistro || new Date().toISOString().split("T")[0],
+        predio: String(avance.predio || avance.campo || "Sin especificar"),
+        rodal: String(avance.rodal || "Sin especificar"),
+        actividad: String(avance.actividad || "Sin especificar"),
+        haAvanzada: Number(avance.superficie ?? 0),
+      })
+    })
+
+    // Ordenar por fecha, predio, rodal
+    return informeData.sort((a, b) => {
+      if (a.fecha !== b.fecha) return new Date(a.fecha).getTime() - new Date(b.fecha).getTime()
+      if (a.predio !== b.predio) return a.predio.localeCompare(b.predio)
+      return a.rodal.localeCompare(b.rodal)
+    })
+  }, [avances, proveedorSeleccionado, fechaDesde, fechaHasta, ordenesOriginales])
+
+  // Calcular resumen por actividades
+  const resumenActividades = useMemo(() => {
+    const resumen = new Map<string, number>()
+
+    datosInforme.forEach((item) => {
+      const actividad = item.actividad
+      const haActual = resumen.get(actividad) || 0
+      resumen.set(actividad, haActual + item.haAvanzada)
+    })
+
+    return Array.from(resumen.entries()).map(([actividad, haAvanzada]) => ({
+      actividad,
+      haAvanzada
+    })).sort((a, b) => b.haAvanzada - a.haAvanzada)
+  }, [datosInforme])
+
+  // Función para generar y descargar el informe en Excel
+  const generarInformeExcel = async () => {
+    if (datosInforme.length === 0) {
+      alert("No hay datos para generar el informe")
+      return
+    }
+
+    setGenerandoInforme(true)
+
+    try {
+      // Crear libro de Excel
+      const wb = XLSX.utils.book_new()
+
+      // Hoja 1: Informe de Avance (formato similar al de la imagen)
+      const informeData = [
+        // Header del informe
+        ["INFORME DE AVANCE"],
+        [""],
+        ["Período:", `${fechaDesde ? formatearFechaArgentina(fechaDesde) : "Inicio"} - ${fechaHasta ? formatearFechaArgentina(fechaHasta) : "Fin"}`],
+        ["EMSEFOR:", proveedorSeleccionado !== "all" ? getNombreProveedorSeleccionado() : "Todos los EMSEFOR"],
+        [""],
+        [""],
+        // Resumen por actividades
+        ["RESUMEN POR ACTIVIDADES"],
+        ["", ""],
+        ["Act.", "Ha Ava"],
+        ...resumenActividades.map(item => [item.actividad, item.haAvanzada.toFixed(1)]),
+        [""],
+        [""],
+        // Detalle por actividades
+        ["DETALLE POR ACTIVIDADES"],
+        ["", ""],
+        ["Fecha", "Predio", "Rodal", "Actividad", "Ha Ava", "Subtotal"],
+        ...datosInforme.map(item => [
+          formatearFechaArgentina(item.fecha),
+          item.predio,
+          item.rodal,
+          item.actividad,
+          item.haAvanzada.toFixed(1),
+          ""
+        ])
+      ]
+
+      const ws = XLSX.utils.aoa_to_sheet(informeData)
+
+      // Ajustar ancho de columnas
+      ws["!cols"] = [
+        { wch: 12 }, // Fecha
+        { wch: 15 }, // Predio
+        { wch: 10 }, // Rodal
+        { wch: 20 }, // Actividad
+        { wch: 10 }, // Ha Ava
+        { wch: 12 }, // Subtotal
+      ]
+
+      XLSX.utils.book_append_sheet(wb, ws, "Informe de Avance")
+
+      // Hoja 2: Datos detallados
+      const datosDetallados = datosInforme.map((item) => ({
+        "FECHA": formatearFechaArgentina(item.fecha),
+        "PREDIO": item.predio,
+        "RODAL": item.rodal,
+        "ACTIVIDAD": item.actividad,
+        "HA AVANZADA": item.haAvanzada.toFixed(1),
+      }))
+
+      const wsDetalle = XLSX.utils.json_to_sheet(datosDetallados)
+      wsDetalle["!cols"] = [
+        { wch: 12 },
+        { wch: 15 },
+        { wch: 10 },
+        { wch: 20 },
+        { wch: 12 },
+      ]
+      XLSX.utils.book_append_sheet(wb, wsDetalle, "Datos Detallados")
+
+      // Generar y descargar archivo
+      const wbArray = XLSX.write(wb, { bookType: "xlsx", type: "array" })
+      const blob = new Blob([wbArray], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })
+
+      // Generar nombre de archivo
+      let fileName = "informe_avances"
+      if (fechaDesde || fechaHasta) {
+        fileName += `_${fechaDesde || "inicio"}_${fechaHasta || "fin"}`
+      }
+      if (proveedorSeleccionado && proveedorSeleccionado !== "all") {
+        const prov = proveedores.find((p) => String(p.id) === proveedorSeleccionado)
+        if (prov) fileName += `_${prov.nombre.replace(/[^a-zA-Z0-9]/g, "_")}`
+      }
+      fileName += `_${new Date().toISOString().split("T")[0]}.xlsx`
+
+      // Crear link temporal para descarga
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.href = url
+      link.download = fileName
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+
+    } catch (error) {
+      console.error("Error generando informe:", error)
+      alert("Error al generar el informe")
+    } finally {
+      setGenerandoInforme(false)
+    }
+  }
+
+  // Función para generar y descargar el informe en PDF
+  const generarInformePDF = async () => {
+    if (datosInforme.length === 0) {
+      alert("No hay datos para generar el informe")
+      return
+    }
+
+    setGenerandoPDF(true)
+
+    try {
+      // Crear nuevo documento PDF
+      const doc = new jsPDF()
+      
+      // Configurar fuente y tamaños
+      const titleFontSize = 16
+      const subtitleFontSize = 12
+      const normalFontSize = 10
+      const smallFontSize = 8
+
+      let yPosition = 20
+
+      // Título principal
+      doc.setFontSize(titleFontSize)
+      doc.setFont("helvetica", "bold")
+      doc.text("INFORME DE AVANCE", 105, yPosition, { align: "center" })
+      yPosition += 15
+
+      // Información del período y EMSEFOR
+      doc.setFontSize(normalFontSize)
+      doc.setFont("helvetica", "normal")
+      doc.text(`Período: ${fechaDesde ? formatearFechaArgentina(fechaDesde) : "Inicio"} - ${fechaHasta ? formatearFechaArgentina(fechaHasta) : "Fin"}`, 20, yPosition)
+      yPosition += 8
+      doc.text(`EMSEFOR: ${proveedorSeleccionado !== "all" ? getNombreProveedorSeleccionado() : "Todos los EMSEFOR"}`, 20, yPosition)
+      yPosition += 15
+
+      // Resumen por actividades
+      doc.setFontSize(subtitleFontSize)
+      doc.setFont("helvetica", "bold")
+      doc.text("RESUMEN POR ACTIVIDADES", 20, yPosition)
+      yPosition += 10
+
+      // Tabla de resumen
+      const resumenTableData = resumenActividades.map(item => [
+        item.actividad,
+        item.haAvanzada.toFixed(1)
+      ])
+
+      autoTable(doc, {
+        head: [["Actividad", "Ha Ava"]],
+        body: resumenTableData,
+        startY: yPosition,
+        styles: {
+          fontSize: normalFontSize,
+          cellPadding: 3,
+        },
+        headStyles: {
+          fillColor: [66, 139, 202],
+          textColor: 255,
+          fontStyle: "bold",
+        },
+        alternateRowStyles: {
+          fillColor: [245, 245, 245],
+        },
+      })
+
+      yPosition = (doc as any).lastAutoTable.finalY + 15
+
+      // Detalle por actividades
+      doc.setFontSize(subtitleFontSize)
+      doc.setFont("helvetica", "bold")
+      doc.text("DETALLE POR ACTIVIDADES", 20, yPosition)
+      yPosition += 10
+
+      // Preparar datos para la tabla de detalle
+      const detalleTableData = datosInforme.map(item => [
+        formatearFechaArgentina(item.fecha),
+        item.predio,
+        item.rodal,
+        item.actividad,
+        item.haAvanzada.toFixed(1)
+      ])
+
+      // Tabla de detalle
+      autoTable(doc, {
+        head: [["Fecha", "Predio", "Rodal", "Actividad", "Ha Ava"]],
+        body: detalleTableData,
+        startY: yPosition,
+        styles: {
+          fontSize: smallFontSize,
+          cellPadding: 2,
+        },
+        headStyles: {
+          fillColor: [66, 139, 202],
+          textColor: 255,
+          fontStyle: "bold",
+        },
+        alternateRowStyles: {
+          fillColor: [245, 245, 245],
+        },
+        columnStyles: {
+          0: { cellWidth: 20 }, // Fecha
+          1: { cellWidth: 30 }, // Predio
+          2: { cellWidth: 20 }, // Rodal
+          3: { cellWidth: 40 }, // Actividad
+          4: { cellWidth: 20 }, // Ha Ava
+        },
+        didDrawPage: function (data) {
+          // Agregar numeración de páginas
+          const pageCount = doc.getNumberOfPages()
+          doc.setFontSize(8)
+          doc.text(`Página ${data.pageNumber} de ${pageCount}`, data.settings.margin.left, doc.internal.pageSize.height - 10)
+        },
+      })
+
+      // Generar nombre de archivo
+      let fileName = "informe_avances"
+      if (fechaDesde || fechaHasta) {
+        fileName += `_${fechaDesde || "inicio"}_${fechaHasta || "fin"}`
+      }
+      if (proveedorSeleccionado && proveedorSeleccionado !== "all") {
+        const prov = proveedores.find((p) => String(p.id) === proveedorSeleccionado)
+        if (prov) fileName += `_${prov.nombre.replace(/[^a-zA-Z0-9]/g, "_")}`
+      }
+      fileName += `_${new Date().toISOString().split("T")[0]}.pdf`
+
+      // Descargar PDF
+      doc.save(fileName)
+
+    } catch (error) {
+      console.error("Error generando PDF:", error)
+      alert("Error al generar el PDF")
+    } finally {
+      setGenerandoPDF(false)
+    }
+  }
+
+  // Función para limpiar filtros
+  const limpiarFiltros = () => {
+    setProveedorSeleccionado("")
+    setFechaDesde("")
+    setFechaHasta("")
+  }
+
+  if (loading) {
+    return (
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="space-y-2">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-4 w-96" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Skeleton className="h-20" />
+          <Skeleton className="h-20" />
+          <Skeleton className="h-20" />
+        </div>
+        <Skeleton className="h-96" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto p-6">
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      </div>
+    )
+  }
+
+  return (
+    <div className="container mx-auto p-6 space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-red-600">GENERADOR DE INFORMES DE AVANCES</h1>
+          <p className="text-muted-foreground">
+            Bienvenido, {supervisor?.nombre || user?.nombre || "Supervisor"} | Genera informes de avances por EMSEFOR y período
+          </p>
+        </div>
+        <Button onClick={refetch} variant="outline" size="sm" disabled={loading}>
+          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+          Actualizar
+        </Button>
+      </div>
+
+      {/* Filtros */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FilterIcon className="h-5 w-5" />
+            Filtros para el Informe
+          </CardTitle>
+          <CardDescription>Selecciona el EMSEFOR y el período para generar el informe en Excel o PDF</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end mb-4">
+            <div className="space-y-2">
+              <Label htmlFor="proveedor" className="text-sm font-medium bg-blue-200 px-2 py-1 rounded">
+                EMSEFOR
+              </Label>
+              <Select value={proveedorSeleccionado} onValueChange={setProveedorSeleccionado}>
+                <SelectTrigger>
+                  <SelectValue>{getNombreProveedorSeleccionado()}</SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los EMSEFOR</SelectItem>
+                  {proveedores.map((p) => (
+                    <SelectItem key={p.id} value={String(p.id)}>{p.nombre}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="fecha-desde" className="text-sm font-medium bg-yellow-200 px-2 py-1 rounded">
+                Fecha Desde
+              </Label>
+              <Input
+                id="fecha-desde"
+                type="date"
+                value={fechaDesde}
+                onChange={(e) => setFechaDesde(e.target.value)}
+                className="w-full"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="fecha-hasta" className="text-sm font-medium bg-yellow-200 px-2 py-1 rounded">
+                Fecha Hasta
+              </Label>
+              <Input
+                id="fecha-hasta"
+                type="date"
+                value={fechaHasta}
+                onChange={(e) => setFechaHasta(e.target.value)}
+                className="w-full"
+              />
+            </div>
+          </div>
+
+          <div className="flex gap-2 justify-end">
+            <Button onClick={limpiarFiltros} variant="outline" size="sm">
+              Limpiar Filtros
+            </Button>
+            <Button 
+              onClick={generarInformeExcel} 
+              variant="default" 
+              size="sm" 
+              disabled={datosInforme.length === 0 || generandoInforme}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              <FileSpreadsheet className="h-4 w-4 mr-2" />
+              {generandoInforme ? "Generando..." : "Generar Excel"}
+            </Button>
+            <Button 
+              onClick={generarInformePDF} 
+              variant="default" 
+              size="sm" 
+              disabled={datosInforme.length === 0 || generandoPDF}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              <FileDown className="h-4 w-4 mr-2" />
+              {generandoPDF ? "Generando..." : "Generar PDF"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Resumen de filtros aplicados */}
+      {(proveedorSeleccionado || fechaDesde || fechaHasta) && (
+        <div className="flex flex-wrap gap-2">
+          {proveedorSeleccionado && proveedorSeleccionado !== "all" && (
+            <Badge variant="secondary" className="flex items-center gap-1">
+              <Building className="h-3 w-3" />
+              EMSEFOR: {proveedores.find((p) => String(p.id) === proveedorSeleccionado)?.nombre}
+            </Badge>
+          )}
+          {fechaDesde && (
+            <Badge variant="secondary" className="flex items-center gap-1">
+              <Calendar className="h-3 w-3" />
+              Desde: {formatearFechaArgentina(fechaDesde)}
+            </Badge>
+          )}
+          {fechaHasta && (
+            <Badge variant="secondary" className="flex items-center gap-1">
+              <Calendar className="h-3 w-3" />
+              Hasta: {formatearFechaArgentina(fechaHasta)}
+            </Badge>
+          )}
+        </div>
+      )}
+
+      {/* Estadísticas rápidas */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-blue-600">{datosInforme.length}</div>
+            <div className="text-sm text-muted-foreground">Registros</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-green-600">
+              {datosInforme.reduce((sum, item) => sum + item.haAvanzada, 0).toFixed(1)}
+            </div>
+            <div className="text-sm text-muted-foreground">Total Hectáreas</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-purple-600">{resumenActividades.length}</div>
+            <div className="text-sm text-muted-foreground">Actividades</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-orange-600">
+              {new Set(datosInforme.map(item => item.predio)).size}
+            </div>
+            <div className="text-sm text-muted-foreground">Predios</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Vista previa del informe */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Resumen por actividades */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Resumen por Actividades
+            </CardTitle>
+            <CardDescription>Total de hectáreas por tipo de actividad</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-blue-50">
+                    <TableHead className="font-bold">Actividad</TableHead>
+                    <TableHead className="font-bold text-right">Ha Ava</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {resumenActividades.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={2} className="text-center py-8 text-muted-foreground">
+                        No hay datos para mostrar
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    resumenActividades.map((item, index) => (
+                      <TableRow key={index}>
+                        <TableCell className="font-medium">{item.actividad}</TableCell>
+                        <TableCell className="text-right font-bold">{item.haAvanzada.toFixed(1)}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                  {resumenActividades.length > 0 && (
+                    <TableRow className="bg-gray-100 font-bold">
+                      <TableCell>TOTAL:</TableCell>
+                      <TableCell className="text-right">
+                        {resumenActividades.reduce((sum, item) => sum + item.haAvanzada, 0).toFixed(1)}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Detalle por actividades */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Detalle por Actividades
+            </CardTitle>
+            <CardDescription>Desglose detallado de avances</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-md border max-h-96 overflow-y-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-blue-50">
+                    <TableHead className="font-bold">Fecha</TableHead>
+                    <TableHead className="font-bold">Predio</TableHead>
+                    <TableHead className="font-bold">Rodal</TableHead>
+                    <TableHead className="font-bold">Actividad</TableHead>
+                    <TableHead className="font-bold text-right">Ha Ava</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {datosInforme.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                        No hay datos para mostrar
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    datosInforme.slice(0, 20).map((item, index) => (
+                      <TableRow key={index}>
+                        <TableCell className="text-sm">{formatearFechaArgentina(item.fecha)}</TableCell>
+                        <TableCell className="font-medium">{item.predio}</TableCell>
+                        <TableCell>{item.rodal}</TableCell>
+                        <TableCell>{item.actividad}</TableCell>
+                        <TableCell className="text-right">{item.haAvanzada.toFixed(1)}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                  {datosInforme.length > 20 && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-4 text-muted-foreground">
+                        Mostrando 20 de {datosInforme.length} registros. Descarga el Excel para ver todos.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  )
+} 

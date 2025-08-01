@@ -5,12 +5,13 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { Home, Users, ClipboardList, TrendingUp, LogOut } from "lucide-react"
+import { Home, Users, ClipboardList, TrendingUp, LogOut, FileText } from "lucide-react"
 
 const navigation = [
   { name: "Dashboard", href: "/supervisor", icon: Home },
   { name: "Mis Proveedores", href: "/supervisor/proveedores", icon: Users },
   { name: "Órdenes de Trabajo", href: "/supervisor/ordenes", icon: ClipboardList },
+  { name: "Informes de Avances", href: "/supervisor/informes", icon: FileText },
 ]
 
 export function SupervisorSidebar() {
