@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
@@ -479,8 +480,8 @@ export default function InformesAvancesPage() {
           <CardDescription>Selecciona el EMSEFOR y el período para generar el informe en Excel o PDF</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end mb-4">
-            <div className="space-y-2">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mb-4">
+            <div className="space-y-2 md:col-span-2">
               <Label htmlFor="proveedor" className="text-sm font-medium bg-blue-200 px-2 py-1 rounded">
                 EMSEFOR
               </Label>
@@ -576,139 +577,122 @@ export default function InformesAvancesPage() {
         </div>
       )}
 
-      {/* Estadísticas rápidas */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-blue-600">{datosInforme.length}</div>
-            <div className="text-sm text-muted-foreground">Registros</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-green-600">
-              {datosInforme.reduce((sum, item) => sum + item.haAvanzada, 0).toFixed(1)}
+      {/* Pestañas estilo Excel */}
+      <Card>
+        <CardContent className="p-0">
+          <Tabs defaultValue="resumen" className="w-full">
+            <div className="border-b">
+              <TabsList className="grid w-full grid-cols-2 h-12 bg-gray-100">
+                <TabsTrigger 
+                  value="resumen" 
+                  className="data-[state=active]:bg-red-500 data-[state=active]:text-white data-[state=active]:shadow-none rounded-t-lg border-r border-gray-300"
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Resumen por Actividades
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="detalle" 
+                  className="data-[state=active]:bg-red-500 data-[state=active]:text-white data-[state=active]:shadow-none rounded-t-lg"
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Detalle por Actividades
+                </TabsTrigger>
+              </TabsList>
             </div>
-            <div className="text-sm text-muted-foreground">Total Hectáreas</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-purple-600">{resumenActividades.length}</div>
-            <div className="text-sm text-muted-foreground">Actividades</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-orange-600">
-              {new Set(datosInforme.map(item => item.predio)).size}
-            </div>
-            <div className="text-sm text-muted-foreground">Predios</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Vista previa del informe */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Resumen por actividades */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Resumen por Actividades
-            </CardTitle>
-            <CardDescription>Total de hectáreas por tipo de actividad</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-blue-50">
-                    <TableHead className="font-bold">Actividad</TableHead>
-                    <TableHead className="font-bold text-right">Ha Ava</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {resumenActividades.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={2} className="text-center py-8 text-muted-foreground">
-                        No hay datos para mostrar
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    resumenActividades.map((item, index) => (
-                      <TableRow key={index}>
-                        <TableCell className="font-medium">{item.actividad}</TableCell>
-                        <TableCell className="text-right font-bold">{item.haAvanzada.toFixed(1)}</TableCell>
+            
+            <TabsContent value="resumen" className="p-6">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Resumen por Actividades</h3>
+                  <p className="text-sm text-gray-600">Total de hectáreas por tipo de actividad</p>
+                </div>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-blue-50">
+                        <TableHead className="font-bold">Actividad</TableHead>
+                        <TableHead className="font-bold text-right">Ha Ava</TableHead>
                       </TableRow>
-                    ))
-                  )}
-                  {resumenActividades.length > 0 && (
-                    <TableRow className="bg-gray-100 font-bold">
-                      <TableCell>TOTAL:</TableCell>
-                      <TableCell className="text-right">
-                        {resumenActividades.reduce((sum, item) => sum + item.haAvanzada, 0).toFixed(1)}
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Detalle por actividades */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Detalle por Actividades
-            </CardTitle>
-            <CardDescription>Desglose detallado de avances</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="rounded-md border max-h-96 overflow-y-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-blue-50">
-                    <TableHead className="font-bold">Fecha</TableHead>
-                    <TableHead className="font-bold">Predio</TableHead>
-                    <TableHead className="font-bold">Rodal</TableHead>
-                    <TableHead className="font-bold">Actividad</TableHead>
-                    <TableHead className="font-bold text-right">Ha Ava</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {datosInforme.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                        No hay datos para mostrar
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    datosInforme.slice(0, 20).map((item, index) => (
-                      <TableRow key={index}>
-                        <TableCell className="text-sm">{formatearFechaArgentina(item.fecha)}</TableCell>
-                        <TableCell className="font-medium">{item.predio}</TableCell>
-                        <TableCell>{item.rodal}</TableCell>
-                        <TableCell>{item.actividad}</TableCell>
-                        <TableCell className="text-right">{item.haAvanzada.toFixed(1)}</TableCell>
+                    </TableHeader>
+                    <TableBody>
+                      {resumenActividades.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={2} className="text-center py-8 text-muted-foreground">
+                            No hay datos para mostrar
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        resumenActividades.map((item, index) => (
+                          <TableRow key={index}>
+                            <TableCell className="font-medium">{item.actividad}</TableCell>
+                            <TableCell className="text-right font-bold">{item.haAvanzada.toFixed(1)}</TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                      {resumenActividades.length > 0 && (
+                        <TableRow className="bg-gray-100 font-bold">
+                          <TableCell>TOTAL:</TableCell>
+                          <TableCell className="text-right">
+                            {resumenActividades.reduce((sum, item) => sum + item.haAvanzada, 0).toFixed(1)}
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="detalle" className="p-6">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Detalle por Actividades</h3>
+                  <p className="text-sm text-gray-600">Desglose detallado de avances</p>
+                </div>
+                <div className="rounded-md border max-h-96 overflow-y-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-blue-50">
+                        <TableHead className="font-bold">Fecha</TableHead>
+                        <TableHead className="font-bold">Predio</TableHead>
+                        <TableHead className="font-bold">Rodal</TableHead>
+                        <TableHead className="font-bold">Actividad</TableHead>
+                        <TableHead className="font-bold text-right">Ha Ava</TableHead>
                       </TableRow>
-                    ))
-                  )}
-                  {datosInforme.length > 20 && (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center py-4 text-muted-foreground">
-                        Mostrando 20 de {datosInforme.length} registros. Descarga el Excel para ver todos.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+                    </TableHeader>
+                    <TableBody>
+                      {datosInforme.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                            No hay datos para mostrar
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        datosInforme.slice(0, 20).map((item, index) => (
+                          <TableRow key={index}>
+                            <TableCell className="text-sm">{formatearFechaArgentina(item.fecha)}</TableCell>
+                            <TableCell className="font-medium">{item.predio}</TableCell>
+                            <TableCell>{item.rodal}</TableCell>
+                            <TableCell>{item.actividad}</TableCell>
+                            <TableCell className="text-right">{item.haAvanzada.toFixed(1)}</TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                      {datosInforme.length > 20 && (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center py-4 text-muted-foreground">
+                            Mostrando 20 de {datosInforme.length} registros. Descarga el Excel para ver todos.
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   )
 } 
