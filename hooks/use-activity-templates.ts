@@ -853,6 +853,38 @@ const DEFAULT_TEMPLATES: ActivityTemplate[] = [
     ],
     activo: true,
   },
+  {
+    id: "preparacion-terreno-template",
+    nombre: "PREPARACION DE TERRENO (TAIPAS - SAVANNAGH ETC.)",
+    descripcion: "Plantilla para actividades de preparación de terreno incluyendo taipas, savannagh y otros métodos.",
+    actividadCodigo: "SAP013",
+    categoria: "Manejo Forestal",
+    unidad: "Ha",
+    patronesCoincidencia: [
+      "preparacion de terreno",
+      "preparación de terreno", 
+      "taipas",
+      "savannagh",
+      "preparacion terreno",
+      "preparación terreno",
+      "terreno preparacion",
+      "terreno preparación",
+      "preparacion del terreno",
+      "preparación del terreno"
+    ],
+    campos: [
+      { id: "fecha", nombre: "Fecha", tipo: "fecha", requerido: true, orden: 1, esDelSistema: true },
+      { id: "predio", nombre: "Predio", tipo: "texto", requerido: true, orden: 2, esDelSistema: true },
+      { id: "rodal", nombre: "Rodal", tipo: "seleccion", requerido: true, orden: 3, esDelSistema: true },
+      { id: "cuadrilla", nombre: "Cuadrilla", tipo: "seleccion", requerido: true, orden: 4, esDelSistema: true },
+      { id: "implemento", nombre: "Implemento", tipo: "seleccion", requerido: true, orden: 5, opciones: ["Topadora", "Tractor"], esDelSistema: true },
+      { id: "jornal", nombre: "Jornal", tipo: "numero", requerido: true, orden: 6, unidad: "hs", esDelSistema: true },
+      { id: "ha", nombre: "Ha", tipo: "numero", requerido: true, orden: 7, unidad: "Ha", esDelSistema: true },
+      { id: "estado", nombre: "Estado", tipo: "seleccion", requerido: true, orden: 8, opciones: ["Pendiente", "R7 (terminado)"], esDelSistema: true },
+      { id: "observaciones", nombre: "Observaciones", tipo: "textarea", requerido: false, orden: 9, esDelSistema: false },
+    ],
+    activo: true,
+  },
 ]
 
 const FRONTEND_VERSION = "2024-07-09-1"; // Cambia este valor en cada deploy relevante
@@ -952,6 +984,7 @@ export function useActivityTemplates() {
 
       // 2. SEGUNDO: Buscar por patrones específicos en orden de prioridad MEJORADO
       const templatePriority = [
+        "PREPARACION DE TERRENO (TAIPAS - SAVANNAGH ETC.)", // Nueva plantilla de preparación de terreno
         "QUEMAS CONTROLADAS", // Nueva plantilla agregada con alta prioridad
         "CONTROL DE MALEZAS", // Más específico primero para evitar conflictos
         "CONTROL DE HORMIGAS",

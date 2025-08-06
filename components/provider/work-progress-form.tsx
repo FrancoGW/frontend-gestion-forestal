@@ -165,6 +165,8 @@ export function WorkProgressForm({
     operarios: "",
     jornales: "",
     implemento: "",
+    // Campos específicos para PREPARACION DE TERRENO
+    jornal: "",
   })
 
   // Estado para productos dinámicos con unidad de medida
@@ -238,6 +240,12 @@ export function WorkProgressForm({
     if (!templateName) return false
     const name = templateName.toLowerCase()
     return name.includes("control de regeneracion") || name.includes("regeneracion")
+  }
+
+  const isPreparacionTerrenoTemplate = (templateName?: string) => {
+    if (!templateName) return false
+    const name = templateName.toLowerCase()
+    return name.includes("preparacion de terreno") || name.includes("taipas") || name.includes("savannagh")
   }
 
   // Función para calcular tiempo automáticamente
@@ -2818,6 +2826,9 @@ export function WorkProgressForm({
     if (isControlRegeneracionTemplate(activeTemplate?.nombre)) {
       // Campos específicos para Control de regeneración de pinos
       requiredFields = ["estado", "fecha", "predio", "rodal", "cuadrilla", "implemento", "operarios", "ha", "jornales"]
+    } else if (isPreparacionTerrenoTemplate(activeTemplate?.nombre)) {
+      // Campos específicos para Preparación de terreno
+      requiredFields = ["fecha", "predio", "rodal", "cuadrilla", "implemento", "jornal", "ha"]
     } else {
       // Para otras plantillas, usar la lógica existente
       requiredFields = ["fecha", "cuadrilla"]
@@ -2832,8 +2843,8 @@ export function WorkProgressForm({
         requiredFields.push("jornada")
       }
 
-      // Agregar superficie solo si NO es control de regeneración
-      if (!isControlRegeneracionTemplate(activeTemplate?.nombre)) {
+      // Agregar superficie solo si NO es control de regeneración y NO es preparación de terreno
+      if (!isControlRegeneracionTemplate(activeTemplate?.nombre) && !isPreparacionTerrenoTemplate(activeTemplate?.nombre)) {
         requiredFields.push("superficie")
       }
     }
@@ -2905,11 +2916,26 @@ export function WorkProgressForm({
       }
     }
 
-    // Validar superficie solo si NO es control de regeneración
-    if (!isControlRegeneracionTemplate(activeTemplate?.nombre)) {
+    // Validar superficie solo si NO es control de regeneración y NO es preparación de terreno
+    if (!isControlRegeneracionTemplate(activeTemplate?.nombre) && !isPreparacionTerrenoTemplate(activeTemplate?.nombre)) {
       const superficie = Number(formData.superficie)
       if (superficie <= 0) {
         setError("La superficie debe ser mayor a 0")
+        return false
+      }
+    }
+    
+    // Validar Ha para preparación de terreno
+    if (isPreparacionTerrenoTemplate(activeTemplate?.nombre)) {
+      const ha = Number(formData.ha)
+      if (ha <= 0) {
+        setError("Las hectáreas deben ser mayor a 0")
+        return false
+      }
+      
+      const jornal = Number(formData.jornal)
+      if (jornal <= 0) {
+        setError("El jornal debe ser mayor a 0")
         return false
       }
     }
@@ -2970,6 +2996,22 @@ export function WorkProgressForm({
           ha: Number(formData.ha || 0),
           superficie: Number(formData.ha || 0), // Mapear ha a superficie para el backend
           jornales: Number(formData.jornales || 0),
+          observaciones: formData.observaciones || "",
+        }
+      } else if (isPreparacionTerrenoTemplate(activeTemplate?.nombre)) {
+        // Para Preparación de terreno, construir el objeto específico
+        submitData = {
+          ...submitData,
+          estado: formData.estado || "Pendiente",
+          fecha: formatDateForArgentina(formData.fecha || getCurrentDateForArgentina()),
+          predio: formData.predio || workOrder?.campo || "",
+          rodal: formData.rodal || "",
+          cuadrilla: formData.cuadrilla || "",
+          cuadrillaId: formData.cuadrillaId || "",
+          implemento: formData.implemento || "",
+          jornal: Number(formData.jornal || 0),
+          ha: Number(formData.ha || 0),
+          superficie: Number(formData.ha || 0), // Mapear ha a superficie para el backend
           observaciones: formData.observaciones || "",
         }
       } else {
@@ -3397,7 +3439,9 @@ export function WorkProgressForm({
                     ? renderRaleoForm()
                     : isQuemasControladasTemplate(activeTemplate?.nombre)
                       ? renderQuemasControladasForm()
-                      : renderGenericForm()}
+                      : isPreparacionTerrenoTemplate(activeTemplate?.nombre)
+                        ? renderGenericForm()
+                        : renderGenericForm()}
 
           {/* Mensajes de estado */}
           {error && (
