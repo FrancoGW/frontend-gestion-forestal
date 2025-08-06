@@ -47,6 +47,14 @@ export default function InformesAvancesPage() {
   // Obtener las órdenes originales (con rodales) desde la API
   const [ordenesOriginales, setOrdenesOriginales] = useState<any[]>([])
   
+  // Debug: Log de datos cargados
+  useEffect(() => {
+    console.log("🔍 [INFORMES DEBUG] Supervisor:", supervisor)
+    console.log("🔍 [INFORMES DEBUG] Proveedores dinámicos:", proveedores)
+    console.log("🔍 [INFORMES DEBUG] Avances del supervisor:", avances)
+    console.log("🔍 [INFORMES DEBUG] Total avances:", avances.length)
+  }, [supervisor, proveedores, avances])
+
   // Cargar órdenes originales al montar el componente
   useEffect(() => {
     const cargarOrdenesOriginales = async () => {
@@ -578,7 +586,7 @@ export default function InformesAvancesPage() {
       )}
 
       {/* Pestañas estilo Excel */}
-      <Card>
+      <Card className="max-w-4xl mx-auto">
         <CardContent className="p-0">
           <Tabs defaultValue="resumen" className="w-full">
             <div className="border-b">
@@ -600,8 +608,8 @@ export default function InformesAvancesPage() {
               </TabsList>
             </div>
             
-            <TabsContent value="resumen" className="p-6">
-              <div className="space-y-4">
+            <TabsContent value="resumen" className="p-4">
+              <div className="space-y-3">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">Resumen por Actividades</h3>
                   <p className="text-sm text-gray-600">Total de hectáreas por tipo de actividad</p>
@@ -610,8 +618,8 @@ export default function InformesAvancesPage() {
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-blue-50">
-                        <TableHead className="font-bold">Actividad</TableHead>
-                        <TableHead className="font-bold text-right">Ha Ava</TableHead>
+                        <TableHead className="font-bold w-2/3">Actividad</TableHead>
+                        <TableHead className="font-bold text-right w-1/3">Ha Ava</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -643,8 +651,8 @@ export default function InformesAvancesPage() {
               </div>
             </TabsContent>
             
-            <TabsContent value="detalle" className="p-6">
-              <div className="space-y-4">
+            <TabsContent value="detalle" className="p-4">
+              <div className="space-y-3">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">Detalle por Actividades</h3>
                   <p className="text-sm text-gray-600">Desglose detallado de avances</p>

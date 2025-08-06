@@ -104,69 +104,177 @@ export function useSupervisorData() {
     return emailToIdMap[email.toLowerCase()] || null
   }
 
-  // Función para obtener proveedores asignados obteniendo todos los supervisores y filtrando
-  const getProveedoresAsignadosFromAPI = async (supervisorEmail: string): Promise<ProveedorData[]> => {
-    // Obtener el ID del supervisor basado en el email
-    const supervisorId = getSupervisorIdFromEmail(supervisorEmail)
-    if (!supervisorId) {
-      return [] // Si no hay ID, no hay proveedores
-    }
-    try {
-      // Obtener todos los supervisores
-      const response = await apiClient.get("/api/supervisores", { timeout: 10000 })
-      if (response.data && response.data.success) {
-        const supervisores = response.data.data || []
-        // Filtrar para encontrar el supervisor por su _id
-        const supervisor = supervisores.find((s: any) => s._id === supervisorId || s.id === supervisorId)
-        if (!supervisor) {
-          return []
-        }
-        // Acceder a proveedoresAsignados
-        const proveedoresAsignados = supervisor.proveedoresAsignados || []
-        const proveedoresTransformados: ProveedorData[] = proveedoresAsignados.map((p: any) => ({
-          id: Number(p.proveedorId) || Number(p.id) || Number(p._id) || Math.floor(Math.random() * 10000),
-          nombre: p.nombre || "Sin nombre",
-          razonSocial: p.nombre || "Sin razón social",
-          fechaAsignacion: p.fechaAsignacion,
-          cuit: p.cuit || "",
-          telefono: p.telefono || "",
-          email: p.email || "",
-        }))
-        return proveedoresTransformados
-      } else {
-        return []
-      }
-    } catch (err: any) {
-      return []
-    }
-  }
-
   // Función para cargar datos del supervisor
   const loadSupervisorData = async () => {
     // Usar los datos del usuario autenticado
     const supervisorData: SupervisorData = {
       id: user?.id || "supervisor-1",
-      nombre: user?.nombre || user?.name || "Supervisor",
+      nombre: user?.nombre || "Supervisor",
       email: user?.email || "supervisor@example.com",
       telefono: user?.telefono || "+54 11 1234-5678",
     }
 
-   
     setSupervisor(supervisorData)
     return supervisorData
   }
 
-  // Función para cargar proveedores desde la API
+  // Función para enriquecer datos de proveedores con información completa
+  const enriquecerDatosProveedores = async (proveedoresBasicos: ProveedorData[]): Promise<ProveedorData[]> => {
+    try {
+      const response = await apiClient.get("/api/supervisores")
+      if (response.data && response.data.success) {
+        const supervisoresAPI = response.data.data || []
+        
+        // Crear un mapa de todos los proveedores disponibles
+        const proveedoresCompletos = new Map<number, any>()
+        supervisoresAPI.forEach((supervisor: any) => {
+          const proveedoresAsignados = supervisor.proveedoresAsignados || []
+          proveedoresAsignados.forEach((p: any) => {
+            const proveedorId = Number(p.proveedorId)
+            if (!proveedoresCompletos.has(proveedorId)) {
+              proveedoresCompletos.set(proveedorId, {
+                id: proveedorId,
+                nombre: p.nombre || "Sin nombre",
+                razonSocial: p.nombre || "Sin razón social",
+                fechaAsignacion: p.fechaAsignacion,
+                cuit: p.cuit || "",
+                telefono: p.telefono || "",
+                email: p.email || "",
+              })
+            }
+          })
+        })
+
+        // Enriquecer los proveedores básicos con datos completos
+        return proveedoresBasicos.map(proveedor => {
+          const proveedorCompleto = proveedoresCompletos.get(proveedor.id)
+          if (proveedorCompleto) {
+            return {
+              ...proveedor,
+              cuit: proveedorCompleto.cuit || proveedor.cuit,
+              telefono: proveedorCompleto.telefono || proveedor.telefono,
+              email: proveedorCompleto.email || proveedor.email,
+            }
+          }
+          return proveedor
+        })
+      }
+      return proveedoresBasicos
+    } catch (err) {
+      console.error("Error al enriquecer datos de proveedores:", err)
+      return proveedoresBasicos
+    }
+  }
+
+  // Función para cargar proveedores dinámicamente desde órdenes y avances de trabajo
   const loadProveedores = async (supervisorData: SupervisorData) => {
-   
+    try {
+      // Obtener el ID del supervisor
+      const supervisorId = getSupervisorIdFromEmail(supervisorData.email || "")
+      if (!supervisorId) {
+        console.log("No se encontró supervisorId, devolviendo array vacío")
+        setProveedores([])
+        return []
+      }
 
-    const proveedoresData = await getProveedoresAsignadosFromAPI(
-      supervisorData.email || "cecilia.pizzini@supervisor.com",
-    )
+      const proveedoresUnicos = new Map<number, any>()
 
-   
-    setProveedores(proveedoresData)
-    return proveedoresData
+      // 1. Obtener proveedores desde las órdenes de trabajo
+      const responseOrdenes = await workOrdersAPI.getAll()
+      let ordenesData = []
+
+      if (responseOrdenes) {
+        if (Array.isArray(responseOrdenes)) {
+          ordenesData = responseOrdenes
+        } else if (responseOrdenes.data && Array.isArray(responseOrdenes.data)) {
+          ordenesData = responseOrdenes.data
+        } else if (responseOrdenes.ordenes && Array.isArray(responseOrdenes.ordenes)) {
+          ordenesData = responseOrdenes.ordenes
+        } else if (responseOrdenes.results && Array.isArray(responseOrdenes.results)) {
+          ordenesData = responseOrdenes.results
+        }
+      }
+
+      // Filtrar órdenes por supervisor_id
+      const ordenesDelSupervisor = ordenesData.filter((orden: any) => {
+        return supervisorId && (orden.supervisor_id === supervisorId || orden.usuario_id === supervisorId)
+      })
+
+      console.log(`Órdenes encontradas para supervisor ${supervisorId}:`, ordenesDelSupervisor.length)
+
+      // Extraer proveedores únicos de las órdenes del supervisor
+      ordenesDelSupervisor.forEach((orden: any) => {
+        const proveedorId = Number(orden.cod_empres || orden.proveedorId || orden.empresaId || 0)
+        const proveedorNombre = orden.empresa || orden.proveedor || "Sin nombre"
+        
+        if (proveedorId && !proveedoresUnicos.has(proveedorId)) {
+          proveedoresUnicos.set(proveedorId, {
+            id: proveedorId,
+            nombre: proveedorNombre,
+            razonSocial: proveedorNombre,
+            fechaAsignacion: orden.fecha || new Date().toISOString(),
+            cuit: "",
+            telefono: "",
+            email: "",
+            fuente: "orden"
+          })
+        }
+      })
+
+      // 2. Obtener proveedores desde los avances de trabajo
+      const responseAvances = await avancesTrabajoAPI.getAll()
+      let avancesData = []
+
+      if (responseAvances) {
+        if (Array.isArray(responseAvances)) {
+          avancesData = responseAvances
+        } else if (responseAvances.data && Array.isArray(responseAvances.data)) {
+          avancesData = responseAvances.data
+        } else if (responseAvances.avances && Array.isArray(responseAvances.avances)) {
+          avancesData = responseAvances.avances
+        } else if (responseAvances.results && Array.isArray(responseAvances.results)) {
+          avancesData = responseAvances.results
+        }
+      }
+
+      // Filtrar avances por supervisorId
+      const avancesDelSupervisor = avancesData.filter((avance: any) => Number(avance.supervisorId) === supervisorId)
+      
+      console.log(`Avances encontrados para supervisor ${supervisorId}:`, avancesDelSupervisor.length)
+
+      // Extraer proveedores únicos de los avances del supervisor
+      avancesDelSupervisor.forEach((avance: any) => {
+        const proveedorId = Number(avance.proveedorId || 0)
+        const proveedorNombre = avance.proveedor || avance.proveedorNombre || "Sin nombre"
+        
+        if (proveedorId && !proveedoresUnicos.has(proveedorId)) {
+          proveedoresUnicos.set(proveedorId, {
+            id: proveedorId,
+            nombre: proveedorNombre,
+            razonSocial: proveedorNombre,
+            fechaAsignacion: avance.fecha || new Date().toISOString(),
+            cuit: "",
+            telefono: "",
+            email: "",
+            fuente: "avance"
+          })
+        }
+      })
+
+      const proveedoresBasicos = Array.from(proveedoresUnicos.values())
+      console.log(`Proveedores dinámicos encontrados para supervisor ${supervisorId}:`, proveedoresBasicos)
+      console.log(`Total proveedores únicos: ${proveedoresBasicos.length}`)
+      
+      // Enriquecer con datos completos desde la API de supervisores
+      const proveedoresData = await enriquecerDatosProveedores(proveedoresBasicos)
+      
+      setProveedores(proveedoresData)
+      return proveedoresData
+    } catch (err) {
+      console.error("Error al cargar proveedores dinámicamente:", err)
+      setProveedores([])
+      return []
+    }
   }
 
   // Función para cargar órdenes de trabajo
@@ -211,19 +319,12 @@ export function useSupervisorData() {
 
      
 
-      const proveedorIds = new Set(proveedoresData.map((p) => p.id))
       const proveedorMap = new Map(proveedoresData.map((p) => [p.id, p]))
 
       // Transformar órdenes filtradas
       const ordenesTransformadas = ordenesFiltradas
         .map((orden: any) => {
           const proveedorId = Number(orden.cod_empres || orden.proveedorId || orden.empresaId || 0)
-
-          // Solo incluir órdenes de proveedores asignados
-          if (!proveedorIds.has(proveedorId)) {
-            return null
-          }
-
           const proveedor = proveedorMap.get(proveedorId)
 
           let superficieTotal = 0
@@ -323,6 +424,7 @@ export function useSupervisorData() {
           const ordenId = Number(avance.ordenTrabajoId)
           let orden = ordenesData.find((o) => o.id === ordenId)
           if (!orden) {
+            // Si no encuentra la orden, crear una orden básica con datos del avance
             orden = {
               id: ordenId,
               numero: String(ordenId),
@@ -330,7 +432,7 @@ export function useSupervisorData() {
               actividad: avance.actividad || "Sin especificar",
               campo: avance.predio || avance.campo || "Sin especificar",
               proveedor: avance.proveedor || "Sin asignar",
-              proveedorId: avance.proveedorId || 0,
+              proveedorId: Number(avance.proveedorId) || 0,
               estado: avance.estado || "Pendiente",
               superficie: Number(avance.superficie) || 0,
               hectareas: Number(avance.superficie) || 0,

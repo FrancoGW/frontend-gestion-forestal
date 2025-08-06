@@ -153,41 +153,164 @@ export function useJdaData() {
     }
   }
 
-  // Función para obtener proveedores de todos los supervisores
-  const loadProveedores = async (supervisoresData: SupervisorData[]): Promise<ProveedorData[]> => {
+  // Función para enriquecer datos de proveedores con información completa
+  const enriquecerDatosProveedores = async (proveedoresBasicos: ProveedorData[]): Promise<ProveedorData[]> => {
     try {
       const response = await apiClient.get("/api/supervisores")
       if (response.data && response.data.success) {
         const supervisoresAPI = response.data.data || []
-        const supervisoresIds = new Set(supervisoresData.map(s => parseInt(s.id)))
         
-        const proveedoresUnicos = new Map<number, ProveedorData>()
-        
-        supervisoresAPI
-          .filter((s: any) => supervisoresIds.has(s._id))
-          .forEach((supervisor: any) => {
-            const proveedoresAsignados = supervisor.proveedoresAsignados || []
-            proveedoresAsignados.forEach((p: any) => {
-              const proveedorId = Number(p.proveedorId)
-              if (!proveedoresUnicos.has(proveedorId)) {
-                proveedoresUnicos.set(proveedorId, {
-                  id: proveedorId,
-                  nombre: p.nombre || "Sin nombre",
-                  razonSocial: p.nombre || "Sin razón social",
-                  fechaAsignacion: p.fechaAsignacion,
-                  cuit: p.cuit || "",
-                  telefono: p.telefono || "",
-                  email: p.email || "",
-                })
-              }
-            })
+        // Crear un mapa de todos los proveedores disponibles
+        const proveedoresCompletos = new Map<number, any>()
+        supervisoresAPI.forEach((supervisor: any) => {
+          const proveedoresAsignados = supervisor.proveedoresAsignados || []
+          proveedoresAsignados.forEach((p: any) => {
+            const proveedorId = Number(p.proveedorId)
+            if (!proveedoresCompletos.has(proveedorId)) {
+              proveedoresCompletos.set(proveedorId, {
+                id: proveedorId,
+                nombre: p.nombre || "Sin nombre",
+                razonSocial: p.nombre || "Sin razón social",
+                fechaAsignacion: p.fechaAsignacion,
+                cuit: p.cuit || "",
+                telefono: p.telefono || "",
+                email: p.email || "",
+              })
+            }
           })
-        
-        return Array.from(proveedoresUnicos.values())
+        })
+
+        // Enriquecer los proveedores básicos con datos completos
+        return proveedoresBasicos.map(proveedor => {
+          const proveedorCompleto = proveedoresCompletos.get(proveedor.id)
+          if (proveedorCompleto) {
+            return {
+              ...proveedor,
+              cuit: proveedorCompleto.cuit || proveedor.cuit,
+              telefono: proveedorCompleto.telefono || proveedor.telefono,
+              email: proveedorCompleto.email || proveedor.email,
+            }
+          }
+          return proveedor
+        })
       }
-      return []
+      return proveedoresBasicos
     } catch (err) {
-      console.error("Error al cargar proveedores:", err)
+      console.error("Error al enriquecer datos de proveedores:", err)
+      return proveedoresBasicos
+    }
+  }
+
+  // Función para obtener proveedores dinámicamente desde órdenes y avances de trabajo
+  const loadProveedores = async (supervisoresIds: number[]): Promise<ProveedorData[]> => {
+    try {
+      const proveedoresUnicos = new Map<number, ProveedorData>()
+
+      // 1. Obtener proveedores desde las órdenes de trabajo
+      let pagina = 1;
+      let totalPaginas = 1;
+      let todasLasOrdenes: any[] = [];
+
+      do {
+        const response = await workOrdersAPI.getAll({ pagina, limite: 100 });
+        let ordenesData: any[] = [];
+        if (response) {
+          if (Array.isArray(response)) {
+            ordenesData = response;
+          } else if (response.data && Array.isArray(response.data)) {
+            ordenesData = response.data;
+          } else if (response.ordenes && Array.isArray(response.ordenes)) {
+            ordenesData = response.ordenes;
+          }
+        }
+        todasLasOrdenes = todasLasOrdenes.concat(ordenesData);
+        // Detectar paginación
+        if (response && response.paginacion) {
+          totalPaginas = response.paginacion.paginas || 1;
+        } else {
+          totalPaginas = 1;
+        }
+        pagina++;
+      } while (pagina <= totalPaginas);
+
+      // Filtrar órdenes por supervisor_id de los supervisores asignados al JDA
+      const ordenesFiltradas = todasLasOrdenes.filter((orden: any) => {
+        const supervisorId = Number(orden.supervisor_id || orden.supervisorId || orden.usuario_id);
+        return supervisoresIds.includes(supervisorId);
+      });
+
+      console.log(`Órdenes encontradas para supervisores ${supervisoresIds}:`, ordenesFiltradas.length)
+
+      // Extraer proveedores únicos de las órdenes filtradas
+      ordenesFiltradas.forEach((orden: any) => {
+        const proveedorId = Number(orden.cod_empres || orden.proveedorId || orden.empresaId || 0)
+        const proveedorNombre = orden.empresa || orden.proveedor || "Sin nombre"
+        
+        if (proveedorId && !proveedoresUnicos.has(proveedorId)) {
+          proveedoresUnicos.set(proveedorId, {
+            id: proveedorId,
+            nombre: proveedorNombre,
+            razonSocial: proveedorNombre,
+            fechaAsignacion: orden.fecha || new Date().toISOString(),
+            cuit: "",
+            telefono: "",
+            email: "",
+          })
+        }
+      })
+
+      // 2. Obtener proveedores desde los avances de trabajo
+      const responseAvances = await avancesTrabajoAPI.getAll()
+      let avancesData = []
+
+      if (responseAvances) {
+        if (Array.isArray(responseAvances)) {
+          avancesData = responseAvances
+        } else if (responseAvances.data && Array.isArray(responseAvances.data)) {
+          avancesData = responseAvances.data
+        } else if (responseAvances.avances && Array.isArray(responseAvances.avances)) {
+          avancesData = responseAvances.avances
+        } else if (responseAvances.results && Array.isArray(responseAvances.results)) {
+          avancesData = responseAvances.results
+        }
+      }
+
+      // Filtrar avances por supervisorId de los supervisores asignados al JDA
+      const avancesFiltrados = avancesData.filter((avance: any) => {
+        const supervisorId = Number(avance.supervisorId)
+        return supervisoresIds.includes(supervisorId)
+      })
+
+      console.log(`Avances encontrados para supervisores ${supervisoresIds}:`, avancesFiltrados.length)
+
+      // Extraer proveedores únicos de los avances filtrados
+      avancesFiltrados.forEach((avance: any) => {
+        const proveedorId = Number(avance.proveedorId || 0)
+        const proveedorNombre = avance.proveedor || avance.proveedorNombre || "Sin nombre"
+        
+        if (proveedorId && !proveedoresUnicos.has(proveedorId)) {
+          proveedoresUnicos.set(proveedorId, {
+            id: proveedorId,
+            nombre: proveedorNombre,
+            razonSocial: proveedorNombre,
+            fechaAsignacion: avance.fecha || new Date().toISOString(),
+            cuit: "",
+            telefono: "",
+            email: "",
+          })
+        }
+      })
+
+      const proveedoresBasicos = Array.from(proveedoresUnicos.values())
+      console.log(`Proveedores dinámicos encontrados para supervisores ${supervisoresIds}:`, proveedoresBasicos)
+      console.log(`Total proveedores únicos: ${proveedoresBasicos.length}`)
+      
+      // Enriquecer con datos completos desde la API de supervisores
+      const proveedoresData = await enriquecerDatosProveedores(proveedoresBasicos)
+      
+      return proveedoresData
+    } catch (err) {
+      console.error("Error al cargar proveedores dinámicamente:", err)
       return []
     }
   }
@@ -221,7 +344,6 @@ export function useJdaData() {
         pagina++;
       } while (pagina <= totalPaginas);
 
-      const proveedorIds = new Set(proveedoresData.map((p) => p.id));
       const proveedorMap = new Map(proveedoresData.map((p) => [p.id, p]));
 
       // Filtrar órdenes por supervisor_id de los supervisores asignados al JDA
@@ -382,7 +504,7 @@ export function useJdaData() {
       console.log("[JDA] Avances filtrados finales:", avancesFiltrados)
 
       // 5. Cargar órdenes de trabajo filtradas por supervisores asignados
-      const proveedoresData = await loadProveedores(supervisoresIds.map(id => ({ id: id, nombre: "", razonSocial: "", fechaAsignacion: "", cuit: "", telefono: "", email: "" })))
+      const proveedoresData = await loadProveedores(supervisoresIds)
       const ordenesData = await loadOrdenes(proveedoresData, supervisoresIds)
       setOrdenes(ordenesData)
 
