@@ -640,7 +640,7 @@ export default function ProviderAvancesPage() {
         throw new Error("Error al actualizar el avance")
       }
     } catch (error) {
-      const errorMessage = error.message || "Error al actualizar el avance"
+      const errorMessage = error.message || "Error al actualizar avance"
       console.error("❌ Error al actualizar avance:", error)
       toast({
         title: "Error al actualizar",
@@ -825,13 +825,13 @@ export default function ProviderAvancesPage() {
           // Sub-actividad si existe
           "Sub-Actividad": getFieldValue(avance, "subActividad", "-"),
 
-          // Observaciones al final
-          Observaciones: avance.observaciones || "Sin observaciones",
-
           // Metadatos
           Usuario: getFieldValue(avance, "usuario", "-"),
           "Fecha Creación": avance.createdAt ? formatDateArgentina(avance.createdAt) : "-",
           "Última Modificación": avance.updatedAt ? formatDateArgentina(avance.updatedAt) : "-",
+
+          // Observaciones al final
+          Observaciones: avance.observaciones || "Sin observaciones",
         }
       })
 
@@ -877,10 +877,10 @@ export default function ProviderAvancesPage() {
         { wch: 30 }, // Productos Malezas
         { wch: 15 }, // Especie Raleo
         { wch: 15 }, // Sub-Actividad
-        { wch: 40 }, // Observaciones
         { wch: 12 }, // Usuario
         { wch: 15 }, // Fecha Creación
         { wch: 15 }, // Última Modificación
+        { wch: 40 }, // Observaciones
       ]
 
       ws["!cols"] = wscols
@@ -1320,13 +1320,13 @@ export default function ProviderAvancesPage() {
                       <TableHead className="hidden lg:table-cell min-w-[120px]">Actividad</TableHead>
                       <TableHead className="hidden lg:table-cell min-w-[120px]">Especie</TableHead>
                       <TableHead className="min-w-[100px]">Rodal</TableHead>
+                      <TableHead className="min-w-[120px] text-center">Estado del avance</TableHead>
                       <TableHead className="hidden sm:table-cell min-w-[100px] text-right">Bandejas</TableHead>
                       <TableHead className="hidden sm:table-cell min-w-[100px] text-right">Plantas</TableHead>
                       <TableHead className="hidden md:table-cell min-w-[90px] text-right">GIS (ha)</TableHead>
                       <TableHead className="min-w-[90px] text-right">Sup (ha)</TableHead>
                       <TableHead className="hidden sm:table-cell min-w-[80px] text-right">Personal</TableHead>
                       <TableHead className="hidden sm:table-cell min-w-[80px] text-right">Jornadas</TableHead>
-                      <TableHead className="min-w-[100px] text-center">Estado</TableHead>
                       <TableHead className="sticky right-0 bg-white z-10 min-w-[100px] text-center">Acciones</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -1361,6 +1361,17 @@ export default function ProviderAvancesPage() {
                               )}
                             </div>
                           </TableCell>
+                          <TableCell className="text-center">
+                            {avance.estado === "R7 (terminado)" ? (
+                              <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">
+                                ✅ Terminado
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-300">
+                                ⏳ Pendiente
+                              </Badge>
+                            )}
+                          </TableCell>
                           <TableCell className="hidden sm:table-cell text-right">
                             {avance.cantidadBandejas > 0 ? avance.cantidadBandejas : "-"}
                           </TableCell>
@@ -1379,17 +1390,6 @@ export default function ProviderAvancesPage() {
                             {avance.cantPersonal || "-"}
                           </TableCell>
                           <TableCell className="hidden sm:table-cell text-right">{avance.jornada || "-"}</TableCell>
-                          <TableCell className="text-center">
-                            {avance.estado === "R7 (terminado)" ? (
-                              <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">
-                                ✅ Terminado
-                              </Badge>
-                            ) : (
-                              <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-300">
-                                ⏳ Pendiente
-                              </Badge>
-                            )}
-                          </TableCell>
                           <TableCell className="sticky right-0 bg-white z-10">
                             <div className="flex items-center justify-center gap-1">
                               <Button
