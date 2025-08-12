@@ -132,6 +132,17 @@ export function useJdaData() {
   // Función para obtener supervisores asignados
   const loadSupervisores = async (jdaData: JdaData): Promise<SupervisorData[]> => {
     try {
+      // Usar directamente los datos del JDA que ya tienen la información completa
+      if (jdaData.supervisoresAsignados && jdaData.supervisoresAsignados.length > 0) {
+        return jdaData.supervisoresAsignados.map((supervisor: any) => ({
+          id: String(supervisor.supervisorId),
+          nombre: supervisor.nombre,
+          email: "", // No tenemos email en los datos del JDA
+          telefono: "" // No tenemos teléfono en los datos del JDA
+        }))
+      }
+      
+      // Fallback: intentar cargar desde la API si no hay datos locales
       const response = await apiClient.get("/api/supervisores")
       if (response.data && response.data.success) {
         const supervisoresAPI = response.data.data || []
@@ -503,7 +514,12 @@ export function useJdaData() {
       setAvances(avancesFiltrados)
       console.log("[JDA] Avances filtrados finales:", avancesFiltrados)
 
-      // 5. Cargar órdenes de trabajo filtradas por supervisores asignados
+      // 5. Cargar supervisores asignados
+      const supervisoresData = await loadSupervisores(jdaData)
+      setSupervisores(supervisoresData)
+      console.log("[JDA] Supervisores cargados:", supervisoresData)
+
+      // 6. Cargar órdenes de trabajo filtradas por supervisores asignados
       const proveedoresData = await loadProveedores(supervisoresIds)
       const ordenesData = await loadOrdenes(proveedoresData, supervisoresIds)
       setOrdenes(ordenesData)

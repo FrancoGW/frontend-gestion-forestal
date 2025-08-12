@@ -6,12 +6,13 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { Home, Users, ClipboardList, TrendingUp, LogOut } from "lucide-react"
+import { Home, Users, ClipboardList, TrendingUp, LogOut, FileText } from "lucide-react"
 
 const navigation = [
   { name: "Dashboard", href: "/jda", icon: Home },
   { name: "Mis Supervisores", href: "/jda/supervisores", icon: Users },
   { name: "Órdenes de Trabajo", href: "/jda/ordenes", icon: ClipboardList },
+  { name: "Informes de Avances", href: "/jda/informes", icon: FileText },
 ]
 
 export function JDASidebar() {
