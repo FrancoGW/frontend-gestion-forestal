@@ -567,7 +567,7 @@ export default function ProviderAvancesPage() {
         productos: fullAvanceData.productos || [],
 
         // QUEMAS CONTROLADAS - Campos específicos
-        areaOperarios: fullAvanceData.areaOperarios || 0,
+
         horaR29: fullAvanceData.horaR29 || "",
         horaR8: fullAvanceData.horaR8 || "",
         horaR7: fullAvanceData.horaR7 || "",
@@ -776,11 +776,11 @@ export default function ProviderAvancesPage() {
             cuadrillaId: avance.cuadrillaId,
             cuadrillaNombre: avance.cuadrillaNombre,
           } as AvanceExtendido),
-          "Cant. Personal": avance.cantPersonal || 0,
-          "Jornadas (hs)": avance.jornada || 0,
+          "Cant. Personal": Number(avance.cantPersonal || 0),
+          "Jornadas (hs)": Number(avance.jornada || 0),
 
           // Superficie
-          "Superficie (ha)": formatHectareas(avance.superficie),
+          "Superficie (ha)": Number(avance.superficie || 0),
           "Sup GIS (ha)": getRodalSuperficieGIS(avance.rodal, avance.ordenTrabajoId) || "N/D",
 
           // PLANTACIÓN - Campos específicos
@@ -788,27 +788,27 @@ export default function ProviderAvancesPage() {
           Vivero: resolveViveroName(avance.vivero || avance.viveroId, viveros),
           "Especie Forestal": resolveEspecieName(avance.especie || avance.especie_forestal, especies),
           Clon: resolveClonCode(avance.clon || avance.clonId || avance.codigo_clon, clones),
-          "Densidad (plantas/ha)": getFieldValue(avance, "densidad", "-"),
-          "Cant. Bandejas": avance.cantidadBandejas || "-",
-          "Total Plantas": avance.totalPlantas || avance.cantidadPlantas || extractPlantQuantity(avance) || "-",
+          "Densidad (plantas/ha)": Number(avance.densidad || 0) || "-",
+          "Cant. Bandejas": Number(avance.cantidadBandejas || 0) || "-",
+          "Total Plantas": Number(avance.totalPlantas || avance.cantidadPlantas || extractPlantQuantity(avance) || 0) || "-",
           Rocambole: getFieldValue(avance, "rocambole", "-"),
-          "Cant. Plantines": avance.cantidadPlantines || "-",
+          "Cant. Plantines": Number(avance.cantidadPlantines || 0) || "-",
 
           // PODA - Campos específicos
           "Tipo de Poda": getFieldValue(avance, "tipoPoda", "-"),
-          "Altura Poda (m)": getFieldValue(avance, "altura_poda", "-"),
-          "Plantas Podadas": avance.plantas || avance.cantidadPlantas || "-",
+          "Altura Poda (m)": Number(avance.altura_poda || 0) || "-",
+          "Plantas Podadas": Number(avance.plantas || avance.cantidadPlantas || 0) || "-",
 
           // CONTROL DE HORMIGAS - Campos específicos
-          "Números de Nidos": getFieldValue(avance, "numerosNidos", "-"),
+          "Números de Nidos": Number(avance.numerosNidos || 0) || "-",
           "Especie Hormiga": getFieldValue(avance, "especieHormiga", "-"),
           "Producto Hormiga": getFieldValue(avance, "producto", "-"),
-          "Cantidad Producto (kg)": getFieldValue(avance, "cantidad", "-"),
+          "Cantidad Producto (kg)": Number(avance.cantidad || 0) || "-",
 
           // CONTROL DE MALEZAS - Campos específicos
           "Tipo Aplicación": getFieldValue(avance, "tipoAplicacion", "-"),
-          "Volumen Aplicado (L/ha)": getFieldValue(avance, "volumenAplicado", "-"),
-          "Cant. Mochilas": getFieldValue(avance, "cantidadMochilas", "-"),
+          "Volumen Aplicado (L/ha)": Number(avance.volumenAplicado || 0) || "-",
+          "Cant. Mochilas": Number(avance.cantidadMochilas || 0) || "-",
           "Productos Malezas": formatProductosMalezas(avance.productos),
 
           // RALEO - Campos específicos
@@ -1015,7 +1015,7 @@ export default function ProviderAvancesPage() {
       if (result.success) {
         toast({
           title: "Avance registrado",
-          description: `Avance guardado correctamente para ${progressData.superficie} ha`,
+          description: `Avance guardado correctamente${progressData.superficie ? ` para ${progressData.superficie} ha` : ""}`,
         })
 
         // Recargar los avances después de un registro exitoso

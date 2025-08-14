@@ -211,9 +211,10 @@ export default function JdaDashboard() {
       ACTIVIDAD: item.actividad,
       PROVEEDOR: item.proveedor,
       CUADRILLA: item.cuadrillaNombre || item.cuadrilla || "Sin cuadrilla",
-      "CANTIDAD (HA)": item.cantidadHA.toFixed(2).replace(".", ","),
+      "CANTIDAD (HA)": Number(item.cantidadHA),
       ESTADO: item.estado,
-      JORNALES: item.jornada,
+      JORNALES: Number(item.jornada),
+      OBSERVACIONES: item.observaciones || "",
     }))
 
     excelData.push({
@@ -225,9 +226,10 @@ export default function JdaDashboard() {
       ACTIVIDAD: "",
       PROVEEDOR: "",
       CUADRILLA: "",
-      "CANTIDAD (HA)": totales.totalHA.toFixed(2).replace(".", ","),
+      "CANTIDAD (HA)": Number(totales.totalHA),
       ESTADO: "TOTALES:",
       JORNALES: 0,
+      OBSERVACIONES: "",
     })
 
     /* ------------------------------------------------------------------ */
@@ -251,6 +253,7 @@ export default function JdaDashboard() {
       { wch: 12 }, // CANTIDAD (HA)
       { wch: 12 }, // ESTADO
       { wch: 8 },  // JORNALES
+      { wch: 30 }, // OBSERVACIONES (última columna)
     ]
     ws["!cols"] = columnWidths
 

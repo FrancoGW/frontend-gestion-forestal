@@ -27,6 +27,7 @@ type InformeAvance = {
   actividad: string;
   haAvanzada: number;
   subtotal?: number;
+  observaciones?: string;
 };
 
 type ResumenActividad = {
@@ -168,6 +169,7 @@ export default function InformesAvancesPage() {
         rodal: String(avance.rodal || "Sin especificar"),
         actividad: actividadFinal,
         haAvanzada: Number(avance.superficie ?? 0),
+        observaciones: String(avance.observaciones || ""),
       })
     })
 
@@ -221,20 +223,21 @@ export default function InformesAvancesPage() {
         ["RESUMEN POR ACTIVIDADES"],
         ["", ""],
         ["Act.", "Ha Ava"],
-        ...resumenActividades.map(item => [item.actividad, item.haAvanzada.toFixed(1)]),
+        ...resumenActividades.map(item => [item.actividad, Number(item.haAvanzada)]),
         [""],
         [""],
         // Detalle por actividades
         ["DETALLE POR ACTIVIDADES"],
         ["", ""],
-        ["Fecha", "Predio", "Rodal", "Actividad", "Ha Ava", "Subtotal"],
+        ["Fecha", "Predio", "Rodal", "Actividad", "Ha Ava", "Subtotal", "Observaciones"],
         ...datosInforme.map(item => [
           formatearFechaArgentina(item.fecha),
           item.predio,
           item.rodal,
           item.actividad,
-          item.haAvanzada.toFixed(1),
-          ""
+          Number(item.haAvanzada),
+          "",
+          item.observaciones || ""
         ])
       ]
 
@@ -248,6 +251,7 @@ export default function InformesAvancesPage() {
         { wch: 20 }, // Actividad
         { wch: 10 }, // Ha Ava
         { wch: 12 }, // Subtotal
+        { wch: 30 }, // Observaciones (última columna)
       ]
 
       XLSX.utils.book_append_sheet(wb, ws, "Informe de Avance")
@@ -258,16 +262,18 @@ export default function InformesAvancesPage() {
         "PREDIO": item.predio,
         "RODAL": item.rodal,
         "ACTIVIDAD": item.actividad,
-        "HA AVANZADA": item.haAvanzada.toFixed(1),
+        "HA AVANZADA": Number(item.haAvanzada),
+        "OBSERVACIONES": item.observaciones || "",
       }))
 
       const wsDetalle = XLSX.utils.json_to_sheet(datosDetallados)
       wsDetalle["!cols"] = [
-        { wch: 12 },
-        { wch: 15 },
-        { wch: 10 },
-        { wch: 20 },
-        { wch: 12 },
+        { wch: 12 }, // FECHA
+        { wch: 15 }, // PREDIO
+        { wch: 10 }, // RODAL
+        { wch: 20 }, // ACTIVIDAD
+        { wch: 12 }, // HA AVANZADA
+        { wch: 30 }, // OBSERVACIONES (última columna)
       ]
       XLSX.utils.book_append_sheet(wb, wsDetalle, "Datos Detallados")
 

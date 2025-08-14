@@ -203,9 +203,15 @@ export function useProviderWorkData() {
         console.log("- data.cuadrilla:", data.cuadrilla)
 
         // Validar datos básicos
-        if (!data.fecha || !data.rodal || data.superficie <= 0) {
+        if (!data.fecha || !data.rodal) {
           setError("Datos de avance incompletos o inválidos")
           return { success: false, error: "Datos de avance incompletos o inválidos" }
+        }
+
+        // Validar superficie solo si existe (no para MANEJO REBROTE)
+        if (data.superficie !== undefined && data.superficie <= 0) {
+          setError("La superficie debe ser mayor a 0")
+          return { success: false, error: "La superficie debe ser mayor a 0" }
         }
 
         // Validar específicamente la cuadrilla - AHORA USANDO data.cuadrillaId
@@ -256,11 +262,10 @@ export function useProviderWorkData() {
         }
 
         // Preparar datos para enviar al servidor - INCLUIR TODOS LOS CAMPOS DE LA PLANTILLA
-        const serverData = {
+        const serverData: any = {
           ordenTrabajoId: orderId,
           proveedorId: providerId,
           fecha: formatDateForArgentina(data.fecha),
-          superficie: Number(data.superficie),
           cuadrillaId: data.cuadrillaId, // Send the cuadrillaId to the API
           cuadrilla: data.cuadrilla, // Also send the name for display
           cantPersonal: Number(data.cantPersonal || 0),
@@ -269,59 +274,42 @@ export function useProviderWorkData() {
           usuario: providerName,
           rodal: data.rodal,
           actividad: data.actividad || "PLANTACION",
-          // CAMPOS ESPECÍFICOS DE LA PLANTILLA DE PLANTACIÓN
-          vivero: data.vivero || "",
-          // ✅ CAMBIO: Asegurar que enviamos el NOMBRE de la especie
-          especie: data.especie || data.especie_forestal || "",
-          clon: data.clon || "",
-          cantidadPlantas: Number(data.cantidadPlantas || data.plantas || 0),
-          altura_poda: Number(data.altura_poda || 0),
-          // CAMPOS ESPECÍFICOS DE LA PLANTILLA DE PODA
-          tipoPoda: data.tipoPoda || "",
-          altura_poda: Number(data.altura_poda || 0),
-          plantas: Number(data.plantas || data.cantidadPlantas || 0),
-          densidad_poda: Number(data.densidad || 0),
-          predio: data.predio || "",
-          seccion: data.seccion || "",
-          // ✅ NUEVO: Incluir información de ensayo
-          rodalEnsayo: data.rodalEnsayo || false,
-          // CAMPOS ADICIONALES QUE PODRÍAN ESTAR EN LA PLANTILLA
-          seccion: data.seccion || "",
-          // Incluir cualquier campo adicional de la plantilla dinámicamente
-          ...Object.keys(data).reduce((acc, key) => {
-            // Incluir campos que no están ya mapeados arriba
-            const mappedFields = [
-              "fecha",
-              "superficie",
-              "cuadrilla",
-              "cuadrillaId",
-              "cantPersonal",
-              "jornada",
-              "observaciones",
-              "rodal",
-              "actividad",
-              "vivero",
-              "especie",
-              "especie_forestal",
-              "especie_nombre",
-              "especie_forestal_nombre",
-              "clon",
-              "cantidadPlantas",
-              "plantas",
-              "altura_poda",
-              "predio",
-              "seccion",
-              "rodalEnsayo",
-              "tipoPoda",
-              "densidad",
-            ]
-
-            if (!mappedFields.includes(key) && data[key] !== undefined && data[key] !== null && data[key] !== "") {
-              acc[key] = data[key]
-            }
-            return acc
-          }, {}),
+          estado: data.estado || "Pendiente",
         }
+
+        // Agregar superficie solo si existe (no para MANEJO REBROTE)
+        if (data.superficie !== undefined) {
+          serverData.superficie = Number(data.superficie)
+        }
+
+        // Agregar campos específicos de la plantilla
+        if (data.vivero) serverData.vivero = data.vivero
+        if (data.especie || data.especie_forestal) serverData.especie = data.especie || data.especie_forestal
+        if (data.clon) serverData.clon = data.clon
+        if (data.cantidadPlantas || data.plantas) serverData.cantidadPlantas = Number(data.cantidadPlantas || data.plantas || 0)
+        if (data.altura_poda) serverData.altura_poda = Number(data.altura_poda)
+        if (data.tipoPoda) serverData.tipoPoda = data.tipoPoda
+        if (data.plantas) serverData.plantas = Number(data.plantas)
+        if (data.densidad) serverData.densidad_poda = Number(data.densidad)
+        if (data.predio) serverData.predio = data.predio
+        if (data.seccion) serverData.seccion = data.seccion
+        if (data.rodalEnsayo !== undefined) serverData.rodalEnsayo = data.rodalEnsayo
+        if (data.operarios) serverData.operarios = Number(data.operarios)
+        if (data.implemento) serverData.implemento = data.implemento
+
+        // Incluir cualquier campo adicional de la plantilla dinámicamente
+        Object.keys(data).forEach(key => {
+          const mappedFields = [
+            "fecha", "superficie", "cuadrilla", "cuadrillaId", "cantPersonal", "jornada", 
+            "observaciones", "rodal", "actividad", "vivero", "especie", "especie_forestal", 
+            "especie_nombre", "especie_forestal_nombre", "clon", "cantidadPlantas", "plantas", 
+            "altura_poda", "predio", "seccion", "rodalEnsayo", "tipoPoda", "densidad", "ha"
+          ]
+
+          if (!mappedFields.includes(key) && data[key] !== undefined && data[key] !== null && data[key] !== "") {
+            serverData[key] = data[key]
+          }
+        })
 
         console.log("📤 DATOS FINALES PARA ENVIAR:")
         console.log("- cuadrillaId:", serverData.cuadrillaId)
@@ -349,7 +337,7 @@ export function useProviderWorkData() {
               id: responseId,
               orderId,
               fecha: formatDateForArgentina(data.fecha),
-              superficie: Number(data.superficie),
+              superficie: data.superficie !== undefined ? Number(data.superficie) : 0,
               cantidadPlantas: Number(data.cantidadPlantas || 0),
               cuadrilla: data.cuadrilla,
               cantPersonal: Number(data.cantPersonal || 0),

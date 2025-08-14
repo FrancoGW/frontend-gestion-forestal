@@ -174,11 +174,11 @@ export function WorkProgressTable({
         Especie: avance.especie || "",
         Rodal: avance.rodal || "",
         Bandejas: avance.cantidadBandejas || "-",
-        Plantas: avance.cantidadPlantas || avance.plantas || 0,
-        "GIS (ha)": avance.superficie || 0,
-        "Sup (ha)": avance.superficie || 0,
-        Personal: avance.cantPersonal || 0,
-        Jornadas: avance.jornada || 0,
+        Plantas: Number(avance.cantidadPlantas || avance.plantas || 0),
+        "GIS (ha)": Number(avance.superficie || 0),
+        "Sup (ha)": Number(avance.superficie || 0),
+        Personal: Number(avance.cantPersonal || 0),
+        Jornadas: Number(avance.jornada || 0),
         Estado: avance.estado || "Pendiente", // ✅ NUEVO: Incluir estado en Excel
         Observaciones: avance.observaciones || "",
       }))

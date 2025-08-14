@@ -152,7 +152,6 @@ export function WorkProgressForm({
     cantidadMochilas: "",
     tipoPoda: "",
     // Campos específicos para QUEMAS CONTROLADAS
-    areaOperarios: "",
     horaR29: "",
     horaR8: "",
     horaR7: "",
@@ -164,9 +163,10 @@ export function WorkProgressForm({
     ha: "",
     operarios: "",
     jornales: "",
-    implemento: "",
     // Campos específicos para PREPARACION DE TERRENO
     jornal: "",
+    // Campo implemento (compartido entre plantillas)
+    implemento: "",
   })
 
   // Estado para productos dinámicos con unidad de medida
@@ -485,8 +485,7 @@ export function WorkProgressForm({
               volumenAplicado: "",
               cantidadMochilas: "",
               tipoPoda: "",
-              // Campos específicos para QUEMAS CONTROLADAS
-              areaOperarios: "",
+                  // Campos específicos para QUEMAS CONTROLADAS
               horaR29: "",
               horaR8: "",
               horaR7: "",
@@ -721,7 +720,7 @@ export function WorkProgressForm({
         cantidadMochilas: String(initialData.cantidadMochilas || ""),
         tipoPoda: initialData.tipoPoda || "",
         // Campos específicos para QUEMAS CONTROLADAS
-        areaOperarios: String(initialData.areaOperarios || ""),
+  
         horaR29: initialData.horaR29 || "",
         horaR8: initialData.horaR8 || "",
         horaR7: initialData.horaR7 || "",
@@ -934,29 +933,7 @@ export function WorkProgressForm({
           />
         </div>
 
-        {/* Área Operarios */}
-        <div className="space-y-2">
-          <Label htmlFor="areaOperarios">
-            Área Operarios <span className="text-red-500">*</span>
-          </Label>
-          <Input
-            id="areaOperarios"
-            type="number"
-            min="1"
-            value={formData.areaOperarios || ""}
-            onChange={(e) => {
-              handleInputChange("areaOperarios", e.target.value)
-              // Recalcular jornada automáticamente
-              const tiempo = formData.tiempoHs
-              if (tiempo && e.target.value) {
-                const jornada = calcularJornada(tiempo, e.target.value)
-                handleInputChange("jornadaHs", jornada)
-              }
-            }}
-            placeholder="Número de operarios"
-            required={true}
-          />
-        </div>
+
 
         {/* Cantidad de Personal */}
         <div className="space-y-2">
@@ -1028,9 +1005,9 @@ export function WorkProgressForm({
                   const tiempo = calcularTiempo(e.target.value, formData.horaR7)
                   if (tiempo) {
                     handleInputChange("tiempoHs", tiempo)
-                    // Recalcular jornada si hay operarios
-                    if (formData.areaOperarios) {
-                      const jornada = calcularJornada(tiempo, formData.areaOperarios)
+                    // Recalcular jornada si hay personal
+                    if (formData.cantPersonal) {
+                      const jornada = calcularJornada(tiempo, formData.cantPersonal)
                       handleInputChange("jornadaHs", jornada)
                     }
                   }
@@ -1056,9 +1033,9 @@ export function WorkProgressForm({
                   const tiempo = calcularTiempo(formData.horaR8, e.target.value)
                   if (tiempo) {
                     handleInputChange("tiempoHs", tiempo)
-                    // Recalcular jornada si hay operarios
-                    if (formData.areaOperarios) {
-                      const jornada = calcularJornada(tiempo, formData.areaOperarios)
+                    // Recalcular jornada si hay personal
+                    if (formData.cantPersonal) {
+                      const jornada = calcularJornada(tiempo, formData.cantPersonal)
                       handleInputChange("jornadaHs", jornada)
                     }
                   }
@@ -2829,6 +2806,9 @@ export function WorkProgressForm({
     } else if (isPreparacionTerrenoTemplate(activeTemplate?.nombre)) {
       // Campos específicos para Preparación de terreno
       requiredFields = ["fecha", "predio", "rodal", "cuadrilla", "implemento", "jornal", "ha"]
+    } else if (activeTemplate?.nombre === "MANEJO REBROTE") {
+      // Campos específicos para Manejo de rebrote
+      requiredFields = ["estado", "fecha", "rodal", "predio", "cuadrilla", "implemento", "operarios", "ha"]
     } else {
       // Para otras plantillas, usar la lógica existente
       requiredFields = ["fecha", "cuadrilla"]
@@ -2843,8 +2823,10 @@ export function WorkProgressForm({
         requiredFields.push("jornada")
       }
 
-      // Agregar superficie solo si NO es control de regeneración y NO es preparación de terreno
-      if (!isControlRegeneracionTemplate(activeTemplate?.nombre) && !isPreparacionTerrenoTemplate(activeTemplate?.nombre)) {
+      // Agregar superficie solo si NO es control de regeneración, NO es preparación de terreno y NO es manejo de rebrote
+      if (!isControlRegeneracionTemplate(activeTemplate?.nombre) && 
+          !isPreparacionTerrenoTemplate(activeTemplate?.nombre) && 
+          activeTemplate?.nombre !== "MANEJO REBROTE") {
         requiredFields.push("superficie")
       }
     }
@@ -2898,12 +2880,26 @@ export function WorkProgressForm({
     } else if (isRaleoTemplate(activeTemplate?.nombre)) {
       requiredFields.push("especie")
     } else if (isQuemasControladasTemplate(activeTemplate?.nombre)) {
-      requiredFields.push("areaOperarios", "horaR29", "horaR8", "horaR7", "horaR28", "cantPersonal", "jornada")
+              requiredFields.push("horaR29", "horaR8", "horaR7", "horaR28", "cantPersonal", "jornada")
+    } else if (activeTemplate?.nombre === "MANEJO REBROTE") {
+      // Validaciones específicas para Manejo de rebrote
+      const operarios = Number(formData.operarios)
+      if (operarios <= 0) {
+        setError("Los operarios deben ser mayor a 0")
+        return false
+      }
+
+      const ha = Number(formData.ha)
+      if (ha <= 0) {
+        setError("Las hectáreas deben ser mayor a 0")
+        return false
+      }
     }
 
     // Debug: Log de campos requeridos y valores
     console.log("[VALIDACIÓN][DEBUG] Campos requeridos:", requiredFields)
     console.log("[VALIDACIÓN][DEBUG] FormData actual:", formData)
+    console.log("[VALIDACIÓN][DEBUG] Plantilla activa:", activeTemplate?.nombre)
     
     // Validar campos requeridos
     for (const field of requiredFields) {
@@ -2911,13 +2907,16 @@ export function WorkProgressForm({
       console.log(`[VALIDACIÓN][DEBUG] Validando campo '${field}':`, value)
       if (!value || (typeof value === "string" && value.trim() === "")) {
         console.log(`[VALIDACIÓN][ERROR] Campo '${field}' está vacío o es inválido`)
+        console.log(`[VALIDACIÓN][ERROR] Valor del campo '${field}':`, value)
         setError(`El campo ${field} es requerido`)
         return false
       }
     }
 
-    // Validar superficie solo si NO es control de regeneración y NO es preparación de terreno
-    if (!isControlRegeneracionTemplate(activeTemplate?.nombre) && !isPreparacionTerrenoTemplate(activeTemplate?.nombre)) {
+    // Validar superficie solo si NO es control de regeneración, NO es preparación de terreno y NO es manejo de rebrote
+    if (!isControlRegeneracionTemplate(activeTemplate?.nombre) && 
+        !isPreparacionTerrenoTemplate(activeTemplate?.nombre) && 
+        activeTemplate?.nombre !== "MANEJO REBROTE") {
       const superficie = Number(formData.superficie)
       if (superficie <= 0) {
         setError("La superficie debe ser mayor a 0")
@@ -3014,6 +3013,22 @@ export function WorkProgressForm({
           superficie: Number(formData.ha || 0), // Mapear ha a superficie para el backend
           observaciones: formData.observaciones || "",
         }
+      } else if (activeTemplate?.nombre === "MANEJO REBROTE") {
+        // Para Manejo de rebrote, construir el objeto específico
+        submitData = {
+          ...submitData,
+          estado: formData.estado || "Pendiente",
+          fecha: formatDateForArgentina(formData.fecha || getCurrentDateForArgentina()),
+          predio: formData.predio || workOrder?.campo || "",
+          rodal: formData.rodal || "",
+          cuadrilla: formData.cuadrilla || "",
+          cuadrillaId: formData.cuadrillaId || "",
+          implemento: formData.implemento || "",
+          operarios: Number(formData.operarios || 0),
+          ha: Number(formData.ha || 0),
+          superficie: Number(formData.ha || 0), // Mapear ha a superficie para el backend
+          observaciones: formData.observaciones || "",
+        }
       } else {
         // Para otras plantillas, usar la lógica existente
         submitData = {
@@ -3080,7 +3095,7 @@ export function WorkProgressForm({
           unidad: p.unidad,
         }))
       } else if (isQuemasControladasTemplate(activeTemplate?.nombre)) {
-        submitData.areaOperarios = Number(formData.areaOperarios)
+
         submitData.tiempoHs = Number(formData.tiempoHs)
         submitData.jornadaHs = Number(formData.jornadaHs)
         submitData.cantPersonal = Number(formData.cantPersonal)
@@ -3134,6 +3149,7 @@ export function WorkProgressForm({
       console.log("[ENVÍO][DEBUG] Datos del formulario:", formData)
       console.log("[ENVÍO][DEBUG] Plantilla activa:", activeTemplate?.nombre)
       console.log("[ENVÍO][DEBUG] Datos a enviar:", submitData)
+      console.log("[ENVÍO][DEBUG] Validación pasó:", true)
 
       // ✅ NUEVA VALIDACIÓN: Verificar que la superficie sea correcta
       if (submitData.superficie && submitData.superficie > 0) {
@@ -3153,7 +3169,9 @@ export function WorkProgressForm({
         }
       }
 
+      console.log("[ENVÍO][DEBUG] Llamando a onSubmit con:", submitData)
       const result = await onSubmit(submitData)
+      console.log("[ENVÍO][DEBUG] Resultado de onSubmit:", result)
 
       if (result.success) {
         setSuccess(true)

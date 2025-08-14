@@ -247,12 +247,12 @@ export default function SupervisorDashboard() {
       PROGRESO: item.indicadorProgreso,
       ESTADO: item.estado,
       "ESTADO SUPERVISIÓN": getEstadoSupervisionTexto(getEstadoSupervision(item.id)),
-      "CANTIDAD (HA)": item.cantidadHA.toFixed(2).replace(".", ","),
-      "GIS HA": item.rodalHa ? item.rodalHa.toFixed(2).replace(".", ",") : "-",
-      SUBTOTAL: item.subtotal.toFixed(0),
-      OBSERVACIONES: item.observaciones,
+      "CANTIDAD (HA)": Number(item.cantidadHA),
+      "GIS HA": item.rodalHa ? Number(item.rodalHa) : "-",
+      SUBTOTAL: Number(item.subtotal),
       CUADRILLA: item.cuadrillaNombre || item.cuadrilla || "Sin cuadrilla",
-      JORNADA: item.jornada,
+      JORNADA: Number(item.jornada),
+      OBSERVACIONES: item.observaciones,
     }))
 
     excelData.push({
@@ -264,13 +264,13 @@ export default function SupervisorDashboard() {
       PROGRESO: "",
       ESTADO: "TOTALES:",
       "ESTADO SUPERVISIÓN": "",
-      "CANTIDAD (HA)": totales.totalHA.toFixed(2).replace(".", ","),
+      "CANTIDAD (HA)": Number(totales.totalHA),
       "GIS HA": "",
-      SUBTOTAL: totales.totalSubtotal.toFixed(0),
+      SUBTOTAL: Number(totales.totalSubtotal),
       PROVEEDOR: "",
-      OBSERVACIONES: "",
       CUADRILLA: "",
       JORNADA: 0,
+      OBSERVACIONES: "",
     })
 
     /* ------------------------------------------------------------------ */
@@ -281,36 +281,36 @@ export default function SupervisorDashboard() {
 
     // Ajuste opcional del ancho de columnas
     ws["!cols"] = [
-      { wch: 15 },
-      { wch: 20 },
-      { wch: 12 },
-      { wch: 10 },
-      { wch: 30 },
-      { wch: 12 },
-      { wch: 15 },
-      { wch: 15 },
-      { wch: 18 },
-      { wch: 12 },
-      { wch: 10 },
-      { wch: 25 },
-      { wch: 30 },
-      { wch: 15 },
-      { wch: 10 },
+      { wch: 15 }, // FECHA REGISTRO
+      { wch: 20 }, // PROVEEDOR
+      { wch: 12 }, // PREDIOS
+      { wch: 10 }, // ORDEN TR
+      { wch: 30 }, // RODAL
+      { wch: 12 }, // ACTIVIDAD
+      { wch: 15 }, // PROGRESO
+      { wch: 15 }, // ESTADO
+      { wch: 18 }, // ESTADO SUPERVISIÓN
+      { wch: 12 }, // CANTIDAD (HA)
+      { wch: 10 }, // GIS HA
+      { wch: 25 }, // SUBTOTAL
+      { wch: 15 }, // CUADRILLA
+      { wch: 10 }, // JORNADA
+      { wch: 30 }, // OBSERVACIONES (ahora última columna)
     ]
     XLSX.utils.book_append_sheet(wb, ws, "Avances Progresivos")
 
     /* Hoja de resumen --------------------------------------------------- */
     const resumenData = [
-      { CONCEPTO: "Total Registros", VALOR: totales.totalRegistros },
-      { CONCEPTO: "Total Hectáreas", VALOR: totales.totalHA.toFixed(2).replace(".", ",") },
-      { CONCEPTO: "Avances Progresivos", VALOR: totales.totalProgresivos },
-      { CONCEPTO: "Terminados", VALOR: totales.totalCompletos },
-      { CONCEPTO: "Pendientes", VALOR: totales.totalPendientes },
-      { CONCEPTO: "Pendientes Revisión", VALOR: totales.totalPendientesRevision },
-      { CONCEPTO: "Aprobados", VALOR: totales.totalAprobados },
-      { CONCEPTO: "Rechazados", VALOR: totales.totalRechazados },
-      { CONCEPTO: "Órdenes Únicas", VALOR: totales.ordenesUnicas },
-      { CONCEPTO: "Proveedores Únicos", VALOR: totales.proveedoresUnicos },
+      { CONCEPTO: "Total Registros", VALOR: Number(totales.totalRegistros) },
+      { CONCEPTO: "Total Hectáreas", VALOR: Number(totales.totalHA) },
+      { CONCEPTO: "Avances Progresivos", VALOR: Number(totales.totalProgresivos) },
+      { CONCEPTO: "Terminados", VALOR: Number(totales.totalCompletos) },
+      { CONCEPTO: "Pendientes", VALOR: Number(totales.totalPendientes) },
+      { CONCEPTO: "Pendientes Revisión", VALOR: Number(totales.totalPendientesRevision) },
+      { CONCEPTO: "Aprobados", VALOR: Number(totales.totalAprobados) },
+      { CONCEPTO: "Rechazados", VALOR: Number(totales.totalRechazados) },
+      { CONCEPTO: "Órdenes Únicas", VALOR: Number(totales.ordenesUnicas) },
+      { CONCEPTO: "Proveedores Únicos", VALOR: Number(totales.proveedoresUnicos) },
     ]
 
     if (

@@ -931,9 +931,9 @@ export default function AvancesPage() {
             ID: orden._id || orden.id,
             Nombre: orden.descripcion || "Sin descripción",
             Número: orden.numero || "N/A",
-            "Superficie Total (ha)": superficieTotal.toString().replace(".", ","),
-            "Superficie Completada (ha)": superficieCompletada.toString().replace(".", ","),
-            "Progreso (%)": porcentajeAvance,
+            "Superficie Total (ha)": Number(superficieTotal),
+            "Superficie Completada (ha)": Number(superficieCompletada),
+            "Progreso (%)": Number(porcentajeAvance),
             Estado: orden.estado || "No especificado",
             "Fecha Creación": formatDate(orden.fechaCreacion),
           })
@@ -962,9 +962,9 @@ export default function AvancesPage() {
               hierarchicalData.push({
                 Tipo: "AVANCE",
                 Fecha: formatDate(avance.fecha),
-                "Superficie (ha)": superficie.toString().replace(".", ","),
-                Plantas: avance.plantas || 0,
-                Personal: avance.personal || 0,
+                "Superficie (ha)": Number(superficie),
+                Plantas: Number(avance.plantas || 0),
+                Personal: Number(avance.personal || 0),
                 Observaciones: avance.observaciones || "",
               })
             }
