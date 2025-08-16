@@ -167,6 +167,8 @@ export function WorkProgressForm({
     jornal: "",
     // Campo implemento (compartido entre plantillas)
     implemento: "",
+    // Campo Año de Plantación (para plantillas que lo requieren)
+    anioPlantacion: "",
   })
 
   // Estado para productos dinámicos con unidad de medida
@@ -1449,6 +1451,26 @@ export function WorkProgressForm({
           />
         </div>
 
+        {/* Año de Plantación */}
+        <div className="space-y-2">
+          <Label htmlFor="anioPlantacion">
+            Año de Plantación <span className="text-red-500">*</span>
+          </Label>
+          <Input
+            id="anioPlantacion"
+            type="number"
+            min="1900"
+            max="2030"
+            value={formData.anioPlantacion || ""}
+            onChange={(e) => handleInputChange("anioPlantacion", e.target.value)}
+            placeholder="Ej: 2020, 2021, 2022"
+            required={true}
+          />
+          <p className="text-xs text-muted-foreground">
+            💡 Año en que se realizó la plantación del rodal
+          </p>
+        </div>
+
         {/* Observaciones */}
         <div className="col-span-2 space-y-2">
           <Label htmlFor="observaciones">Observaciones</Label>
@@ -1660,7 +1682,7 @@ export function WorkProgressForm({
         {/* Predio/Campo */}
         <div className="space-y-2">
           <Label htmlFor="predio">
-            <span className="text-red-500">*</span>
+            Predio/Campo <span className="text-red-500">*</span>
           </Label>
           <Input
             id="predio"
@@ -1954,6 +1976,26 @@ export function WorkProgressForm({
           />
           <p className="text-xs text-muted-foreground">
             💡 La superficie se calcula automáticamente: Total de plantas ÷ Densidad
+          </p>
+        </div>
+
+        {/* Año de Plantación */}
+        <div className="space-y-2">
+          <Label htmlFor="anioPlantacion">
+            Año de Plantación <span className="text-red-500">*</span>
+          </Label>
+          <Input
+            id="anioPlantacion"
+            type="number"
+            min="1900"
+            max="2030"
+            value={formData.anioPlantacion || ""}
+            onChange={(e) => handleInputChange("anioPlantacion", e.target.value)}
+            placeholder="Ej: 2020, 2021, 2022"
+            required={true}
+          />
+          <p className="text-xs text-muted-foreground">
+            💡 Año en que se realizó la plantación del rodal
           </p>
         </div>
 
@@ -2802,13 +2844,13 @@ export function WorkProgressForm({
     // Para Control de regeneración de pinos, usar exactamente los campos definidos en la plantilla
     if (isControlRegeneracionTemplate(activeTemplate?.nombre)) {
       // Campos específicos para Control de regeneración de pinos
-      requiredFields = ["estado", "fecha", "predio", "rodal", "cuadrilla", "implemento", "operarios", "ha", "jornales"]
+      requiredFields = ["estado", "fecha", "predio", "rodal", "cuadrilla", "implemento", "operarios", "ha", "jornales", "anioPlantacion"]
     } else if (isPreparacionTerrenoTemplate(activeTemplate?.nombre)) {
       // Campos específicos para Preparación de terreno
       requiredFields = ["fecha", "predio", "rodal", "cuadrilla", "implemento", "jornal", "ha"]
     } else if (activeTemplate?.nombre === "MANEJO REBROTE") {
       // Campos específicos para Manejo de rebrote
-      requiredFields = ["estado", "fecha", "rodal", "predio", "cuadrilla", "implemento", "operarios", "ha"]
+      requiredFields = ["estado", "fecha", "rodal", "predio", "cuadrilla", "implemento", "operarios", "ha", "anioPlantacion"]
     } else {
       // Para otras plantillas, usar la lógica existente
       requiredFields = ["fecha", "cuadrilla"]
@@ -2833,14 +2875,14 @@ export function WorkProgressForm({
 
     // Validaciones específicas por tipo de plantilla
     if (isPlantationTemplate(activeTemplate?.nombre)) {
-      requiredFields.push("tipoCarga", "densidad", "vivero", "especie_forestal", "clon")
+      requiredFields.push("tipoCarga", "densidad", "vivero", "especie_forestal", "clon", "anioPlantacion")
       if (formData.tipoCarga === "Bandejas") {
         requiredFields.push("cantidadBandejas")
       } else if (formData.tipoCarga === "Rocambole") {
         requiredFields.push("cantidadPlantines")
       }
     } else if (isPodaTemplate(activeTemplate?.nombre)) {
-      requiredFields.push("tipoPoda", "altura_poda", "cantidadPlantas", "densidad")
+      requiredFields.push("tipoPoda", "altura_poda", "cantidadPlantas", "densidad", "anioPlantacion")
 
       // Validaciones específicas para PODA
       if (!formData.tipoPoda || formData.tipoPoda.trim() === "") {
@@ -2863,6 +2905,20 @@ export function WorkProgressForm({
       const densidad = Number(formData.densidad)
       if (densidad <= 0) {
         setError("La densidad debe ser mayor a 0")
+        return false
+      }
+
+      // Validar año de plantación para PODA
+      const anioPlantacion = Number(formData.anioPlantacion)
+      if (anioPlantacion < 1900 || anioPlantacion > 2030) {
+        setError("El año de plantación debe estar entre 1900 y 2030")
+        return false
+      }
+    } else if (isPlantationTemplate(activeTemplate?.nombre)) {
+      // Validar año de plantación para PLANTACION
+      const anioPlantacion = Number(formData.anioPlantacion)
+      if (anioPlantacion < 1900 || anioPlantacion > 2030) {
+        setError("El año de plantación debe estar entre 1900 y 2030")
         return false
       }
     } else if (isControlHormigasTemplate(activeTemplate?.nombre)) {
@@ -2892,6 +2948,20 @@ export function WorkProgressForm({
       const ha = Number(formData.ha)
       if (ha <= 0) {
         setError("Las hectáreas deben ser mayor a 0")
+        return false
+      }
+
+      // Validar año de plantación para Manejo de rebrote
+      const anioPlantacion = Number(formData.anioPlantacion)
+      if (anioPlantacion < 1900 || anioPlantacion > 2030) {
+        setError("El año de plantación debe estar entre 1900 y 2030")
+        return false
+      }
+    } else if (isControlRegeneracionTemplate(activeTemplate?.nombre)) {
+      // Validar año de plantación para Control de regeneración de pinos
+      const anioPlantacion = Number(formData.anioPlantacion)
+      if (anioPlantacion < 1900 || anioPlantacion > 2030) {
+        setError("El año de plantación debe estar entre 1900 y 2030")
         return false
       }
     }
@@ -2995,6 +3065,7 @@ export function WorkProgressForm({
           ha: Number(formData.ha || 0),
           superficie: Number(formData.ha || 0), // Mapear ha a superficie para el backend
           jornales: Number(formData.jornales || 0),
+          anioPlantacion: Number(formData.anioPlantacion || 0),
           observaciones: formData.observaciones || "",
         }
       } else if (isPreparacionTerrenoTemplate(activeTemplate?.nombre)) {
@@ -3027,6 +3098,7 @@ export function WorkProgressForm({
           operarios: Number(formData.operarios || 0),
           ha: Number(formData.ha || 0),
           superficie: Number(formData.ha || 0), // Mapear ha a superficie para el backend
+          anioPlantacion: Number(formData.anioPlantacion || 0),
           observaciones: formData.observaciones || "",
         }
       } else {
@@ -3059,6 +3131,7 @@ export function WorkProgressForm({
           submitData.cantidadPlantas = Number(formData.cantidadPlantines)
         }
         submitData.densidad = Number(formData.densidad)
+        submitData.anioPlantacion = Number(formData.anioPlantacion || 0)
       } else if (isPodaTemplate(activeTemplate?.nombre)) {
         // Campos específicos de PODA
         submitData.tipoPoda = formData.tipoPoda || ""
@@ -3066,6 +3139,7 @@ export function WorkProgressForm({
         submitData.plantas = Number(formData.cantidadPlantas || 0)
         submitData.cantidadPlantas = Number(formData.cantidadPlantas || 0)
         submitData.densidad = Number(formData.densidad || 0)
+        submitData.anioPlantacion = Number(formData.anioPlantacion || 0)
 
         // Campos del sistema que deben incluirse
         submitData.predio = formData.predio || workOrder?.campo || ""
