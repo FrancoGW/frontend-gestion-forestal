@@ -173,6 +173,7 @@ export function WorkProgressTable({
         Actividad: avance.actividad || "",
         Especie: avance.especie || "",
         Rodal: avance.rodal || "",
+        "Año P.": Number(avance.anioPlantacion || 0) || "-",
         Bandejas: avance.cantidadBandejas || "-",
         Plantas: Number(avance.cantidadPlantas || avance.plantas || 0),
         "GIS (ha)": Number(avance.superficie || 0),
@@ -197,6 +198,7 @@ export function WorkProgressTable({
         { wch: 20 }, // Actividad
         { wch: 15 }, // Especie
         { wch: 8 }, // Rodal
+        { wch: 10 }, // Año P.
         { wch: 10 }, // Bandejas
         { wch: 10 }, // Plantas
         { wch: 10 }, // GIS (ha)
@@ -280,6 +282,7 @@ export function WorkProgressTable({
                 <TableHead>Actividad</TableHead>
                 <TableHead>Especie</TableHead>
                 <TableHead className="w-[80px] text-center">Rodal</TableHead>
+                <TableHead className="w-[80px] text-center">Año P.</TableHead>
                 <TableHead className="w-[100px] text-center">Bandejas</TableHead>
                 <TableHead className="w-[100px] text-center">Plantas</TableHead>
                 <TableHead className="w-[100px] text-center">GIS (ha)</TableHead>
@@ -332,6 +335,9 @@ export function WorkProgressTable({
                     <TableCell className="text-center">
                       <Skeleton className="h-4 w-12 mx-auto" />
                     </TableCell>
+                    <TableCell className="text-center">
+                      <Skeleton className="h-4 w-12 mx-auto" />
+                    </TableCell>
                     {/* ✅ NUEVO: Skeleton para Estado */}
                     <TableCell className="text-center">
                       <Skeleton className="h-6 w-20 mx-auto" />
@@ -343,7 +349,7 @@ export function WorkProgressTable({
                 ))
               ) : filteredAvances.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={14} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={15} className="text-center py-8 text-muted-foreground">
                     {searchTerm || dateFrom || dateTo
                       ? "No se encontraron avances con los filtros aplicados"
                       : "No hay avances registrados"}
@@ -368,6 +374,7 @@ export function WorkProgressTable({
                       </div>
                     </TableCell>
                     <TableCell className="text-center">{avance.rodal || "-"}</TableCell>
+                    <TableCell className="text-center">{avance.anioPlantacion || "-"}</TableCell>
                     <TableCell className="text-center">{avance.cantidadBandejas || "-"}</TableCell>
                     <TableCell className="text-center">{avance.cantidadPlantas || avance.plantas || 0}</TableCell>
                     <TableCell className="text-center">{Number(avance.superficie || 0).toFixed(1)}</TableCell>

@@ -767,6 +767,7 @@ export default function ProviderAvancesPage() {
           // Ubicación
           "Predio/Campo": capitalizeFirstLetter(avance.predio) || "Sin especificar",
           Rodal: capitalizeFirstLetter(avance.rodal) || "Sin especificar",
+          "Año P.": Number(avance.anioPlantacion || 0) || "-",
           Sección: getFieldValue(avance, "seccion", "Sin especificar"),
           Ensayo: avance.rodalEnsayo ? "Sí" : "No",
 
@@ -848,6 +849,7 @@ export default function ProviderAvancesPage() {
         { wch: 12 }, // Estado
         { wch: 15 }, // Predio/Campo
         { wch: 10 }, // Rodal
+        { wch: 10 }, // Año P.
         { wch: 12 }, // Sección
         { wch: 8 }, // Ensayo
         { wch: 15 }, // Cuadrilla
@@ -1320,6 +1322,7 @@ export default function ProviderAvancesPage() {
                       <TableHead className="hidden lg:table-cell min-w-[120px]">Actividad</TableHead>
                       <TableHead className="hidden lg:table-cell min-w-[120px]">Especie</TableHead>
                       <TableHead className="min-w-[100px]">Rodal</TableHead>
+                      <TableHead className="min-w-[80px] text-center">Año P.</TableHead>
                       <TableHead className="min-w-[120px] text-center">Estado del avance</TableHead>
                       <TableHead className="hidden sm:table-cell min-w-[100px] text-right">Bandejas</TableHead>
                       <TableHead className="hidden sm:table-cell min-w-[100px] text-right">Plantas</TableHead>
@@ -1360,6 +1363,9 @@ export default function ProviderAvancesPage() {
                                 </Badge>
                               )}
                             </div>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {avance._originalData?.anioPlantacion || "-"}
                           </TableCell>
                           <TableCell className="text-center">
                             {avance.estado === "R7 (terminado)" ? (

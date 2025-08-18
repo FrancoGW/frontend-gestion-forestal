@@ -41,6 +41,7 @@ type DatosTablaItem = {
   cuadrillaId?: string;
   cuadrillaNombre?: string;
   jornada: number;
+  anioPlantacion?: number; // ✅ AGREGADO: Campo año de plantación
 };
 
 export default function JdaDashboard() {
@@ -387,6 +388,7 @@ export default function JdaDashboard() {
           cuadrillaId: avance.cuadrillaId ? String(avance.cuadrillaId) : undefined,
           cuadrillaNombre: cuadrillaNombre,
           jornada: Number(avance.jornada) || 0,
+          anioPlantacion: avance.anioPlantacion ? Number(avance.anioPlantacion) : undefined, // ✅ AGREGADO: Campo año de plantación
         })
       })
     })
@@ -722,6 +724,7 @@ export default function JdaDashboard() {
                   <TableHead>Supervisor</TableHead>
                   <TableHead>Predio</TableHead>
                   <TableHead>Rodal</TableHead>
+                  <TableHead>Año P.</TableHead>
                   <TableHead>Actividad</TableHead>
                   <TableHead>Proveedor</TableHead>
                   <TableHead>Cuadrilla</TableHead>
@@ -733,7 +736,7 @@ export default function JdaDashboard() {
               <TableBody>
                 {datosTabla.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={12} className="text-center py-8 text-muted-foreground">
                       No hay avances que coincidan con los filtros seleccionados
                     </TableCell>
                   </TableRow>
@@ -749,6 +752,7 @@ export default function JdaDashboard() {
                       </TableCell>
                       <TableCell>{item.predio}</TableCell>
                       <TableCell>{item.rodal}</TableCell>
+                      <TableCell>{item.anioPlantacion || "-"}</TableCell>
                       <TableCell>{item.actividad}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className="text-xs">

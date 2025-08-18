@@ -65,6 +65,7 @@ export interface AvanceData {
   empresa?: string
   proveedorId?: number
   proveedorNombre?: string
+  anioPlantacion?: number // ✅ AGREGADO: Campo año de plantación
 }
 
 export function useSupervisorData() {
@@ -464,6 +465,7 @@ export function useSupervisorData() {
             proveedor: avance.proveedor || orden.proveedor,
             proveedorId: avance.proveedorId || orden.proveedorId,
             proveedorNombre: avance.proveedorNombre || "",
+            anioPlantacion: avance.anioPlantacion ? Number(avance.anioPlantacion) : undefined, // ✅ AGREGADO: Campo año de plantación
           }
           return avanceTransformado
         })

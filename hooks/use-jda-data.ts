@@ -57,6 +57,7 @@ interface AvanceData {
   proveedorNombre: string
   supervisorId: number
   supervisorNombre: string
+  anioPlantacion?: number // ✅ AGREGADO: Campo año de plantación
 }
 
 interface JdaData {
@@ -437,7 +438,8 @@ export function useJdaData() {
           proveedorId: Number(avance.proveedorId || orden?.proveedorId || 0),
           proveedorNombre: avance.proveedorNombre || orden?.proveedor || "",
           supervisorId: Number(avance.supervisorId || orden?.supervisor_id || 0),
-          supervisorNombre: avance.supervisorNombre || ""
+          supervisorNombre: avance.supervisorNombre || "",
+          anioPlantacion: avance.anioPlantacion ? Number(avance.anioPlantacion) : undefined // ✅ AGREGADO: Campo año de plantación
         }
       })
     } catch (err) {
@@ -508,7 +510,8 @@ export function useJdaData() {
           proveedorId: Number(avance.proveedorId || 0),
           proveedorNombre: avance.proveedorNombre || "",
           supervisorId: Number(avance.supervisorId || 0),
-          supervisorNombre: avance.supervisorNombre || ""
+          supervisorNombre: avance.supervisorNombre || "",
+          anioPlantacion: avance.anioPlantacion ? Number(avance.anioPlantacion) : undefined // ✅ AGREGADO: Campo año de plantación
         }
       })
       setAvances(avancesFiltrados)

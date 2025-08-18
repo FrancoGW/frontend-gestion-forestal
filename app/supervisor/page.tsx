@@ -42,6 +42,7 @@ type DatosTablaItem = {
   cuadrillaNombre?: string;
   jornada: number;
   rodalHa?: number; // Added for GIS HA
+  anioPlantacion?: number; // Added for Año de Plantación
 };
 
 export default function SupervisorDashboard() {
@@ -243,6 +244,7 @@ export default function SupervisorDashboard() {
       PREDIOS: item.predio,
       "ORDEN TR": item.ordenTrabajo,
       RODAL: item.rodal,
+      "AÑO P.": item.anioPlantacion || "-",
       ACTIVIDAD: item.actividad,
       PROGRESO: item.indicadorProgreso,
       ESTADO: item.estado,
@@ -260,6 +262,7 @@ export default function SupervisorDashboard() {
       PREDIOS: "",
       "ORDEN TR": "",
       RODAL: "",
+      "AÑO P.": "",
       ACTIVIDAD: "",
       PROGRESO: "",
       ESTADO: "TOTALES:",
@@ -286,6 +289,7 @@ export default function SupervisorDashboard() {
       { wch: 12 }, // PREDIOS
       { wch: 10 }, // ORDEN TR
       { wch: 30 }, // RODAL
+      { wch: 10 }, // AÑO P.
       { wch: 12 }, // ACTIVIDAD
       { wch: 15 }, // PROGRESO
       { wch: 15 }, // ESTADO
@@ -569,6 +573,7 @@ export default function SupervisorDashboard() {
           cuadrillaNombre: cuadrillaNombre,
           jornada: Number(avance.jornada) || 0,
           rodalHa: rodalHa,
+                     anioPlantacion: avance.anioPlantacion ? Number(avance.anioPlantacion) : undefined, // ✅ AGREGADO: Campo año de plantación
         })
       })
     })
@@ -1007,6 +1012,7 @@ export default function SupervisorDashboard() {
                   <TableHead className="font-bold bg-yellow-200">Predios</TableHead>
                   <TableHead className="font-bold bg-blue-200">Ord. Tr.</TableHead>
                   <TableHead className="font-bold bg-blue-200">Rodal</TableHead>
+                  <TableHead className="font-bold bg-blue-200">Año P.</TableHead>
                   <TableHead className="font-bold bg-blue-200">Act.</TableHead>
                   <TableHead className="font-bold bg-orange-200">Progreso</TableHead>
                   <TableHead className="font-bold bg-purple-200">Estado</TableHead>
@@ -1018,9 +1024,9 @@ export default function SupervisorDashboard() {
               <TableBody>
                 {datosTabla.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={12} className="text-center py-8 text-muted-foreground">
-                      No se encontraron registros con los filtros aplicados
-                    </TableCell>
+                                      <TableCell colSpan={13} className="text-center py-8 text-muted-foreground">
+                    No se encontraron registros con los filtros aplicados
+                  </TableCell>
                   </TableRow>
                 ) : (
                   datosTabla.map((item, index: number) => (
@@ -1039,6 +1045,7 @@ export default function SupervisorDashboard() {
                       <TableCell className="font-medium">{item.predio}</TableCell>
                       <TableCell>{item.ordenTrabajo}</TableCell>
                       <TableCell>{item.rodal}</TableCell>
+                      <TableCell>{item.anioPlantacion || "-"}</TableCell>
                       <TableCell>{item.actividad}</TableCell>
                       <TableCell>
                         <Badge
@@ -1101,9 +1108,9 @@ export default function SupervisorDashboard() {
                 )}
                 {datosTabla.length > 0 && (
                   <TableRow className="bg-gray-100 font-bold">
-                    <TableCell colSpan={11} className="text-right">
-                      TOTALES:
-                    </TableCell>
+                                      <TableCell colSpan={12} className="text-right">
+                    TOTALES:
+                  </TableCell>
                     <TableCell className="text-right">{totales.totalHA.toFixed(2)}</TableCell>
                     <TableCell className="text-right bg-blue-200">{/* Total GIS HA */}</TableCell>
                   </TableRow>

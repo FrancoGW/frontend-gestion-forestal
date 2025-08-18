@@ -683,6 +683,7 @@ export default function InformesAvancesPage() {
                         <TableHead className="font-bold">Fecha</TableHead>
                         <TableHead className="font-bold">Predio</TableHead>
                         <TableHead className="font-bold">Rodal</TableHead>
+                        <TableHead className="font-bold">Año P.</TableHead>
                         <TableHead className="font-bold">Actividad</TableHead>
                         <TableHead className="font-bold text-right">Ha Ava</TableHead>
                       </TableRow>
@@ -690,7 +691,7 @@ export default function InformesAvancesPage() {
                     <TableBody>
                       {datosInforme.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                          <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                             No hay datos para mostrar
                           </TableCell>
                         </TableRow>
@@ -700,6 +701,7 @@ export default function InformesAvancesPage() {
                             <TableCell className="text-sm">{formatearFechaArgentina(item.fecha)}</TableCell>
                             <TableCell className="font-medium">{item.predio}</TableCell>
                             <TableCell>{item.rodal}</TableCell>
+                            <TableCell>{item.anioPlantacion || "-"}</TableCell>
                             <TableCell>{item.actividad}</TableCell>
                             <TableCell className="text-right">{item.haAvanzada.toFixed(1)}</TableCell>
                           </TableRow>
@@ -707,7 +709,7 @@ export default function InformesAvancesPage() {
                       )}
                       {datosInforme.length > 20 && (
                         <TableRow>
-                          <TableCell colSpan={5} className="text-center py-4 text-muted-foreground">
+                          <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">
                             Mostrando 20 de {datosInforme.length} registros. Descarga el Excel para ver todos.
                           </TableCell>
                         </TableRow>
