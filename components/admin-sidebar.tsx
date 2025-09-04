@@ -68,7 +68,6 @@ export function AdminSidebar({ children }: { children?: React.ReactNode }) {
     { href: "/admin/tipos-uso", label: "Tipos de Uso", icon: Layers },
     { href: "/admin/especies", label: "Especies", icon: Leaf },
     { href: "/admin/viveros", label: "Viveros", icon: Building },
-    { href: "/admin/clones", label: "Clones", icon: Layers },
     { href: "/admin/ambientales", label: "Aspectos Ambientales", icon: Droplet },
     { href: "/admin/insumos", label: "Insumos", icon: Package },
     { href: "/admin/malezas-productos", label: "Malezas Productos", icon: Beaker },

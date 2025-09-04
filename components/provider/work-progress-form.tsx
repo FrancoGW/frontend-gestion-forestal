@@ -16,7 +16,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { cuadrillasAPI, avancesTrabajoAPI } from "@/lib/api-client"
-import { viverosAPI, especiesAPI, clonesAPI } from "@/lib/api-client"
+import { viverosAPI, especiesAPI } from "@/lib/api-client"
 import { useMalezasProductos } from "@/hooks/use-malezas-productos"
 import { supervisorsAPI } from "@/lib/api-client"
 import { useProviders } from "@/hooks/use-providers"
@@ -188,7 +188,10 @@ export function WorkProgressForm({
   const [rodalProgress, setRodalProgress] = useState<Record<string, number>>({})
   const [loadingRodalProgress, setLoadingRodalProgress] = useState(false)
   const [viveros, setViveros] = useState<any[]>([])
+  // especies: opciones visibles (filtradas por vivero)
   const [especies, setEspecies] = useState<any[]>([])
+  // allEspecies: catálogo completo desde /api/especies
+  const [allEspecies, setAllEspecies] = useState<any[]>([])
   const [clones, setClones] = useState<any[]>([])
   const [loadingPlantationData, setLoadingPlantationData] = useState(false)
 
@@ -404,13 +407,16 @@ export function WorkProgressForm({
       setLoadingPlantationData(true)
 
       try {
-        const especiesData = await especiesAPI.getAll()
-        const viverosData = await viverosAPI.getAll()
-        const clonesData = await clonesAPI.getAll()
+        const especiesResp = await especiesAPI.getAll()
+        const viverosResp = await viverosAPI.getAll()
+
+        const viverosData = viverosResp?.data ?? (Array.isArray(viverosResp) ? viverosResp : [])
+        const especiesData = especiesResp?.data ?? (Array.isArray(especiesResp) ? especiesResp : [])
 
         setViveros(Array.isArray(viverosData) ? viverosData : [])
-        setEspecies(Array.isArray(especiesData) ? especiesData : [])
-        setClones(Array.isArray(clonesData) ? clonesData : [])
+        setAllEspecies(Array.isArray(especiesData) ? especiesData : [])
+        setEspecies([])
+        setClones([]) // Los clones se cargarán dinámicamente cuando se seleccione un vivero
       } catch (error) {
         setViveros([])
         setEspecies([])
@@ -422,6 +428,40 @@ export function WorkProgressForm({
 
     loadPlantationData()
   }, [activeTemplate, workOrder?.id, workOrder?.campo])
+
+  // Función para obtener especies de un vivero específico
+  const getEspeciesDelVivero = (viveroId: string) => {
+    if (!viveroId || !viveros.length) return []
+    
+    const vivero = viveros.find(v => (v._id || v.id) === viveroId)
+    if (!vivero || !vivero.especies) return []
+    
+    // Filtrar especies que existen en la colección de especies
+    const especiesExistentes = (allEspecies || []).filter(especie => 
+      vivero.especies.includes(especie._id || especie.id)
+    )
+    
+    // Agregar especies de texto personalizado
+    const especiesTexto = vivero.especies.filter(especie => 
+      !(allEspecies || []).some(e => (e._id || e.id) === especie)
+    )
+    
+    return [...especiesExistentes, ...especiesTexto.map(texto => ({ 
+      _id: texto, 
+      especie: texto, 
+      nombre: texto 
+    }))]
+  }
+
+  // Función para obtener clones de un vivero específico
+  const getClonesDelVivero = (viveroId: string) => {
+    if (!viveroId || !viveros.length) return []
+    
+    const vivero = viveros.find(v => (v._id || v.id) === viveroId)
+    if (!vivero || !vivero.clones) return []
+    
+    return vivero.clones.filter(clon => clon.activo !== false)
+  }
 
   // Cargar plantilla y inicializar campos dinámicos
   useEffect(() => {
@@ -1821,9 +1861,10 @@ export function WorkProgressForm({
           <Select
             value={formData.especie_forestal || ""}
             onValueChange={(newValue) => handleInputChange("especie_forestal", newValue)}
+            disabled={!formData.vivero}
           >
             <SelectTrigger id="especie_forestal">
-              <SelectValue placeholder="Seleccionar especie">
+              <SelectValue placeholder={formData.vivero ? "Seleccionar especie" : "Primero seleccione un vivero"}>
                 {formData.especie_forestal
                   ? (() => {
                       const especie = especies.find((e) => (e._id || e.id) === formData.especie_forestal)
@@ -1831,19 +1872,25 @@ export function WorkProgressForm({
                         ? especie.especie || especie.nombre || `Especie ${formData.especie_forestal}`
                         : formData.especie_forestal
                     })()
-                  : "Seleccionar especie"}
+                  : formData.vivero ? "Seleccionar especie" : "Primero seleccione un vivero"}
               </SelectValue>
             </SelectTrigger>
             <SelectContent>
-              {especies.map((especie) => {
-                const id = especie._id || especie.id || ""
-                const nombre = especie.especie || especie.nombre || `Especie ${id}`
-                return (
-                  <SelectItem key={id} value={id}>
-                    {nombre}
-                  </SelectItem>
-                )
-              })}
+              {especies.length > 0 ? (
+                especies.map((especie) => {
+                  const id = especie._id || especie.id || ""
+                  const nombre = especie.especie || especie.nombre || `Especie ${id}`
+                  return (
+                    <SelectItem key={id} value={id}>
+                      {nombre}
+                    </SelectItem>
+                  )
+                })
+              ) : (
+                <SelectItem value="" disabled>
+                  {formData.vivero ? "No hay especies disponibles" : "Seleccione un vivero primero"}
+                </SelectItem>
+              )}
             </SelectContent>
           </Select>
         </div>
@@ -1856,12 +1903,15 @@ export function WorkProgressForm({
           <Select
             value={formData.clon || ""}
             onValueChange={(newValue) => {
-             
               handleInputChange("clon", newValue)
             }}
+            disabled={!formData.vivero}
           >
             <SelectTrigger id="clon">
-              <SelectValue placeholder="Seleccionar clon">
+              <SelectValue placeholder={
+                !formData.vivero ? "Primero seleccione un vivero" :
+                "Seleccionar clon"
+              }>
                 {formData.clon
                   ? (() => {
                       const clon = clones.find((c) => (c._id || c.id) === formData.clon)
@@ -1869,19 +1919,27 @@ export function WorkProgressForm({
                         ? clon.codigo || clon.codigoClon || clon.nombre || clon.clon || `Clon ${formData.clon}`
                         : formData.clon
                     })()
-                  : "Seleccionar clon"}
+                  : !formData.vivero ? "Primero seleccione un vivero" :
+                    "Seleccionar clon"}
               </SelectValue>
             </SelectTrigger>
             <SelectContent>
-              {clones.map((clon) => {
-                const id = clon._id || clon.id || ""
-                const codigo = clon.codigo || clon.codigoClon || clon.nombre || clon.clon || `Clon ${id}`
-                return (
-                  <SelectItem key={id} value={id}>
-                    {codigo}
-                  </SelectItem>
-                )
-              })}
+              {clones.length > 0 ? (
+                clones.map((clon) => {
+                  const id = clon._id || clon.id || ""
+                  const codigo = clon.codigo || clon.codigoClon || clon.nombre || clon.clon || `Clon ${id}`
+                  return (
+                    <SelectItem key={id} value={id}>
+                      {codigo}
+                    </SelectItem>
+                  )
+                })
+              ) : (
+                <SelectItem value="" disabled>
+                  {!formData.vivero ? "Seleccione un vivero primero" :
+                   "No hay clones disponibles"}
+                </SelectItem>
+              )}
             </SelectContent>
           </Select>
         </div>
@@ -2831,10 +2889,40 @@ export function WorkProgressForm({
       console.log(`[INPUT][${field}] Tipo:`, typeof value)
     }
     
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }))
+    setFormData((prev) => {
+      const newFormData = {
+        ...prev,
+        [field]: value,
+      }
+
+      // Si se selecciona un vivero, actualizar especies y clones disponibles
+      if (field === "vivero" && value) {
+        const especiesDelVivero = getEspeciesDelVivero(value as string)
+        const clonesDelVivero = getClonesDelVivero(value as string)
+
+        setEspecies(especiesDelVivero)
+        setClones(clonesDelVivero)
+
+        // Limpiar especie y clon seleccionados si ya no están disponibles
+        if (!especiesDelVivero.some(e => (e._id || e.id) === prev.especie_forestal)) {
+          newFormData.especie_forestal = ""
+        }
+        if (!clonesDelVivero.some(c => (c._id || c.id) === prev.clon)) {
+          newFormData.clon = ""
+        }
+      }
+
+      // Si se selecciona una especie ya no filtramos clones; mostramos todos los del vivero.
+      if (field === "especie_forestal" && formData.vivero) {
+        const clonesDelVivero = getClonesDelVivero(formData.vivero)
+        setClones(clonesDelVivero)
+        if (!clonesDelVivero.some(c => (c._id || c.id) === prev.clon)) {
+          newFormData.clon = ""
+        }
+      }
+
+      return newFormData
+    })
   }
 
   // Función para validar el formulario

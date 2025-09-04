@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Skeleton } from "@/components/ui/skeleton"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { avancesTrabajoAPI, cuadrillasAPI, especiesAPI, viverosAPI, clonesAPI, supervisorsAPI } from "@/lib/api-client"
+import { avancesTrabajoAPI, cuadrillasAPI, especiesAPI, viverosAPI, supervisorsAPI } from "@/lib/api-client"
 import { useAuth } from "@/hooks/use-auth"
 import { useProviderOrders } from "@/hooks/use-provider-orders"
 import * as XLSX from "xlsx"
@@ -368,7 +368,7 @@ export default function ProviderAvancesPage() {
         const [especiesData, viverosData, clonesData] = await Promise.all([
           especiesAPI.getAll(),
           viverosAPI.getAll(),
-          clonesAPI.getAll(),
+          Promise.resolve([]), // Los clones ahora se manejan dentro de los viveros
         ])
 
         setEspecies(Array.isArray(especiesData) ? especiesData : [])

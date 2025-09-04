@@ -16,7 +16,7 @@ import {
   ambientalesAPI,
   insumosAPI,
   viverosAPI,
-  clonesAPI,
+
 } from "@/lib/api-client"
 
 // Mapa de APIs
@@ -32,7 +32,6 @@ const apiMap: Record<string, any> = {
   ambientales: ambientalesAPI,
   insumos: insumosAPI,
   viveros: viverosAPI,
-  clones: clonesAPI,
 }
 
 // Actualizar el mapeo de campos para incluir empresas y tipos de uso
@@ -84,11 +83,6 @@ const fieldMappings: Record<string, Record<string, string>> = {
   viveros: {
     id: "_id",
     nombre: "nombre",
-  },
-  clones: {
-    id: "_id",
-    codigo: "codigo",
-    nombre: "codigo", // usar codigo como nombre para display
   },
 }
 
@@ -155,9 +149,6 @@ export function useAdminCollection(collectionName: string) {
       } else if (response.viveros && Array.isArray(response.viveros) && collectionName === "viveros") {
         // Manejar estructura específica de viveros
         items = response.viveros
-      } else if (response.clones && Array.isArray(response.clones) && collectionName === "clones") {
-        // Manejar estructura específica de clones
-        items = response.clones
       } else {
         console.warn(`Estructura de respuesta desconocida para ${collectionName}:`, response)
         items = []
@@ -181,8 +172,8 @@ export function useAdminCollection(collectionName: string) {
       console.error(`Error al obtener ${collectionName}:`, error)
       setIsError(true)
       setErrorMessage(error.message || `Error al obtener ${collectionName}`)
-      // Usar datos de ejemplo en caso de error
-      setData(getExampleData(collectionName).map(transformData))
+      // No usar datos mock, dejar el array vacío
+      setData([])
     } finally {
       setIsLoading(false)
     }
@@ -465,7 +456,6 @@ function getSingularName(collectionName: string): string {
     ambientales: "aspecto ambiental",
     insumos: "insumo",
     viveros: "vivero",
-    clones: "clon",
   }
 
   return singularMap[collectionName] || collectionName.slice(0, -1)
@@ -537,12 +527,6 @@ function getExampleData(collectionName: string): any[] {
         { _id: 1, nombre: "Paul", activo: true },
         { _id: 2, nombre: "Loreto", activo: true },
         { _id: 3, nombre: "Von Wernich", activo: true },
-      ]
-    case "clones":
-      return [
-        { _id: 1, codigo: "FA 13", especieAsociada: "Eucalipto", origen: "Forestal Argentina", activo: true },
-        { _id: 2, codigo: "FA 50", especieAsociada: "Eucalipto", origen: "Forestal Argentina", activo: true },
-        { _id: 3, codigo: "INTA 36", especieAsociada: "Eucalipto", origen: "INTA", activo: true },
       ]
     default:
       return []
