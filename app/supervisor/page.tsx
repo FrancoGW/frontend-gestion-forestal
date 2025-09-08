@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
-import { FilterIcon, RefreshCw, AlertTriangle, FileSpreadsheet, CheckCircle, XCircle, Clock } from "lucide-react"
+import { FilterIcon, RefreshCw, AlertTriangle, FileSpreadsheet, CheckCircle, Clock } from "lucide-react"
 import { useSupervisorData } from "@/hooks/use-supervisor-data"
 import { useAuth } from "@/hooks/use-auth"
 import * as XLSX from "xlsx"
@@ -1092,10 +1092,6 @@ export default function SupervisorDashboard() {
                               <SelectItem value="aprobado" className="flex items-center gap-2">
                                 <CheckCircle className="h-4 w-4 text-green-600" />
                                 <span>Aprobado</span>
-                              </SelectItem>
-                              <SelectItem value="rechazado" className="flex items-center gap-2">
-                                <XCircle className="h-4 w-4 text-red-600" />
-                                <span>Rechazado</span>
                               </SelectItem>
                             </SelectContent>
                           </Select>
