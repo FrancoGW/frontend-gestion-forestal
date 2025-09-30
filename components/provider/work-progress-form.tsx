@@ -2852,15 +2852,8 @@ export function WorkProgressForm({
               <SelectValue placeholder="Seleccionar especie" />
             </SelectTrigger>
             <SelectContent>
-              {especies.map((especie) => {
-                const id = especie._id || especie.id || ""
-                const nombre = especie.especie || especie.nombre || `Especie ${id}`
-                return (
-                  <SelectItem key={id} value={id}>
-                    {nombre}
-                  </SelectItem>
-                )
-              })}
+              <SelectItem value="Ecua">Ecua</SelectItem>
+              <SelectItem value="Pino">Pino</SelectItem>
             </SelectContent>
           </Select>
         </div>
