@@ -189,7 +189,7 @@ const DEFAULT_TEMPLATES: ActivityTemplate[] = [
         tipo: "seleccion",
         requerido: true,
         orden: 9,
-        opciones: ["Pino", "Eucalipto"],
+        opciones: ["Ecua", "Pino"],
         esDelSistema: true,
       },
       {
@@ -900,7 +900,7 @@ const DEFAULT_TEMPLATES: ActivityTemplate[] = [
   },
 ]
 
-const FRONTEND_VERSION = "2024-07-09-1"; // Cambia este valor en cada deploy relevante
+const FRONTEND_VERSION = "2025-09-30-1"; // Cambia este valor en cada deploy relevante
 
 try {
   const lastVersion = localStorage.getItem("frontend-version");
