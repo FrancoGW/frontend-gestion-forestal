@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/use-auth"
 import { useProviderProfile } from "@/hooks/use-provider-profile"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Home, FileText, TrendingUp, User, LogOut } from "lucide-react"
+import { Home, FileText, TrendingUp, User, LogOut, FileX } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
@@ -19,6 +19,11 @@ const navigation = [
     name: "Mis Órdenes",
     href: "/proveedor/ordenes",
     icon: FileText,
+  },
+  {
+    name: "Sin Órdenes",
+    href: "/proveedor/sin-ordenes",
+    icon: FileX,
   },
   {
     name: "Avances",

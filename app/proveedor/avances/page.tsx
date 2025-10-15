@@ -731,21 +731,41 @@ export default function ProviderAvancesPage() {
           matchesSearch = searchableFields.some((field) => String(field).toLowerCase().includes(searchTermLower))
         }
 
-        // Filtro por fechas
+        // Filtro por fechas - CORREGIDO para manejar correctamente las zonas horarias
         let matchesDateRange = true
         if (dateFrom || dateTo) {
-          const avanceDate = new Date(avanceExtendido.fecha + "T00:00:00")
-
+          // Crear fecha directamente desde el string YYYY-MM-DD sin agregar T00:00:00
+          const avanceDate = new Date(avanceExtendido.fecha)
+          
           if (dateFrom && dateTo) {
-            const fromDate = new Date(dateFrom.getFullYear(), dateFrom.getMonth(), dateFrom.getDate())
-            const toDate = new Date(dateTo.getFullYear(), dateTo.getMonth(), dateTo.getDate(), 23, 59, 59)
-            matchesDateRange = avanceDate >= fromDate && avanceDate <= toDate
+            // Normalizar fechas a medianoche para comparación precisa
+            const fromDate = new Date(dateFrom)
+            fromDate.setHours(0, 0, 0, 0)
+            
+            const toDate = new Date(dateTo)
+            toDate.setHours(23, 59, 59, 999)
+            
+            // Normalizar avanceDate a medianoche
+            const normalizedAvanceDate = new Date(avanceDate)
+            normalizedAvanceDate.setHours(0, 0, 0, 0)
+            
+            matchesDateRange = normalizedAvanceDate >= fromDate && normalizedAvanceDate <= toDate
           } else if (dateFrom) {
-            const fromDate = new Date(dateFrom.getFullYear(), dateFrom.getMonth(), dateFrom.getDate())
-            matchesDateRange = avanceDate >= fromDate
+            const fromDate = new Date(dateFrom)
+            fromDate.setHours(0, 0, 0, 0)
+            
+            const normalizedAvanceDate = new Date(avanceDate)
+            normalizedAvanceDate.setHours(0, 0, 0, 0)
+            
+            matchesDateRange = normalizedAvanceDate >= fromDate
           } else if (dateTo) {
-            const toDate = new Date(dateTo.getFullYear(), dateTo.getMonth(), dateTo.getDate(), 23, 59, 59)
-            matchesDateRange = avanceDate <= toDate
+            const toDate = new Date(dateTo)
+            toDate.setHours(23, 59, 59, 999)
+            
+            const normalizedAvanceDate = new Date(avanceDate)
+            normalizedAvanceDate.setHours(0, 0, 0, 0)
+            
+            matchesDateRange = normalizedAvanceDate <= toDate
           }
         }
 
@@ -955,21 +975,41 @@ export default function ProviderAvancesPage() {
       matchesSearch = searchableFields.some((field) => String(field).toLowerCase().includes(searchTermLower))
     }
 
-    // Filtro por fechas
+    // Filtro por fechas - CORREGIDO para manejar correctamente las zonas horarias
     let matchesDateRange = true
     if (dateFrom || dateTo) {
-      const avanceDate = new Date(avance.fecha + "T00:00:00")
-
+      // Crear fecha directamente desde el string YYYY-MM-DD sin agregar T00:00:00
+      const avanceDate = new Date(avance.fecha)
+      
       if (dateFrom && dateTo) {
-        const fromDate = new Date(dateFrom.getFullYear(), dateFrom.getMonth(), dateFrom.getDate())
-        const toDate = new Date(dateTo.getFullYear(), dateTo.getMonth(), dateTo.getDate(), 23, 59, 59)
-        matchesDateRange = avanceDate >= fromDate && avanceDate <= toDate
+        // Normalizar fechas a medianoche para comparación precisa
+        const fromDate = new Date(dateFrom)
+        fromDate.setHours(0, 0, 0, 0)
+        
+        const toDate = new Date(dateTo)
+        toDate.setHours(23, 59, 59, 999)
+        
+        // Normalizar avanceDate a medianoche
+        const normalizedAvanceDate = new Date(avanceDate)
+        normalizedAvanceDate.setHours(0, 0, 0, 0)
+        
+        matchesDateRange = normalizedAvanceDate >= fromDate && normalizedAvanceDate <= toDate
       } else if (dateFrom) {
-        const fromDate = new Date(dateFrom.getFullYear(), dateFrom.getMonth(), dateFrom.getDate())
-        matchesDateRange = avanceDate >= fromDate
+        const fromDate = new Date(dateFrom)
+        fromDate.setHours(0, 0, 0, 0)
+        
+        const normalizedAvanceDate = new Date(avanceDate)
+        normalizedAvanceDate.setHours(0, 0, 0, 0)
+        
+        matchesDateRange = normalizedAvanceDate >= fromDate
       } else if (dateTo) {
-        const toDate = new Date(dateTo.getFullYear(), dateTo.getMonth(), dateTo.getDate(), 23, 59, 59)
-        matchesDateRange = avanceDate <= toDate
+        const toDate = new Date(dateTo)
+        toDate.setHours(23, 59, 59, 999)
+        
+        const normalizedAvanceDate = new Date(avanceDate)
+        normalizedAvanceDate.setHours(0, 0, 0, 0)
+        
+        matchesDateRange = normalizedAvanceDate <= toDate
       }
     }
 
