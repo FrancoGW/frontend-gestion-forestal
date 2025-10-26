@@ -66,6 +66,16 @@ export default function SinOrdenesPage() {
     referencia: ""
   })
 
+  // Actualizar empresa cuando el usuario esté disponible
+  useEffect(() => {
+    if (user?.nombre) {
+      setFormData(prev => ({
+        ...prev,
+        empresa: user.nombre
+      }))
+    }
+  }, [user?.nombre])
+
   // Cargar cuadrillas
   useEffect(() => {
     const loadCuadrillas = async () => {
