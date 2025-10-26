@@ -245,6 +245,7 @@ export const ambientalesAPI = createAdminAPI("ambientales")
 export const insumosAPI = createAdminAPI("insumos")
 export const cuadrillasAPI = createAdminAPI("cuadrillas")
 export const viverosAPI = createAdminAPI("viveros")
+export const vecinosAPI = createAdminAPI("vecinos")
 
 // --- CRUD para la colección de usuarios (general) -------------------------
 export const usuariosAPI = createAdminAPI("usuarios")

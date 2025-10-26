@@ -16,6 +16,7 @@ import {
   ambientalesAPI,
   insumosAPI,
   viverosAPI,
+  vecinosAPI,
 
 } from "@/lib/api-client"
 
@@ -32,6 +33,7 @@ const apiMap: Record<string, any> = {
   ambientales: ambientalesAPI,
   insumos: insumosAPI,
   viveros: viverosAPI,
+  vecinos: vecinosAPI,
 }
 
 // Actualizar el mapeo de campos para incluir empresas y tipos de uso
@@ -81,6 +83,10 @@ const fieldMappings: Record<string, Record<string, string>> = {
     nombre: "insumo",
   },
   viveros: {
+    id: "_id",
+    nombre: "nombre",
+  },
+  vecinos: {
     id: "_id",
     nombre: "nombre",
   },
@@ -456,6 +462,7 @@ function getSingularName(collectionName: string): string {
     ambientales: "aspecto ambiental",
     insumos: "insumo",
     viveros: "vivero",
+    vecinos: "vecino",
   }
 
   return singularMap[collectionName] || collectionName.slice(0, -1)

@@ -25,6 +25,7 @@ import {
   ChevronRight,
   MoreHorizontal,
   Beaker,
+  UserPlus,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -71,6 +72,7 @@ export function AdminSidebar({ children }: { children?: React.ReactNode }) {
     { href: "/admin/ambientales", label: "Aspectos Ambientales", icon: Droplet },
     { href: "/admin/insumos", label: "Insumos", icon: Package },
     { href: "/admin/malezas-productos", label: "Malezas Productos", icon: Beaker },
+    { href: "/admin/vecinos", label: "Vecinos", icon: UserPlus },
     { href: "/admin/estadisticas", label: "Estadísticas", icon: BarChart3 },
   ]
 
