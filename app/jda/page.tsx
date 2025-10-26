@@ -323,8 +323,8 @@ export default function JdaDashboard() {
     const avancesProgresivos: DatosTablaItem[] = []
 
     gruposPorClave.forEach((grupo, claveBase) => {
-      // Ordenar avances por fecha
-      grupo.sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime())
+      // Ordenar avances por fecha (más reciente primero)
+      grupo.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
 
       const tieneAvancesProgresivos = grupo.length > 1
 

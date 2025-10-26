@@ -471,11 +471,11 @@ export default function SupervisorDashboard() {
 
     // Procesar cada grupo para mostrar avances progresivos
     gruposPorClave.forEach((grupo, claveBase) => {
-      // Ordenar por fecha para mostrar progresión temporal
+      // Ordenar por fecha para mostrar progresión temporal (más reciente primero)
       grupo.sort((a: any, b: any) => {
         const fechaA = new Date(a.fecha || a.fechaRegistro || new Date())
         const fechaB = new Date(b.fecha || b.fechaRegistro || new Date())
-        return fechaA.getTime() - fechaB.getTime()
+        return fechaB.getTime() - fechaA.getTime()
       })
 
       // Determinar si hay avances progresivos (múltiples registros para la misma tarea)

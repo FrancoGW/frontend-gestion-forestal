@@ -835,6 +835,15 @@ export default function ProviderAvancesPage() {
           // RALEO - Campos específicos
           "Especie Raleo": getFieldValue(avance, "especie", "-"),
 
+          // QUEMAS CONTROLADAS - Campos específicos
+          "Hora Inicio (R29)": getFieldValue(avance, "horaR29", "-"),
+          "Hora Inicio Actividad (R8)": getFieldValue(avance, "horaR8", "-"),
+          "Hora Fin Actividad (R7)": getFieldValue(avance, "horaR7", "-"),
+          "Hora Fin (R28)": getFieldValue(avance, "horaR28", "-"),
+          "Hs Trabajadas": Number(avance.tiempoHs || 0) || "-",
+          "Jornales Sistema": Number(avance.jornadaHs || 0) || "-",
+          "Comentarios Quemas": getFieldValue(avance, "comentarios", "-"),
+
           // Campos dinámicos adicionales (field-*)
           ...Object.keys(avance)
             .filter((key) => key.startsWith("field-"))

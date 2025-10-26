@@ -196,8 +196,8 @@ export default function SupervisorAvancesPage() {
 
     // Calcular estadísticas para cada orden
     ordenesMap.forEach((orden) => {
-      // Ordenar avances por fecha
-      orden.avances.sort((a, b) => a.fecha.localeCompare(b.fecha))
+      // Ordenar avances por fecha (más reciente primero)
+      orden.avances.sort((a, b) => b.fecha.localeCompare(a.fecha))
 
       // Calcular superficie trabajada
       orden.superficieTrabajada = orden.avances.reduce((sum, avance) => sum + avance.superficie, 0)

@@ -650,6 +650,10 @@ export default function AvancesPage() {
               "Superficie (ha)": "Superficie (ha)",
               Plantas: "Plantas",
               Personal: "Personal",
+              "Hora Inicio": "Hora Inicio (R29)",
+              "Hora Fin": "Hora Fin (R28)",
+              "Hs Trabajadas": "Hs Trabajadas",
+              "Jornales Sistema": "Jornales Sistema",
               Observaciones: "Observaciones",
             })
 
@@ -669,6 +673,10 @@ export default function AvancesPage() {
                 "Superficie (ha)": superficie.toString().replace(".", ","),
                 Plantas: avance.plantas || 0,
                 Personal: avance.personal || 0,
+                "Hora Inicio": avance.horaR29 || "-",
+                "Hora Fin": avance.horaR28 || "-",
+                "Hs Trabajadas": avance.tiempoHs || "-",
+                "Jornales Sistema": avance.jornadaHs || "-",
                 Observaciones: avance.observaciones || "",
               })
             }
@@ -946,6 +954,10 @@ export default function AvancesPage() {
               "Superficie (ha)": "Superficie (ha)",
               Plantas: "Plantas",
               Personal: "Personal",
+              "Hora Inicio": "Hora Inicio (R29)",
+              "Hora Fin": "Hora Fin (R28)",
+              "Hs Trabajadas": "Hs Trabajadas",
+              "Jornales Sistema": "Jornales Sistema",
               Observaciones: "Observaciones",
             })
 
@@ -965,6 +977,10 @@ export default function AvancesPage() {
                 "Superficie (ha)": Number(superficie),
                 Plantas: Number(avance.plantas || 0),
                 Personal: Number(avance.personal || 0),
+                "Hora Inicio": avance.horaR29 || "-",
+                "Hora Fin": avance.horaR28 || "-",
+                "Hs Trabajadas": avance.tiempoHs || "-",
+                "Jornales Sistema": avance.jornadaHs || "-",
                 Observaciones: avance.observaciones || "",
               })
             }

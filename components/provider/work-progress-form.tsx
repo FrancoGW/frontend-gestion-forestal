@@ -285,7 +285,8 @@ export function WorkProgressForm({
 
     if (isNaN(tiempoNum) || isNaN(operariosNum)) return ""
 
-    return (tiempoNum * operariosNum).toFixed(2)
+    // Fórmula: (R7 - R8) * Cantidad de Operarios / 8
+    return ((tiempoNum * operariosNum) / 8).toFixed(2)
   }
 
   // Funciones para manejar productos dinámicos con unidades - FIXED
@@ -604,10 +605,7 @@ export function WorkProgressForm({
       isEditing &&
       initialData &&
       activeTemplate &&
-      cuadrillas.length > 0 &&
-      viveros.length > 0 &&
-      especies.length > 0 &&
-      clones.length > 0
+      cuadrillas.length > 0
     ) {
 
       const editFormData: Record<string, any> = {
@@ -642,8 +640,7 @@ export function WorkProgressForm({
         // ✅ CORREGIDO: Resolver vivero correctamente
         vivero: (() => {
           const viveroId = initialData.vivero || initialData.viveroId || ""
-          if (!viveroId) return ""
-
+          if (!viveroId || viveros.length === 0) return ""
 
           // Buscar el vivero por ID
           const vivero = viveros.find((v) => {
@@ -672,8 +669,7 @@ export function WorkProgressForm({
         // ✅ CORREGIDO: Resolver especie forestal correctamente
         especie_forestal: (() => {
           const especieId = initialData.especie_forestal || initialData.especie || ""
-          if (!especieId) return ""
-
+          if (!especieId || especies.length === 0) return ""
 
           // Buscar la especie por ID
           const especie = especies.find((e) => {
@@ -703,9 +699,7 @@ export function WorkProgressForm({
         // ✅ CORREGIDO: Resolver clon correctamente
         clon: (() => {
           const clonId = initialData.clon || initialData.clonId || initialData.codigo_clon || ""
-          if (!clonId) return ""
-
-         
+          if (!clonId || clones.length === 0) return ""
 
           // Buscar el clon por ID exacto
           const clonPorId = clones.find((c) => {
@@ -774,7 +768,9 @@ export function WorkProgressForm({
         ha: String(initialData.ha || initialData.superficie || ""),
         operarios: String(initialData.operarios || ""),
         jornales: String(initialData.jornales || ""),
+        jornal: String(initialData.jornal || ""),
         implemento: initialData.implemento || "",
+        anioPlantacion: String(initialData.anioPlantacion || ""),
       }
 
       // ✅ CORREGIR: Resolver el nombre de la cuadrilla correctamente
@@ -1129,7 +1125,7 @@ export function WorkProgressForm({
         {/* Campos calculados */}
         <div className="space-y-2">
           <Label htmlFor="tiempoHs">
-            Tiempo (hs) <span className="text-sm text-gray-500">(Calculado automáticamente)</span>
+            Hs Trabajadas <span className="text-sm text-gray-500">(Calculado automáticamente)</span>
           </Label>
           <Input
             id="tiempoHs"
@@ -1139,13 +1135,13 @@ export function WorkProgressForm({
             readOnly
             disabled
             className="bg-gray-100 cursor-not-allowed"
-            placeholder="Se calcula automáticamente (R8-R7)"
+            placeholder="Se calcula automáticamente (R7-R8)"
           />
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="jornadaHs">
-            Jornada (hs) <span className="text-sm text-gray-500">(Calculado automáticamente)</span>
+            Jornales Sistema <span className="text-sm text-gray-500">(Calculado automáticamente)</span>
           </Label>
           <Input
             id="jornadaHs"
@@ -1155,7 +1151,7 @@ export function WorkProgressForm({
             readOnly
             disabled
             className="bg-gray-100 cursor-not-allowed"
-            placeholder="Se calcula automáticamente (Tiempo × Operarios)"
+            placeholder="(R7-R8) × Operarios ÷ 8"
           />
         </div>
 
