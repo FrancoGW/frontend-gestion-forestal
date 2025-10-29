@@ -408,11 +408,9 @@ export const avancesTrabajoAPI = {
 
       // Crear una versión simplificada con solo los campos esenciales
       const simplifiedData = {
-        ordenTrabajoId: data.ordenTrabajoId,
         proveedorId: data.proveedorId,
         fecha: data.fecha,
         cuadrillaId: data.cuadrillaId, // Ensure we're sending cuadrillaId
-        rodal: data.rodal,
         actividad: data.actividad,
         cantPersonal: data.cantPersonal || 0,
         jornada: data.jornada || 8,
@@ -428,6 +426,16 @@ export const avancesTrabajoAPI = {
         rodalEnsayo: data.rodalEnsayo || false,
         // ✅ NUEVO: Asegurar que el estado se envíe correctamente
         estado: data.estado || "Pendiente",
+      }
+
+      // Solo agregar ordenTrabajoId si existe (no es undefined/null)
+      if (data.ordenTrabajoId) {
+        simplifiedData.ordenTrabajoId = data.ordenTrabajoId
+      }
+
+      // Solo agregar rodal si existe (para actividades con orden)
+      if (data.rodal) {
+        simplifiedData.rodal = data.rodal
       }
 
       // Agregar superficie solo si está definida y es válida
@@ -458,8 +466,10 @@ export const avancesTrabajoAPI = {
           "seccion",
           "rodalEnsayo",
           "estado", // ✅ NUEVO: Incluir estado en la lista de campos mapeados
+          // Campos que ya se procesan especialmente en simplifiedData
         ]
 
+        // Incluir todos los campos no mapeados, incluyendo los de actividades sin orden
         if (!mappedFields.includes(key) && data[key] !== undefined && data[key] !== null && data[key] !== "") {
           acc[key] = data[key]
         }
@@ -472,16 +482,18 @@ export const avancesTrabajoAPI = {
         ...dynamicFields
       }
 
+      console.log("📤 Enviando avance al backend:", finalData)
+
       const response = await apiClient.post("/api/avancesTrabajos", finalData)
       return response.data
     } catch (error) {
-      console.error("Error en avancesTrabajoAPI.create:", error.message)
+      console.error("❌ Error en avancesTrabajoAPI.create:", error.message)
       if (error.response) {
-        console.error("Detalles del error:", {
+        console.error("📋 Detalles del error del backend:", {
           status: error.response.status,
           statusText: error.response.statusText,
           data: error.response.data,
-          headers: error.response.headers,
+          mensaje: error.response.data?.message || error.response.data?.error,
         })
       }
       throw error

@@ -48,7 +48,6 @@ export default function SinOrdenesPage() {
     actividad: "",
     fecha: new Date().toISOString().split('T')[0],
     ubicacion: "",
-    rodal: "",
     cuadrilla: "",
     cuadrillaId: "",
     cantPersonal: "",
@@ -179,7 +178,6 @@ export default function SinOrdenesPage() {
         
         // Campos de ubicación
         predio: formData.ubicacion,
-        rodal: formData.rodal,
         
         // Campos de cuadrilla
         cuadrilla: formData.cuadrilla,
@@ -219,7 +217,6 @@ export default function SinOrdenesPage() {
         actividad: actividadSeleccionada,
         fecha: new Date().toISOString().split('T')[0],
         ubicacion: "",
-        rodal: "",
         cuadrilla: "",
         cuadrillaId: "",
         cantPersonal: "",
@@ -358,18 +355,6 @@ export default function SinOrdenesPage() {
                         onChange={handleInputChange}
                         placeholder="Ingresa la ubicación"
                         required
-                      />
-                    </div>
-
-                    {/* Rodal */}
-                    <div className="space-y-2">
-                      <Label htmlFor="rodal">Rodal</Label>
-                      <Input
-                        id="rodal"
-                        name="rodal"
-                        value={formData.rodal}
-                        onChange={handleInputChange}
-                        placeholder="Número de rodal"
                       />
                     </div>
 
