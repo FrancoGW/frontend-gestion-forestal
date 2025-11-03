@@ -997,10 +997,12 @@ export function WorkProgressForm({
           <Input
             id="jornada"
             type="number"
-            min="1"
+            step="0.1"
+            min="0.1"
             max="24"
             value={formData.jornada || ""}
             onChange={(e) => handleInputChange("jornada", e.target.value)}
+            placeholder="Ej: 7.3, 8.5, 1.4"
             required={true}
           />
         </div>
@@ -1415,10 +1417,12 @@ export function WorkProgressForm({
           <Input
             id="jornada"
             type="number"
-            min="1"
+            step="0.1"
+            min="0.1"
             max="24"
             value={formData.jornada || ""}
             onChange={(e) => handleInputChange("jornada", e.target.value)}
+            placeholder="Ej: 7.3, 8.5, 1.4"
             required={true}
           />
         </div>
@@ -1803,10 +1807,12 @@ export function WorkProgressForm({
           <Input
             id="jornada"
             type="number"
-            min="1"
+            step="0.1"
+            min="0.1"
             max="24"
             value={formData.jornada || ""}
             onChange={(e) => handleInputChange("jornada", e.target.value)}
+            placeholder="Ej: 7.3, 8.5, 1.4"
             required={true}
           />
         </div>
@@ -2233,10 +2239,12 @@ export function WorkProgressForm({
           <Input
             id="jornada"
             type="number"
-            min="1"
+            step="0.1"
+            min="0.1"
             max="24"
             value={formData.jornada || ""}
             onChange={(e) => handleInputChange("jornada", e.target.value)}
+            placeholder="Ej: 7.3, 8.5, 1.4"
             required={true}
           />
         </div>
@@ -2573,10 +2581,12 @@ export function WorkProgressForm({
           <Input
             id="jornada"
             type="number"
-            min="1"
+            step="0.1"
+            min="0.1"
             max="24"
             value={formData.jornada || ""}
             onChange={(e) => handleInputChange("jornada", e.target.value)}
+            placeholder="Ej: 7.3, 8.5, 1.4"
             required={true}
           />
         </div>
@@ -2830,10 +2840,12 @@ export function WorkProgressForm({
           <Input
             id="jornada"
             type="number"
-            min="1"
+            step="0.1"
+            min="0.1"
             max="24"
             value={formData.jornada || ""}
             onChange={(e) => handleInputChange("jornada", e.target.value)}
+            placeholder="Ej: 7.3, 8.5, 1.4"
             required={true}
           />
         </div>

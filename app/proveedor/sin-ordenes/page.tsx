@@ -54,6 +54,7 @@ export default function SinOrdenesPage() {
     jornada: "8",
     superficie: "",
     vecino: "",
+    estado: "Pendiente",
     // Campos específicos de Quemas Controladas
     horaR29: "",
     horaR8: "",
@@ -165,10 +166,9 @@ export default function SinOrdenesPage() {
       // Preparar datos para enviar
       const actividadData = {
         // Campos requeridos para avances
-        proveedorId: user?.providerId || user?.id || user?._id,
+        proveedorId: user?.providerId || user?.id,
         fecha: formData.fecha,
         actividad: actividadesSinOrdenes.find(a => a.id === actividadSeleccionada)?.nombre || "",
-        estado: "Pendiente",
         observaciones: formData.referencia,
         
         // Campos específicos para actividades sin orden
@@ -190,6 +190,9 @@ export default function SinOrdenesPage() {
         
         // Campo de vecino
         vecino: formData.vecino || "sin vecinos",
+        
+        // Campo de estado
+        estado: formData.estado || "Pendiente",
         
         // Campos específicos de Quemas Controladas
         horaR29: formData.horaR29,
@@ -223,6 +226,7 @@ export default function SinOrdenesPage() {
         jornada: "8",
         superficie: "",
         vecino: "",
+        estado: "Pendiente",
         horaR29: "",
         horaR8: "",
         horaR7: "",
@@ -358,28 +362,6 @@ export default function SinOrdenesPage() {
                       />
                     </div>
 
-                    {/* Vecino */}
-                    <div className="space-y-2">
-                      <Label htmlFor="vecino">Vecino</Label>
-                      <Select 
-                        value={formData.vecino} 
-                        onValueChange={(value) => handleSelectChange("vecino", value)}
-                        disabled={loadingVecinos}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder={loadingVecinos ? "Cargando vecinos..." : "Seleccionar vecino"} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="sin vecinos">Sin vecinos</SelectItem>
-                          {vecinos.map((vecino) => (
-                            <SelectItem key={vecino._id || vecino.id} value={vecino.nombre}>
-                              {vecino.nombre}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
                     {/* Cuadrilla */}
                     <div className="space-y-2">
                       <Label htmlFor="cuadrilla">Cuadrilla <span className="text-red-500">*</span></Label>
@@ -467,12 +449,52 @@ export default function SinOrdenesPage() {
                         id="jornada"
                         name="jornada"
                         type="number"
-                        min="1"
+                        step="0.1"
+                        min="0.1"
                         max="24"
                         value={formData.jornada}
                         onChange={handleInputChange}
+                        placeholder="Ej: 7.3, 8.5, 1.4"
                         required
                       />
+                    </div>
+
+                    {/* Vecino */}
+                    <div className="space-y-2">
+                      <Label htmlFor="vecino">Vecino</Label>
+                      <Select 
+                        value={formData.vecino} 
+                        onValueChange={(value) => handleSelectChange("vecino", value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={loadingVecinos ? "Cargando vecinos..." : "Seleccionar vecino"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="sin vecinos">Sin vecinos</SelectItem>
+                          {vecinos.map((vecino) => (
+                            <SelectItem key={vecino._id || vecino.id} value={vecino.nombre}>
+                              {vecino.nombre}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Estado */}
+                    <div className="space-y-2">
+                      <Label htmlFor="estado">Estado <span className="text-red-500">*</span></Label>
+                      <Select 
+                        value={formData.estado} 
+                        onValueChange={(value) => handleSelectChange("estado", value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccionar estado" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Pendiente">Pendiente</SelectItem>
+                          <SelectItem value="R7 (terminado)">Terminado</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
 

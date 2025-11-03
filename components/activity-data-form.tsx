@@ -92,7 +92,7 @@ const baseSystemFields: ActivityField[] = [
     required: true,
     isSystemField: true,
     description: "Horas de trabajo programadas",
-    placeholder: "Ej: 8",
+    placeholder: "Ej: 7.3, 8.5, 1.4",
   },
 ]
 
@@ -250,10 +250,11 @@ export function ActivityDataForm({ activityType, onSubmit, initialData, isLoadin
         return (
           <Input
             type="number"
+            step={field.name === "jornadaHs" || field.name === "tiempoHs" || field.name === "jornada" ? "0.1" : "1"}
             value={value}
             onChange={(e) => handleInputChange(field.name, e.target.value)}
             placeholder={field.placeholder || `Ingrese ${field.label.toLowerCase()}`}
-            min="0"
+            min={field.name === "jornadaHs" || field.name === "tiempoHs" || field.name === "jornada" ? "0.1" : "0"}
           />
         )
 
