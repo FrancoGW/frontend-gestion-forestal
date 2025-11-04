@@ -744,7 +744,11 @@ export function WorkProgressForm({
         totalPlantas: String(initialData.totalPlantas || ""),
         rocambole: "",
         cantidadPlantines: String(initialData.cantidadPlantines || ""),
-        densidad: String(initialData.densidad || ""),
+        densidad: (() => {
+          const densidadValue = initialData.densidad
+          console.log("[FORMULARIO PODA] Densidad recibida en initialData:", densidadValue, "tipo:", typeof densidadValue)
+          return densidadValue !== undefined && densidadValue !== null ? String(densidadValue) : ""
+        })(),
         estado: initialData.estado || "Pendiente",
         producto: initialData.producto || "",
         cantidad: String(initialData.cantidad || ""),

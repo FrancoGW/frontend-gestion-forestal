@@ -290,7 +290,7 @@ export function useProviderWorkData() {
         if (data.altura_poda) serverData.altura_poda = Number(data.altura_poda)
         if (data.tipoPoda) serverData.tipoPoda = data.tipoPoda
         if (data.plantas) serverData.plantas = Number(data.plantas)
-        if (data.densidad) serverData.densidad_poda = Number(data.densidad)
+        if (data.densidad !== undefined && data.densidad !== null && data.densidad !== "") serverData.densidad = Number(data.densidad)
         if (data.predio) serverData.predio = data.predio
         if (data.seccion) serverData.seccion = data.seccion
         if (data.rodalEnsayo !== undefined) serverData.rodalEnsayo = data.rodalEnsayo

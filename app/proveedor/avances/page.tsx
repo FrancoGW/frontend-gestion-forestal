@@ -540,7 +540,6 @@ export default function ProviderAvancesPage() {
         especie: fullAvanceData.especie || fullAvanceData.especie_forestal || "",
         especie_forestal: fullAvanceData.especie_forestal || fullAvanceData.especie || "",
         clon: fullAvanceData.clon || fullAvanceData.clonId || fullAvanceData.codigo_clon || "",
-        densidad: fullAvanceData.densidad || 0,
         cantidadBandejas: fullAvanceData.cantidadBandejas || 0,
         totalPlantas: fullAvanceData.totalPlantas || fullAvanceData.cantidadPlantas || 0,
         rocambole: fullAvanceData.rocambole || "",
@@ -552,6 +551,18 @@ export default function ProviderAvancesPage() {
         tipoPoda: fullAvanceData.tipoPoda || "",
         altura_poda: fullAvanceData.altura_poda || 0,
         plantas: fullAvanceData.plantas || fullAvanceData.cantidadPlantas || 0,
+        densidad: (() => {
+          // Buscar en ambos campos por compatibilidad con datos antiguos
+          const densidadValue = fullAvanceData.densidad !== undefined && fullAvanceData.densidad !== null 
+            ? fullAvanceData.densidad 
+            : (fullAvanceData.densidad_poda !== undefined && fullAvanceData.densidad_poda !== null 
+              ? fullAvanceData.densidad_poda 
+              : null)
+          console.log("[EDICION PODA] Densidad encontrada:", densidadValue, "tipo:", typeof densidadValue)
+          return densidadValue !== undefined && densidadValue !== null ? String(densidadValue) : ""
+        })(),
+        cantidadPlantas: fullAvanceData.cantidadPlantas || fullAvanceData.plantas || 0,
+        anioPlantacion: fullAvanceData.anioPlantacion || "",
 
         // CONTROL DE HORMIGAS - Campos específicos
         numerosNidos: fullAvanceData.numerosNidos || "",
