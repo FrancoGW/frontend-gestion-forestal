@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useAuth } from "@/hooks/use-auth"
 import { useVecinos } from "@/hooks/use-vecinos"
+import { useProviderOrders } from "@/hooks/use-provider-orders"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -37,6 +38,8 @@ export default function SinOrdenesPage() {
   const { user } = useAuth()
   const { toast } = useToast()
   const { vecinos, isLoading: loadingVecinos } = useVecinos()
+  const { orders, loading: ordersLoading } = useProviderOrders()
+  const prediosUnicos = Array.from(new Set((orders || []).map((o) => o.campo).filter(Boolean)))
   const [actividadSeleccionada, setActividadSeleccionada] = useState("")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -352,21 +355,33 @@ export default function SinOrdenesPage() {
                     {/* Ubicación */}
                     <div className="space-y-2">
                       <Label htmlFor="ubicacion">Ubicación/Predio <span className="text-red-500">*</span></Label>
-                      <Input
-                        id="ubicacion"
-                        name="ubicacion"
-                        value={formData.ubicacion}
-                        onChange={handleInputChange}
-                        placeholder="Ingresa la ubicación"
-                        required
-                      />
+                      <Select
+                        value={String(formData.ubicacion || "")}
+                        onValueChange={(value) => handleSelectChange("ubicacion", value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={ordersLoading ? "Cargando predios..." : "Seleccionar predio"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {prediosUnicos.length === 0 ? (
+                            <SelectItem value="">Sin predios disponibles</SelectItem>
+                          ) : (
+                            prediosUnicos.map((predio) => {
+                              const p = String(predio)
+                              return (
+                                <SelectItem key={p} value={p}>{p}</SelectItem>
+                              )
+                            })
+                          )}
+                        </SelectContent>
+                      </Select>
                     </div>
 
                     {/* Cuadrilla */}
                     <div className="space-y-2">
                       <Label htmlFor="cuadrilla">Cuadrilla <span className="text-red-500">*</span></Label>
                       <Select 
-                        value={formData.cuadrilla} 
+                        value={String(formData.cuadrilla || "")} 
                         onValueChange={(value) => {
                           const cuadrillaSeleccionada = cuadrillas.find((c) => {
                             const nombre = c.nombre || c.descripcion || ""
@@ -463,7 +478,7 @@ export default function SinOrdenesPage() {
                     <div className="space-y-2">
                       <Label htmlFor="vecino">Vecino</Label>
                       <Select 
-                        value={formData.vecino} 
+                        value={String(formData.vecino || "")} 
                         onValueChange={(value) => handleSelectChange("vecino", value)}
                       >
                         <SelectTrigger>
@@ -484,7 +499,7 @@ export default function SinOrdenesPage() {
                     <div className="space-y-2">
                       <Label htmlFor="estado">Estado <span className="text-red-500">*</span></Label>
                       <Select 
-                        value={formData.estado} 
+                        value={String(formData.estado || "Pendiente")} 
                         onValueChange={(value) => handleSelectChange("estado", value)}
                       >
                         <SelectTrigger>
