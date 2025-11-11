@@ -352,12 +352,51 @@ export const usuariosAdminAPI = {
 }
 
 // Nuevo: API para avances de trabajo
+const FECHA_CORTE_AVANCES = new Date("2025-10-15T00:00:00Z")
+
+const filtrarAvancesPorFecha = (avances: any[]) => {
+  if (!Array.isArray(avances)) return []
+
+  return avances.filter((avance) => {
+    if (!avance || !avance.fecha) return false
+    const fechaAvance = new Date(avance.fecha)
+    if (Number.isNaN(fechaAvance.getTime())) return false
+    return fechaAvance >= FECHA_CORTE_AVANCES
+  })
+}
+
+const aplicarFiltroAvancesEnRespuesta = (data: any) => {
+  if (Array.isArray(data)) {
+    return filtrarAvancesPorFecha(data)
+  }
+
+  if (data && typeof data === "object") {
+    const responseClone = { ...data }
+
+    if (Array.isArray(responseClone.avances)) {
+      responseClone.avances = filtrarAvancesPorFecha(responseClone.avances)
+    }
+
+    if (Array.isArray(responseClone.data)) {
+      responseClone.data = filtrarAvancesPorFecha(responseClone.data)
+    }
+
+    if (Array.isArray(responseClone.items)) {
+      responseClone.items = filtrarAvancesPorFecha(responseClone.items)
+    }
+
+    return responseClone
+  }
+
+  return data
+}
+
 export const avancesTrabajoAPI = {
   // Obtener todos los avances de trabajo
   getAll: async (params = {}) => {
     try {
       const response = await apiClient.get("/api/avancesTrabajos", { params })
-      return response.data
+      return aplicarFiltroAvancesEnRespuesta(response.data)
     } catch (error) {
       console.error("Error en avancesTrabajoAPI.getAll:", error.message)
       throw error
@@ -371,10 +410,10 @@ export const avancesTrabajoAPI = {
       // Obtener todos los avances
       const response = await apiClient.get("/api/avancesTrabajos")
 
-      // Filtrar por ordenTrabajoId
-      const filteredData = Array.isArray(response.data)
-        ? response.data.filter((item) => item.ordenTrabajoId === orderId)
-        : []
+      // Filtrar por ordenTrabajoId y fecha
+      const filteredData = filtrarAvancesPorFecha(Array.isArray(response.data) ? response.data : []).filter(
+        (item) => item.ordenTrabajoId === orderId,
+      )
 
       return filteredData
     } catch (error) {
@@ -390,10 +429,10 @@ export const avancesTrabajoAPI = {
       // Obtener todos los avances
       const response = await apiClient.get("/api/avancesTrabajos")
 
-      // Filtrar por proveedorId
-      const filteredData = Array.isArray(response.data)
-        ? response.data.filter((item) => item.proveedorId === providerId)
-        : []
+      // Filtrar por proveedorId y fecha
+      const filteredData = filtrarAvancesPorFecha(Array.isArray(response.data) ? response.data : []).filter(
+        (item) => item.proveedorId === providerId,
+      )
 
       return filteredData
     } catch (error) {
