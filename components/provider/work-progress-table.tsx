@@ -170,9 +170,10 @@ export function WorkProgressTable({
         Fecha: formatDate(avance.fecha),
         Cuadrilla: avance.cuadrilla || "",
         Predio: avance.predio || "",
+        "Predio vecino": avance.vecino || avance.predioVecino || "",
+        Rodal: avance.rodal || "",
         Actividad: avance.actividad || "",
         Especie: avance.especie || "",
-        Rodal: avance.rodal || "",
         "Año P.": Number(avance.anioPlantacion || 0) || "-",
         Bandejas: avance.cantidadBandejas || "-",
         Plantas: Number(avance.cantidadPlantas || avance.plantas || 0),
@@ -195,9 +196,10 @@ export function WorkProgressTable({
         { wch: 12 }, // Fecha
         { wch: 15 }, // Cuadrilla
         { wch: 15 }, // Predio
+        { wch: 18 }, // Predio vecino
+        { wch: 8 }, // Rodal
         { wch: 20 }, // Actividad
         { wch: 15 }, // Especie
-        { wch: 8 }, // Rodal
         { wch: 10 }, // Año P.
         { wch: 10 }, // Bandejas
         { wch: 10 }, // Plantas

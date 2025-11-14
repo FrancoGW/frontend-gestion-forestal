@@ -20,6 +20,37 @@ export interface PeriodoFechas {
 export function useSupervisionState(supervisorId: string) {
   const [estadosSupervision, setEstadosSupervision] = useState<Map<string, SupervisionState>>(new Map())
   const [loading, setLoading] = useState(false)
+  const storageKey = supervisorId ? `supervision_state_${supervisorId}` : null
+
+  useEffect(() => {
+    if (!storageKey || typeof window === 'undefined') {
+      setEstadosSupervision(new Map())
+      return
+    }
+
+    try {
+      const storedData = window.localStorage.getItem(storageKey)
+      if (!storedData) {
+        setEstadosSupervision(new Map())
+        return
+      }
+
+      const parsed: SupervisionState[] = JSON.parse(storedData)
+      const map = new Map<string, SupervisionState>()
+
+      parsed.forEach((state) => {
+        map.set(state.avanceId, {
+          ...state,
+          fechaRevision: state.fechaRevision ? new Date(state.fechaRevision) : undefined,
+        })
+      })
+
+      setEstadosSupervision(map)
+    } catch (error) {
+      console.error('Error al cargar estados de supervisión almacenados:', error)
+      setEstadosSupervision(new Map())
+    }
+  }, [storageKey])
 
   // Función para obtener el período actual (15 a 15)
   const getPeriodoActual = (): PeriodoFechas => {
@@ -104,8 +135,21 @@ export function useSupervisionState(supervisorId: string) {
         periodo: periodoString
       }
 
-      // Guardar en estado local
-      setEstadosSupervision(prev => new Map(prev).set(avanceId, nuevoEstado))
+      // Guardar en estado local y en almacenamiento persistente
+      setEstadosSupervision(prev => {
+        const updated = new Map(prev)
+        updated.set(avanceId, nuevoEstado)
+
+        if (storageKey && typeof window !== 'undefined') {
+          const serializable = Array.from(updated.values()).map((state) => ({
+            ...state,
+            fechaRevision: state.fechaRevision ? state.fechaRevision.toISOString() : undefined,
+          }))
+          window.localStorage.setItem(storageKey, JSON.stringify(serializable))
+        }
+
+        return updated
+      })
 
       // TODO: Aquí se guardaría en la base de datos
       // await saveSupervisionState(nuevoEstado)

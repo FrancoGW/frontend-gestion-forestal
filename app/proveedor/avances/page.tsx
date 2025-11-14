@@ -1181,27 +1181,63 @@ export default function ProviderAvancesPage() {
   const selectedOrder = selectedOrderId ? orders.find((order) => order.id === selectedOrderId) : null
 
   // ✅ NUEVA: Obtener la orden del avance que se está editando
-  // Si es un avance sin orden, crear un workOrder ficticio
-  const editingOrder = editingAvance ? (
-    editingAvance.ordenId 
-      ? orders.find((order) => order.id === editingAvance.ordenId)
-      : (editingAvance.numeroOrden === "SIN-ORDEN" || editingAvance.sinOrden || !editingAvance.ordenId
-          ? {
-              // Crear un workOrder ficticio para avances sin orden
-              id: 0,
-              numero: "SIN-ORDEN",
-              actividad: editingAvance.actividad || fullEditingAvance?.actividad || "Quema Controlada",
-              campo: editingAvance.predio || fullEditingAvance?.predio || editingAvance.ubicacion || fullEditingAvance?.ubicacion || "",
-              rodales: [],
-              totalHectareas: editingAvance.superficie || fullEditingAvance?.superficie || 0,
-              unidadMedida: "Ha",
-              cantidadNumerica: editingAvance.superficie || fullEditingAvance?.superficie || 0,
-              estado: editingAvance.estado || fullEditingAvance?.estado || "Pendiente",
-              proveedorId: editingAvance.proveedorId || user?.providerId,
-              sinOrden: true,
-            }
-          : null)
-  ) : null
+  // Incluye fallback inteligente cuando la orden no está disponible localmente
+  const editingOrder = editingAvance || fullEditingAvance ? (() => {
+    const ordenIdFromAvance =
+      editingAvance?.ordenId ??
+      editingAvance?.ordenTrabajoId ??
+      fullEditingAvance?.ordenTrabajoId ??
+      fullEditingAvance?.ordenId
+
+    if (ordenIdFromAvance !== undefined && ordenIdFromAvance !== null) {
+      const foundOrder = orders.find((order) => String(order.id) === String(ordenIdFromAvance))
+      if (foundOrder) {
+        return foundOrder
+      }
+    }
+
+    const isSinOrden =
+      editingAvance?.numeroOrden === "SIN-ORDEN" ||
+      editingAvance?.sinOrden ||
+      !ordenIdFromAvance
+
+    const superficieBase = Number(
+      fullEditingAvance?.superficie ?? editingAvance?.superficie ?? 0,
+    )
+
+    return {
+      id:
+        typeof ordenIdFromAvance === "number"
+          ? ordenIdFromAvance
+          : Number(ordenIdFromAvance) || 0,
+      numero: isSinOrden
+        ? "SIN-ORDEN"
+        : `#${ordenIdFromAvance ?? ""}`,
+      actividad:
+        fullEditingAvance?.actividad ||
+        editingAvance?.actividad ||
+        "Trabajo",
+      campo:
+        editingAvance?.predio ||
+        fullEditingAvance?.predio ||
+        editingAvance?.ubicacion ||
+        fullEditingAvance?.ubicacion ||
+        "",
+      rodales: [],
+      totalHectareas: superficieBase,
+      unidadMedida: "Ha",
+      cantidadNumerica: superficieBase,
+      estado:
+        editingAvance?.estado ||
+        fullEditingAvance?.estado ||
+        "Pendiente",
+      proveedorId:
+        editingAvance?.proveedorId ||
+        fullEditingAvance?.proveedorId ||
+        user?.providerId,
+      sinOrden: isSinOrden,
+    } as any
+  })() : null
 
   if (loading) {
     return (
@@ -1736,22 +1772,9 @@ export default function ProviderAvancesPage() {
             </DialogDescription>
           </DialogHeader>
 
-          {fullEditingAvance && (editingOrder || (editingAvance && (editingAvance.numeroOrden === "SIN-ORDEN" || editingAvance.sinOrden || !editingAvance.ordenId))) && (
+          {fullEditingAvance && editingOrder && (
             <WorkProgressForm
-              workOrder={editingOrder || {
-                // Fallback: crear workOrder ficticio si no existe
-                id: 0,
-                numero: "SIN-ORDEN",
-                actividad: editingAvance.actividad || fullEditingAvance?.actividad || "Quema Controlada",
-                campo: editingAvance.predio || fullEditingAvance?.predio || editingAvance.ubicacion || fullEditingAvance?.ubicacion || "",
-                rodales: [],
-                totalHectareas: editingAvance.superficie || fullEditingAvance?.superficie || 0,
-                unidadMedida: "Ha",
-                cantidadNumerica: editingAvance.superficie || fullEditingAvance?.superficie || 0,
-                estado: editingAvance.estado || fullEditingAvance?.estado || "Pendiente",
-                proveedorId: editingAvance.proveedorId || user?.providerId,
-                sinOrden: true,
-              }}
+              workOrder={editingOrder}
               onSubmit={handleUpdateAvance}
               isSubmitting={isUpdating}
               initialData={fullEditingAvance}
