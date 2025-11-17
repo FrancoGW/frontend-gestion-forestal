@@ -2933,6 +2933,9 @@ export function WorkProgressForm({
   // Función para validar el formulario
   const validateForm = (): boolean => {
     let requiredFields: string[] = []
+    
+    // Campos de sistema que no se validan como requeridos individualmente
+    const camposSistema = ["estado", "fecha", "predio", "rodal", "cuadrilla"]
 
     // Para Control de regeneración de pinos, usar exactamente los campos definidos en la plantilla
     if (isControlRegeneracionTemplate(activeTemplate?.nombre)) {
@@ -2963,6 +2966,15 @@ export function WorkProgressForm({
           !isPreparacionTerrenoTemplate(activeTemplate?.nombre) && 
           activeTemplate?.nombre !== "MANEJO REBROTE") {
         requiredFields.push("superficie")
+      }
+
+      // Agregar todos los campos requeridos definidos en la plantilla que no sean de sistema
+      if (activeTemplate?.campos) {
+        activeTemplate.campos.forEach((campo: ActivityField) => {
+          if (campo.requerido && !camposSistema.includes(campo.id) && !requiredFields.includes(campo.id)) {
+            requiredFields.push(campo.id)
+          }
+        })
       }
     }
 
@@ -3516,16 +3528,24 @@ export function WorkProgressForm({
                 />
               )}
               {campo.tipo === "numero" && (
-                <Input
-                  id={campo.id}
-                  type="number"
-                  step={campo.id.includes("superficie") ? "0.0001" : "1"}
-                  min="0"
-                  value={formData[campo.id] || ""}
-                  onChange={(e) => handleInputChange(campo.id, e.target.value)}
-                  placeholder={campo.placeholder}
-                  required={campo.requerido}
-                />
+                <div className="relative">
+                  <Input
+                    id={campo.id}
+                    type="number"
+                    step={campo.id.includes("superficie") || campo.id === "ha" ? "0.0001" : "1"}
+                    min="0"
+                    value={formData[campo.id] || ""}
+                    onChange={(e) => handleInputChange(campo.id, e.target.value)}
+                    placeholder={campo.placeholder}
+                    required={campo.requerido}
+                    className={campo.unidad ? "pr-12" : ""}
+                  />
+                  {campo.unidad && (
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                      {campo.unidad}
+                    </span>
+                  )}
+                </div>
               )}
               {campo.tipo === "fecha" && (
                 <Input
