@@ -559,7 +559,7 @@ const DEFAULT_TEMPLATES: ActivityTemplate[] = [
         id: "subActividad",
         nombre: "Sub Actividad",
         tipo: "seleccion",
-        requerido: true,
+        requerido: false,
         orden: 8,
         opciones: [
           "Ctrl QRebrote",
@@ -599,7 +599,7 @@ const DEFAULT_TEMPLATES: ActivityTemplate[] = [
         id: "cantidad",
         nombre: "Cantidad",
         tipo: "numero",
-        requerido: true,
+        requerido: false,
         orden: 11,
         unidad: "L/Ha",
         esDelSistema: true,

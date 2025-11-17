@@ -2969,9 +2969,24 @@ export function WorkProgressForm({
       }
 
       // Agregar todos los campos requeridos definidos en la plantilla que no sean de sistema
+      // Excluir campos que no se usan en formularios específicos o que tienen validación especial
       if (activeTemplate?.campos) {
+        const camposExcluidos = isControlMalezasTemplate(activeTemplate?.nombre) 
+          ? ["cantidad", "productos"] // El campo "cantidad" no se usa y "productos" tiene validación especial
+          : []
+        
         activeTemplate.campos.forEach((campo: ActivityField) => {
-          if (campo.requerido && !camposSistema.includes(campo.id) && !requiredFields.includes(campo.id)) {
+          // Excluir campos dinámicos y campos excluidos específicos
+          const esCampoDinamico = campo.tipo === "dinamico"
+          const estaExcluido = camposExcluidos.includes(campo.id)
+          
+          if (
+            campo.requerido && 
+            !camposSistema.includes(campo.id) && 
+            !requiredFields.includes(campo.id) &&
+            !estaExcluido &&
+            !esCampoDinamico
+          ) {
             requiredFields.push(campo.id)
           }
         })
