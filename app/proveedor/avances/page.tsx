@@ -807,6 +807,7 @@ export default function ProviderAvancesPage() {
 
           // Ubicación
           "Predio/Campo": capitalizeFirstLetter(avance.predio) || "Sin especificar",
+          "Predio Vecino": capitalizeFirstLetter(avance.vecino || avance.predioVecino || "") || "-",
           Rodal: capitalizeFirstLetter(avance.rodal) || "Sin especificar",
           "Año P.": Number(avance.anioPlantacion || 0) || "-",
           Sección: getFieldValue(avance, "seccion", "Sin especificar"),
@@ -898,6 +899,7 @@ export default function ProviderAvancesPage() {
         { wch: 20 }, // Actividad
         { wch: 12 }, // Estado
         { wch: 15 }, // Predio/Campo
+        { wch: 18 }, // Predio Vecino
         { wch: 10 }, // Rodal
         { wch: 10 }, // Año P.
         { wch: 12 }, // Sección

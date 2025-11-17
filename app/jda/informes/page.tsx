@@ -329,6 +329,7 @@ export default function InformesAvancesJdaPage() {
       const datosDetallados = datosInforme.map((item) => ({
         "FECHA": formatearFechaArgentina(item.fecha),
         "PREDIO": item.predio,
+        "PREDIO VECINO": item.vecino || item.predioVecino || "-",
         "RODAL": item.rodal,
         "ACTIVIDAD": item.actividad,
         "SUPERVISOR": item.supervisor,
@@ -341,6 +342,7 @@ export default function InformesAvancesJdaPage() {
       wsDetalle["!cols"] = [
         { wch: 12 }, // FECHA
         { wch: 15 }, // PREDIO
+        { wch: 18 }, // PREDIO VECINO
         { wch: 10 }, // RODAL
         { wch: 20 }, // ACTIVIDAD
         { wch: 20 }, // SUPERVISOR

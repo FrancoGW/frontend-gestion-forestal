@@ -260,6 +260,7 @@ export default function InformesAvancesPage() {
       const datosDetallados = datosInforme.map((item) => ({
         "FECHA": formatearFechaArgentina(item.fecha),
         "PREDIO": item.predio,
+        "PREDIO VECINO": item.vecino || item.predioVecino || "-",
         "RODAL": item.rodal,
         "ACTIVIDAD": item.actividad,
         "HA AVANZADA": Number(item.haAvanzada),
@@ -270,6 +271,7 @@ export default function InformesAvancesPage() {
       wsDetalle["!cols"] = [
         { wch: 12 }, // FECHA
         { wch: 15 }, // PREDIO
+        { wch: 18 }, // PREDIO VECINO
         { wch: 10 }, // RODAL
         { wch: 20 }, // ACTIVIDAD
         { wch: 12 }, // HA AVANZADA

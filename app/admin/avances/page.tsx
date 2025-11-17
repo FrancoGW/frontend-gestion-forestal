@@ -647,6 +647,8 @@ export default function AvancesPage() {
             hierarchicalData.push({
               Tipo: "ENCABEZADO_AVANCES",
               Fecha: "Fecha",
+              "Predio/Campo": "Predio/Campo",
+              "Predio Vecino": "Predio Vecino",
               "Superficie (ha)": "Superficie (ha)",
               Plantas: "Plantas",
               Personal: "Personal",
@@ -670,6 +672,8 @@ export default function AvancesPage() {
               hierarchicalData.push({
                 Tipo: "AVANCE",
                 Fecha: formatDate(avance.fecha),
+                "Predio/Campo": avance.predio || "-",
+                "Predio Vecino": avance.vecino || avance.predioVecino || "-",
                 "Superficie (ha)": superficie.toString().replace(".", ","),
                 Plantas: avance.plantas || 0,
                 Personal: avance.personal || 0,
@@ -782,6 +786,8 @@ export default function AvancesPage() {
             "Número Orden": orden.numero || "N/A",
             "Descripción Orden": orden.descripcion || "Sin descripción",
             "Fecha Avance": formatDate(avance.fecha),
+            "Predio/Campo": avance.predio || "-",
+            "Predio Vecino": avance.vecino || avance.predioVecino || "-",
             "Superficie (ha)": superficie.toString().replace(".", ","),
             Plantas: avance.plantas || 0,
             Personal: avance.personal || 0,
@@ -951,6 +957,8 @@ export default function AvancesPage() {
             hierarchicalData.push({
               Tipo: "ENCABEZADO_AVANCES",
               Fecha: "Fecha",
+              "Predio/Campo": "Predio/Campo",
+              "Predio Vecino": "Predio Vecino",
               "Superficie (ha)": "Superficie (ha)",
               Plantas: "Plantas",
               Personal: "Personal",
@@ -974,6 +982,8 @@ export default function AvancesPage() {
               hierarchicalData.push({
                 Tipo: "AVANCE",
                 Fecha: formatDate(avance.fecha),
+                "Predio/Campo": avance.predio || "-",
+                "Predio Vecino": avance.vecino || avance.predioVecino || "-",
                 "Superficie (ha)": Number(superficie),
                 Plantas: Number(avance.plantas || 0),
                 Personal: Number(avance.personal || 0),

@@ -242,6 +242,7 @@ export default function SupervisorDashboard() {
       "FECHA REGISTRO": formatearFechaArgentina(item.fecha),
       PROVEEDOR: item.proveedor,
       PREDIOS: item.predio,
+      "PREDIO VECINO": item.vecino || item.predioVecino || "-",
       "ORDEN TR": item.ordenTrabajo,
       RODAL: item.rodal,
       "AÑO P.": item.anioPlantacion || "-",
@@ -260,6 +261,7 @@ export default function SupervisorDashboard() {
     excelData.push({
       "FECHA REGISTRO": "",
       PREDIOS: "",
+      "PREDIO VECINO": "",
       "ORDEN TR": "",
       RODAL: "",
       "AÑO P.": "",
@@ -287,6 +289,7 @@ export default function SupervisorDashboard() {
       { wch: 15 }, // FECHA REGISTRO
       { wch: 20 }, // PROVEEDOR
       { wch: 12 }, // PREDIOS
+      { wch: 18 }, // PREDIO VECINO
       { wch: 10 }, // ORDEN TR
       { wch: 30 }, // RODAL
       { wch: 10 }, // AÑO P.

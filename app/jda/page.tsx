@@ -208,6 +208,7 @@ export default function JdaDashboard() {
       "ORDEN TR": item.ordenTrabajo,
       SUPERVISOR: item.supervisor,
       PREDIOS: item.predio,
+      "PREDIO VECINO": item.vecino || item.predioVecino || "-",
       RODAL: item.rodal,
       ACTIVIDAD: item.actividad,
       PROVEEDOR: item.proveedor,
@@ -223,6 +224,7 @@ export default function JdaDashboard() {
       "ORDEN TR": "",
       SUPERVISOR: "",
       PREDIOS: "",
+      "PREDIO VECINO": "",
       RODAL: "",
       ACTIVIDAD: "",
       PROVEEDOR: "",
@@ -247,6 +249,7 @@ export default function JdaDashboard() {
       { wch: 10 }, // ORDEN TR
       { wch: 15 }, // SUPERVISOR
       { wch: 15 }, // PREDIOS
+      { wch: 18 }, // PREDIO VECINO
       { wch: 8 },  // RODAL
       { wch: 20 }, // ACTIVIDAD
       { wch: 20 }, // PROVEEDOR
