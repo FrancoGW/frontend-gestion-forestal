@@ -243,7 +243,7 @@ export default function SupervisorDashboard() {
       PROVEEDOR: item.proveedor,
       PREDIOS: item.predio,
       "PREDIO VECINO": item.vecino || item.predioVecino || "-",
-      "ORDEN TR": item.ordenTrabajo,
+      "ORDEN TR": String(item.ordenTrabajo || "").replace(/^#/, ""),
       RODAL: item.rodal,
       "AÑO P.": item.anioPlantacion || "-",
       ACTIVIDAD: item.actividad,
@@ -527,8 +527,8 @@ export default function SupervisorDashboard() {
           });
           
           if (rodalObj) {
-            // Obtener el valor de supha que contiene las hectáreas
-            rodalHa = Number(rodalObj.supha || 0);
+            // Obtener el valor de sup_ha (nuevo formato) o supha (formato antiguo) que contiene las hectáreas
+            rodalHa = Number(rodalObj.sup_ha || rodalObj.supha || rodalObj.superficie || 0);
             
             // Log para depuración
             console.log(`✅ Encontrado rodal ${avance.rodal} en orden ${avance.numeroOrden}:`, {

@@ -166,7 +166,11 @@ export function useProviderOrders() {
 
     // Calcular la superficie total sumando las hectáreas de todos los rodales
     const totalHectareas = (apiOrder.rodales || []).reduce(
-      (sum: number, rodal: any) => sum + (Number.parseFloat(rodal.supha) || 0),
+      (sum: number, rodal: any) => {
+        // Buscar sup_ha primero (nuevo formato), luego supha (formato antiguo)
+        const hectareas = Number.parseFloat(rodal.sup_ha || rodal.supha || rodal.superficie || 0) || 0
+        return sum + hectareas
+      },
       0,
     )
 
@@ -254,11 +258,15 @@ export function useProviderOrders() {
       rodales:
         apiOrder.rodales?.map((rodal: any) => ({
           numero: rodal.cod_rodal?.toString() || "",
-          hectareas: Number.parseFloat(rodal.supha) || 0,
-          tipoUso: capitalizeFirstLetter(rodal.tipo_uso || ""),
+          // Buscar sup_ha primero (nuevo formato), luego supha (formato antiguo)
+          hectareas: Number.parseFloat(rodal.sup_ha || rodal.supha || rodal.superficie || 0) || 0,
+          tipoUso: capitalizeFirstLetter(rodal.tipo_uso || rodal.tipouso || ""),
           especie: capitalizeFirstLetter(rodal.especie || ""),
         })) || [],
-      totalHectareas: totalHectareas || Number.parseFloat(apiOrder.cantidad) || 0,
+      // Si cantidad es null o 0, usar el total calculado de los rodales
+      totalHectareas: apiOrder.cantidad != null && apiOrder.cantidad !== 0 
+        ? Number.parseFloat(apiOrder.cantidad) || totalHectareas 
+        : totalHectareas,
       empresaServicio: capitalizeFirstLetter(apiOrder.empresa || ""),
       cuit: "",
       telefono: "",

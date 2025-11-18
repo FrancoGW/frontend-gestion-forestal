@@ -128,8 +128,8 @@ export function WorkOrderDetails({ workOrder }: WorkOrderDetailsProps) {
     if (rodal && typeof rodal === "object") {
       // Buscar el número de rodal (cod_rodal, numero, o id)
       const numero = rodal.cod_rodal || rodal.numero || rodal.id || `#${index + 1}`;
-      // Buscar la superficie (supha, hectareas, superficie)
-      const hectareas = rodal.supha || rodal.hectareas || rodal.superficie || 0;
+      // Buscar la superficie (sup_ha primero, luego supha, hectareas, superficie)
+      const hectareas = rodal.sup_ha || rodal.supha || rodal.hectareas || rodal.superficie || 0;
       // Formatear superficie
       const hectareasFmt = `${parseFloat(hectareas).toFixed(1)} ha`;
       return (
@@ -148,7 +148,7 @@ export function WorkOrderDetails({ workOrder }: WorkOrderDetailsProps) {
     let hectareas = 0;
     if (rodal) {
       if (typeof rodal === "object") {
-        hectareas = parseFloat(rodal.supha || rodal.hectareas || rodal.superficie || 0);
+        hectareas = parseFloat(rodal.sup_ha || rodal.supha || rodal.hectareas || rodal.superficie || 0);
       } else if (typeof rodal === "string") {
         // Si es string, no se suma
         hectareas = 0;

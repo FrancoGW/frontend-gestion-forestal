@@ -94,18 +94,20 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
     let totalHectareas = 0
     const rodales =
       order.rodales?.map((rodal: any) => {
-        const hectareas = Number.parseFloat(rodal.supha) || Number.parseFloat(rodal.superficie) || 0
+        // Buscar sup_ha primero (nuevo formato), luego supha (formato antiguo)
+        const hectareas = Number.parseFloat(rodal.sup_ha || rodal.supha || rodal.superficie || 0) || 0
         totalHectareas += hectareas
         return {
           numero: rodal.cod_rodal?.toString() || rodal.numero?.toString() || "",
           hectareas: hectareas,
-          tipoUso: rodal.tipo_uso || "",
+          tipoUso: rodal.tipo_uso || rodal.tipouso || "",
           especie: rodal.especie || "",
         }
       }) || []
 
-    if ((!rodales || rodales.length === 0) && order.cantidad) {
-      totalHectareas = Number.parseFloat(order.cantidad) || 0
+    // Si cantidad es null o 0, usar el total calculado de los rodales
+    if ((!rodales || rodales.length === 0) && order.cantidad != null && order.cantidad !== 0) {
+      totalHectareas = Number.parseFloat(order.cantidad) || totalHectareas
     }
 
     const transformedOrder = {
