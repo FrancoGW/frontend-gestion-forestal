@@ -465,6 +465,42 @@ export const avancesTrabajoAPI = {
         rodalEnsayo: data.rodalEnsayo || false,
         // ✅ NUEVO: Asegurar que el estado se envíe correctamente
         estado: data.estado || "Pendiente",
+        // ✅ CAMPOS ESPECÍFICOS DE PODA
+        tipoPoda: data.tipoPoda || "",
+        densidad: data.densidad !== undefined && data.densidad !== null ? Number(data.densidad) : undefined,
+        anioPlantacion: data.anioPlantacion !== undefined && data.anioPlantacion !== null ? Number(data.anioPlantacion) : undefined,
+        // ✅ CAMPOS ESPECÍFICOS DE PLANTACIÓN
+        tipoCarga: data.tipoCarga || "",
+        cantidadBandejas: data.cantidadBandejas !== undefined && data.cantidadBandejas !== null ? Number(data.cantidadBandejas) : undefined,
+        totalPlantas: data.totalPlantas !== undefined && data.totalPlantas !== null ? Number(data.totalPlantas) : undefined,
+        rocambole: data.rocambole || "",
+        cantidadPlantines: data.cantidadPlantines !== undefined && data.cantidadPlantines !== null ? Number(data.cantidadPlantines) : undefined,
+        // ✅ CAMPOS ESPECÍFICOS DE CONTROL DE HORMIGAS
+        numerosNidos: data.numerosNidos !== undefined && data.numerosNidos !== null ? Number(data.numerosNidos) : undefined,
+        especieHormiga: data.especieHormiga || "",
+        producto: data.producto || "",
+        cantidad: data.cantidad !== undefined && data.cantidad !== null ? Number(data.cantidad) : undefined,
+        // ✅ CAMPOS ESPECÍFICOS DE CONTROL DE MALEZAS
+        subActividad: data.subActividad || "",
+        tipoAplicacion: data.tipoAplicacion || "",
+        volumenAplicado: data.volumenAplicado !== undefined && data.volumenAplicado !== null ? Number(data.volumenAplicado) : undefined,
+        cantidadMochilas: data.cantidadMochilas !== undefined && data.cantidadMochilas !== null ? Number(data.cantidadMochilas) : undefined,
+        productos: Array.isArray(data.productos) ? data.productos : undefined,
+        // ✅ CAMPOS ESPECÍFICOS DE QUEMAS CONTROLADAS
+        horaR29: data.horaR29 || "",
+        horaR8: data.horaR8 || "",
+        horaR7: data.horaR7 || "",
+        horaR28: data.horaR28 || "",
+        tiempoHs: data.tiempoHs !== undefined && data.tiempoHs !== null ? Number(data.tiempoHs) : undefined,
+        jornadaHs: data.jornadaHs !== undefined && data.jornadaHs !== null ? Number(data.jornadaHs) : undefined,
+        comentarios: data.comentarios || "",
+        // ✅ CAMPOS ESPECÍFICOS DE CONTROL DE REGENERACIÓN DE PINOS Y MANEJO REBROTE
+        implemento: data.implemento || "",
+        operarios: data.operarios !== undefined && data.operarios !== null ? Number(data.operarios) : undefined,
+        jornales: data.jornales !== undefined && data.jornales !== null ? Number(data.jornales) : undefined,
+        ha: data.ha !== undefined && data.ha !== null ? Number(data.ha) : undefined,
+        // ✅ CAMPOS ESPECÍFICOS DE PREPARACIÓN DE TERRENO
+        jornal: data.jornal !== undefined && data.jornal !== null ? Number(data.jornal) : undefined,
       }
 
       // Solo agregar ordenTrabajoId si existe (no es undefined/null)
@@ -507,7 +543,39 @@ export const avancesTrabajoAPI = {
           "predio",
           "seccion",
           "rodalEnsayo",
-          "estado", // ✅ NUEVO: Incluir estado en la lista de campos mapeados
+          "estado",
+          // Campos de plantación
+          "tipoCarga",
+          "cantidadBandejas",
+          "totalPlantas",
+          "rocambole",
+          "cantidadPlantines",
+          // Campos de control de hormigas
+          "numerosNidos",
+          "especieHormiga",
+          "producto",
+          "cantidad",
+          // Campos de control de malezas
+          "subActividad",
+          "tipoAplicacion",
+          "volumenAplicado",
+          "cantidadMochilas",
+          "productos",
+          // Campos de quemas controladas
+          "horaR29",
+          "horaR8",
+          "horaR7",
+          "horaR28",
+          "tiempoHs",
+          "jornadaHs",
+          "comentarios",
+          // Campos de control de regeneración y manejo rebrote
+          "implemento",
+          "operarios",
+          "jornales",
+          "ha",
+          // Campos de preparación de terreno
+          "jornal",
           // Campos que ya se procesan especialmente en simplifiedData
         ]
 

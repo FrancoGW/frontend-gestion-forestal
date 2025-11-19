@@ -3279,6 +3279,10 @@ export function WorkProgressForm({
       } else if (isControlMalezasTemplate(activeTemplate?.nombre)) {
         submitData.volumenAplicado = Number(formData.volumenAplicado)
         submitData.cantidadMochilas = Number(formData.cantidadMochilas || 0)
+        // Agregar campo cantidad si existe (opcional, L/Ha)
+        if (formData.cantidad !== undefined && formData.cantidad !== null && formData.cantidad !== "") {
+          submitData.cantidad = Number(formData.cantidad)
+        }
         // Agregar productos válidos
         const productosValidos = productosMalezas.filter(
           (p) => p.producto && p.cantidad && p.unidad && Number(p.cantidad) > 0,
