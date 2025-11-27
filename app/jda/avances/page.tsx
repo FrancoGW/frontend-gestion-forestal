@@ -34,6 +34,7 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { useAuth } from "@/hooks/use-auth"
 import { useSupervisorData } from "@/hooks/use-supervisor-data"
+import { formatDateArgentina } from "@/utils/date-utils"
 
 // Interfaces
 interface AvanceDetallado {
@@ -81,23 +82,6 @@ const capitalizeText = (text: string | null | undefined): string => {
   return String(text).charAt(0).toUpperCase() + String(text).slice(1).toLowerCase()
 }
 
-// Función para formatear fechas
-const formatDateArgentina = (dateString: string): string => {
-  try {
-    if (dateString.includes("/")) return dateString
-    if (dateString.includes("-")) {
-      const parts = dateString.split("T")[0].split("-")
-      if (parts.length === 3) {
-        return `${parts[2]}/${parts[1]}/${parts[0]}`
-      }
-    }
-    const date = new Date(dateString + "T00:00:00")
-    if (isNaN(date.getTime())) return dateString
-    return format(date, "dd/MM/yyyy", { locale: es })
-  } catch (error) {
-    return dateString
-  }
-}
 
 // Función para formatear fecha y hora
 const formatDateTimeArgentina = (dateString: string): string => {

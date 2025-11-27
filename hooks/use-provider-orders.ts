@@ -6,6 +6,7 @@ import type { WorkOrder, WorkOrderStatus } from "@/types/work-order"
 import { useAuth } from "./use-auth"
 import { useProviderWorkData } from "./use-provider-work-data"
 import { useRouter } from "next/navigation"
+import { formatDateArgentina, parseLocalDate } from "@/utils/date-utils"
 
 // Datos simulados de órdenes
 const mockOrders: any[] = [

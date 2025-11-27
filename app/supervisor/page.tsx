@@ -19,6 +19,7 @@ import type { AvanceExtendido } from "@/types/AvanceExtendido"
 import { useCuadrillas } from "@/hooks/use-cuadrillas"
 import { useSupervisionState, type EstadoSupervision } from "@/hooks/use-supervision-state"
 import { workOrdersAPI } from "@/lib/api-client"
+import { formatDateArgentina } from "@/utils/date-utils"
 
 type DatosTablaItem = {
   id: string;

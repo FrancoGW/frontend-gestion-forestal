@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { avancesTrabajoAPI, cuadrillasAPI, especiesAPI, viverosAPI, supervisorsAPI } from "@/lib/api-client"
+import { formatDateArgentina } from "@/utils/date-utils"
 import { useAuth } from "@/hooks/use-auth"
 import { useProviderOrders } from "@/hooks/use-provider-orders"
 import * as XLSX from "xlsx"
@@ -48,35 +49,6 @@ const formatHectareas = (hectareas: number | string | undefined): string => {
   return numHectareas.toFixed(1)
 }
 
-// Función CORREGIDA para formatear fechas sin conversión de zona horaria
-const formatDateArgentina = (dateString: string): string => {
-  try {
-    // Si la fecha ya está en formato DD/MM/YYYY, devolverla tal como está
-    if (dateString.includes("/")) {
-      return dateString
-    }
-
-    // Si es una fecha en formato YYYY-MM-DD, procesarla directamente sin conversión de zona horaria
-    if (dateString.includes("-")) {
-      const parts = dateString.split("T")[0].split("-") // Tomar solo la parte de fecha, ignorar hora
-      if (parts.length === 3) {
-        const year = parts[0]
-        const month = parts[1]
-        const day = parts[2]
-        return `${day}/${month}/${year}`
-      }
-    }
-
-    // Como último recurso, intentar parsear la fecha pero forzando la zona horaria local
-    const date = new Date(dateString + "T00:00:00") // Agregar hora 00:00:00 para evitar problemas de zona horaria
-    if (isNaN(date.getTime())) {
-      return dateString
-    }
-    return format(date, "dd/MM/yyyy", { locale: es })
-  } catch (error) {
-    return dateString
-  }
-}
 
 // Función para resolver ID de especie a nombre - MEJORADA
 const resolveEspecieName = (especieValue: string | number, especies: any[]): string => {
@@ -325,7 +297,7 @@ export default function ProviderAvancesPage() {
         const mappedAvances = providerAvances.map((avance) => ({
           id: avance._id || avance.id || Math.random().toString(),
           ordenId: avance.ordenTrabajoId,
-          numeroOrden: avance.ordenTrabajoId ? `#${avance.ordenTrabajoId}` : "-",
+          numeroOrden: avance.ordenTrabajoId ? String(avance.ordenTrabajoId) : "-",
           fecha: avance.fecha || new Date().toISOString().split("T")[0],
           superficie: avance.superficie || 0,
           cantidadPlantas: extractPlantQuantity(avance),
@@ -720,7 +692,7 @@ export default function ProviderAvancesPage() {
         const avanceExtendido = {
           id: avance._id || avance.id || "",
           ordenId: avance.ordenTrabajoId,
-          numeroOrden: orders.find((o) => o.id === avance.ordenTrabajoId)?.numero || `#${avance.ordenTrabajoId}`,
+          numeroOrden: orders.find((o) => o.id === avance.ordenTrabajoId)?.numero || String(avance.ordenTrabajoId || ""),
           fecha: avance.fecha || "",
           cuadrilla: avance.cuadrilla || "",
           cuadrillaId: avance.cuadrillaId,
@@ -795,7 +767,7 @@ export default function ProviderAvancesPage() {
 
       // ✅ NUEVA: Preparar datos completos para exportar con TODOS los campos posibles
       const dataToExport = filteredFullData.map((avance) => {
-        const ordenNumero = orders.find((o) => o.id === avance.ordenTrabajoId)?.numero || `#${avance.ordenTrabajoId}`
+        const ordenNumero = orders.find((o) => o.id === avance.ordenTrabajoId)?.numero || String(avance.ordenTrabajoId || "")
 
         return {
           // Campos básicos comunes
