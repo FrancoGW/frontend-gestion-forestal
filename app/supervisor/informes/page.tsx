@@ -96,16 +96,6 @@ export default function InformesAvancesPage() {
     cargarOrdenesOriginales()
   }, [])
 
-  // Función helper para formatear fechas en zona horaria de Argentina
-  const formatearFechaArgentina = (fechaString: string): string => {
-    try {
-      const fecha = new Date(fechaString);
-      const fechaArgentina = new Date(fecha.getTime() + (3 * 60 * 60 * 1000));
-      return fechaArgentina.toLocaleDateString("es-AR");
-    } catch (error) {
-      return new Date(fechaString).toLocaleDateString("es-AR");
-    }
-  };
 
   // Función para obtener el nombre del proveedor seleccionado
   const getNombreProveedorSeleccionado = () => {
@@ -215,7 +205,7 @@ export default function InformesAvancesPage() {
         // Header del informe
         ["INFORME DE AVANCE"],
         [""],
-        ["Período:", `${fechaDesde ? formatearFechaArgentina(fechaDesde) : "Inicio"} - ${fechaHasta ? formatearFechaArgentina(fechaHasta) : "Fin"}`],
+        ["Período:", `${fechaDesde ? formatDateArgentina(fechaDesde) : "Inicio"} - ${fechaHasta ? formatDateArgentina(fechaHasta) : "Fin"}`],
         ["EMSEFOR:", proveedorSeleccionado !== "all" ? getNombreProveedorSeleccionado() : "Todos los EMSEFOR"],
         [""],
         [""],
@@ -231,7 +221,7 @@ export default function InformesAvancesPage() {
         ["", ""],
         ["Fecha", "Predio", "Rodal", "Actividad", "Ha Ava", "Subtotal", "Observaciones"],
         ...datosInforme.map(item => [
-          formatearFechaArgentina(item.fecha),
+          formatDateArgentina(item.fecha),
           item.predio,
           item.rodal,
           item.actividad,
@@ -258,7 +248,7 @@ export default function InformesAvancesPage() {
 
       // Hoja 2: Datos detallados
       const datosDetallados = datosInforme.map((item) => ({
-        "FECHA": formatearFechaArgentina(item.fecha),
+        "FECHA": formatDateArgentina(item.fecha),
         "PREDIO": item.predio,
         "PREDIO VECINO": item.vecino || item.predioVecino || "-",
         "RODAL": item.rodal,
@@ -342,7 +332,7 @@ export default function InformesAvancesPage() {
       // Información del período y EMSEFOR
       doc.setFontSize(normalFontSize)
       doc.setFont("helvetica", "normal")
-      doc.text(`Período: ${fechaDesde ? formatearFechaArgentina(fechaDesde) : "Inicio"} - ${fechaHasta ? formatearFechaArgentina(fechaHasta) : "Fin"}`, 20, yPosition)
+      doc.text(`Período: ${fechaDesde ? formatDateArgentina(fechaDesde) : "Inicio"} - ${fechaHasta ? formatDateArgentina(fechaHasta) : "Fin"}`, 20, yPosition)
       yPosition += 8
       doc.text(`EMSEFOR: ${proveedorSeleccionado !== "all" ? getNombreProveedorSeleccionado() : "Todos los EMSEFOR"}`, 20, yPosition)
       yPosition += 15
@@ -387,7 +377,7 @@ export default function InformesAvancesPage() {
 
       // Preparar datos para la tabla de detalle
       const detalleTableData = datosInforme.map(item => [
-        formatearFechaArgentina(item.fecha),
+        formatDateArgentina(item.fecha),
         item.predio,
         item.rodal,
         item.actividad,
@@ -594,13 +584,13 @@ export default function InformesAvancesPage() {
           {fechaDesde && (
             <Badge variant="secondary" className="flex items-center gap-1">
               <Calendar className="h-3 w-3" />
-              Desde: {formatearFechaArgentina(fechaDesde)}
+              Desde: {formatDateArgentina(fechaDesde)}
             </Badge>
           )}
           {fechaHasta && (
             <Badge variant="secondary" className="flex items-center gap-1">
               <Calendar className="h-3 w-3" />
-              Hasta: {formatearFechaArgentina(fechaHasta)}
+              Hasta: {formatDateArgentina(fechaHasta)}
             </Badge>
           )}
         </div>
@@ -700,7 +690,7 @@ export default function InformesAvancesPage() {
                       ) : (
                         datosInforme.slice(0, 20).map((item, index) => (
                           <TableRow key={index}>
-                            <TableCell className="text-sm">{formatearFechaArgentina(item.fecha)}</TableCell>
+                            <TableCell className="text-sm">{formatDateArgentina(item.fecha)}</TableCell>
                             <TableCell className="font-medium">{item.predio}</TableCell>
                             <TableCell>{item.rodal}</TableCell>
                             <TableCell>{item.anioPlantacion || "-"}</TableCell>

@@ -1,54 +1,11 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import type { WorkOrder } from "@/types/work-order"
+import { formatDateArgentina } from "@/utils/date-utils"
 
-// Función para formatear fechas de manera más robusta
+// Función para formatear fechas de manera más robusta (usa la utilidad compartida)
 const formatDate = (dateString: string | Date) => {
-  if (!dateString) return "No especificada"
-
-  try {
-    let date: Date
-
-    // Si ya es un objeto Date
-    if (dateString instanceof Date) {
-      date = dateString
-    }
-    // Si es un string
-    else if (typeof dateString === "string") {
-      // Verificar si contiene "Invalid Date"
-      if (dateString.includes("Invalid")) {
-        return "Fecha no válida"
-      }
-
-      // Si ya está formateado como DD/MM/YYYY, devolverlo tal como está
-      if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateString)) {
-        return dateString
-      }
-
-      // Intentar parsear como fecha ISO o estándar
-      date = new Date(dateString)
-    }
-    // Si es un número (timestamp)
-    else if (typeof dateString === "number") {
-      date = new Date(dateString)
-    } else {
-      return "Formato de fecha no válido"
-    }
-
-    // Verificar si la fecha es válida
-    if (isNaN(date.getTime())) {
-      return "Fecha no válida"
-    }
-
-    return date.toLocaleDateString("es-AR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    })
-  } catch (error) {
-    console.warn("Error formatting date:", dateString, error)
-    return "Error en fecha"
-  }
+  return formatDateArgentina(dateString)
 }
 
 // Función para obtener el color del estado

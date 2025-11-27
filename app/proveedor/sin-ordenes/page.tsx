@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast"
 import { FileX, Plus } from "lucide-react"
 import { avancesTrabajoAPI, cuadrillasAPI } from "@/lib/api-client"
 import { Checkbox } from "@/components/ui/checkbox"
+import { formatDateArgentina } from "@/utils/date-utils"
 
 interface Cuadrilla {
   _id?: string
@@ -405,7 +406,7 @@ export default function SinOrdenesPage() {
                       <div>
                         <p className="text-sm font-semibold">Fecha</p>
                         <p className="text-sm text-muted-foreground">
-                          {avance.fecha ? new Date(avance.fecha).toLocaleDateString() : "-"}
+                          {avance.fecha ? formatDateArgentina(avance.fecha) : "-"}
                         </p>
                       </div>
                       <div>

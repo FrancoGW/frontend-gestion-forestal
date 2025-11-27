@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Calendar, Clock, Download, FileText, Filter, Printer } from "lucide-react"
 import { useProviderOrders } from "@/hooks/use-provider-orders"
+import { formatDateArgentina } from "@/utils/date-utils"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DatePicker } from "@/components/ui/date-picker"
 
@@ -197,7 +198,7 @@ export default function ProviderReportsPage() {
                       <div className="flex items-center">
                         <Clock className="h-4 w-4 mr-1 text-muted-foreground" />
                         <span className="text-sm text-muted-foreground">
-                          {new Date(order.fecha || Date.now()).toLocaleDateString()}
+                          {formatDateArgentina(order.fecha)}
                         </span>
                       </div>
                     </div>
@@ -228,7 +229,7 @@ export default function ProviderReportsPage() {
                       <div className="space-y-1 pt-1">
                         <p className="text-sm font-medium leading-none">{order.titulo || `Orden #${order.id}`}</p>
                         <p className="text-sm text-muted-foreground">
-                          {new Date(order.fecha || Date.now()).toLocaleDateString()}
+                          {formatDateArgentina(order.fecha)}
                         </p>
                         <p className="text-sm text-muted-foreground">
                           Estado: {order.estado?.charAt(0).toUpperCase() + order.estado?.slice(1) || "Desconocido"}

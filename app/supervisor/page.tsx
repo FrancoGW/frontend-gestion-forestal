@@ -50,18 +50,6 @@ export default function SupervisorDashboard() {
   const { supervisor, proveedores, ordenes, avances, loading, error, refetch } = useSupervisorData()
   const { cuadrillas } = useCuadrillas();
   
-  // Función helper para formatear fechas en zona horaria de Argentina
-  const formatearFechaArgentina = (fechaString: string): string => {
-    try {
-      const fecha = new Date(fechaString);
-      // Ajustar para zona horaria de Argentina (UTC-3)
-      const fechaArgentina = new Date(fecha.getTime() + (3 * 60 * 60 * 1000));
-      return fechaArgentina.toLocaleDateString("es-AR");
-    } catch (error) {
-      return new Date(fechaString).toLocaleDateString("es-AR");
-    }
-  };
-  
   // Obtener las órdenes originales (con rodales) desde la API
   const [ordenesOriginales, setOrdenesOriginales] = useState<any[]>([])
   
@@ -239,7 +227,7 @@ export default function SupervisorDashboard() {
     /* 1 ▸ Preparar datos en formato JSON → hoja de Excel                 */
     /* ------------------------------------------------------------------ */
     const excelData = datosTabla.map((item) => ({
-      "FECHA REGISTRO": formatearFechaArgentina(item.fecha),
+      "FECHA REGISTRO": formatDateArgentina(item.fecha),
       PROVEEDOR: item.proveedor,
       PREDIOS: item.predio,
       "PREDIO VECINO": item.vecino || item.predioVecino || "-",
@@ -400,8 +388,31 @@ export default function SupervisorDashboard() {
     
     let avancesFiltrados = [...avances]
 
-    // Filtrar por período - solo si no es "actual" (que muestra todos)
-    if (periodoSeleccionado !== "actual" && periodoSeleccionado !== "personalizado") {
+    // Filtrar por período
+    // Por defecto ("actual") o si es "personalizado" sin fechas: mostrar TODOS los registros
+    if (periodoSeleccionado === "actual") {
+      // No filtrar por fecha - mostrar todos los registros
+      // (ya está como avancesFiltrados = [...avances])
+    } else if (periodoSeleccionado === "personalizado") {
+      // Solo filtrar por fecha personalizada si hay fechas seleccionadas
+      // Si no hay fechas, mostrar todos los registros
+      if (fechaDesde || fechaHasta) {
+        if (fechaDesde) {
+          avancesFiltrados = avancesFiltrados.filter((avance) => {
+            const avanceFecha = avance.fecha || avance.fechaRegistro || new Date().toISOString().split('T')[0]
+            return avanceFecha >= fechaDesde
+          })
+        }
+        if (fechaHasta) {
+          avancesFiltrados = avancesFiltrados.filter((avance) => {
+            const avanceFecha = avance.fecha || avance.fechaRegistro || new Date().toISOString().split('T')[0]
+            return avanceFecha <= fechaHasta
+          })
+        }
+      }
+      // Si no hay fechas, no filtrar (mostrar todos)
+    } else {
+      // Períodos predefinidos (anterior, siguiente)
       const periodoSeleccionadoObj = periodosDisponibles.find(p => {
         if (periodoSeleccionado === "anterior") return p.nombre.includes("Anterior")
         if (periodoSeleccionado === "siguiente") return p.nombre.includes("Siguiente")
@@ -416,16 +427,7 @@ export default function SupervisorDashboard() {
           return avanceFecha >= desdeStr && avanceFecha <= hastaStr
         })
       }
-    } else if (periodoSeleccionado === "personalizado") {
-      // Filtrar por fecha personalizada
-      if (fechaDesde) {
-        avancesFiltrados = avancesFiltrados.filter((avance) => avance.fecha >= fechaDesde)
-      }
-      if (fechaHasta) {
-        avancesFiltrados = avancesFiltrados.filter((avance) => avance.fecha <= fechaHasta)
-      }
     }
-    // Si es "actual", no filtrar por fecha (mostrar todos)
     
     console.log('Avances después del filtro de período:', avancesFiltrados.length)
 
@@ -716,13 +718,23 @@ export default function SupervisorDashboard() {
               <Label htmlFor="periodo" className="text-sm font-medium bg-blue-200 px-2 py-1 rounded">
                 Período
               </Label>
-              <Select value={periodoSeleccionado} onValueChange={setPeriodoSeleccionado}>
+              <Select 
+                value={periodoSeleccionado} 
+                onValueChange={(value) => {
+                  setPeriodoSeleccionado(value)
+                  // Si cambia a "actual", limpiar las fechas personalizadas
+                  if (value === "actual") {
+                    setFechaDesde("")
+                    setFechaHasta("")
+                  }
+                }}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccionar período" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="actual">Período Actual (Todos)</SelectItem>
                   <SelectItem value="anterior">Período Anterior</SelectItem>
-                  <SelectItem value="actual">Período Actual</SelectItem>
                   <SelectItem value="siguiente">Período Siguiente</SelectItem>
                   <SelectItem value="personalizado">Fechas Personalizadas</SelectItem>
                 </SelectContent>
@@ -1043,7 +1055,7 @@ export default function SupervisorDashboard() {
                           : ""
                       }`}
                     >
-                      <TableCell className="text-sm">{formatearFechaArgentina(item.fecha)}</TableCell>
+                      <TableCell className="text-sm">{formatDateArgentina(item.fecha)}</TableCell>
                       <TableCell className="font-medium">{item.proveedor}</TableCell>
                       <TableCell className="font-medium">{item.predio}</TableCell>
                       <TableCell>{item.ordenTrabajo}</TableCell>

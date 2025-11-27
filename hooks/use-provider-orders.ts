@@ -189,31 +189,11 @@ export function useProviderOrders() {
 
         for (const dateValue of possibleDates) {
           try {
-            // Si es un string, intentar parsearlo
+            // Usar la función helper para parsear fechas correctamente
             if (typeof dateValue === "string") {
-              // Verificar si es una fecha ISO válida
-              if (dateValue.includes("T") || dateValue.includes("-")) {
-                const parsedDate = new Date(dateValue)
-                if (!isNaN(parsedDate.getTime())) {
-                  return parsedDate.toLocaleDateString("es-AR", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "numeric",
-                  })
-                }
-              }
-
-              // Intentar formato DD/MM/YYYY
-              if (dateValue.includes("/")) {
-                const [day, month, year] = dateValue.split("/")
-                const parsedDate = new Date(Number.parseInt(year), Number.parseInt(month) - 1, Number.parseInt(day))
-                if (!isNaN(parsedDate.getTime())) {
-                  return parsedDate.toLocaleDateString("es-AR", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "numeric",
-                  })
-                }
+              const formatted = formatDateArgentina(dateValue)
+              if (formatted && formatted !== "Fecha no válida" && formatted !== "Error en fecha") {
+                return formatted
               }
             }
 
@@ -225,6 +205,7 @@ export function useProviderOrders() {
                   day: "2-digit",
                   month: "2-digit",
                   year: "numeric",
+                  timeZone: "America/Argentina/Buenos_Aires",
                 })
               }
             }
@@ -235,6 +216,7 @@ export function useProviderOrders() {
                 day: "2-digit",
                 month: "2-digit",
                 year: "numeric",
+                timeZone: "America/Argentina/Buenos_Aires",
               })
             }
           } catch (error) {
@@ -248,6 +230,7 @@ export function useProviderOrders() {
           day: "2-digit",
           month: "2-digit",
           year: "numeric",
+          timeZone: "America/Argentina/Buenos_Aires",
         })
       })(),
       emisor: capitalizeFirstLetter(apiOrder.emisor || apiOrder.supervisor_nombre || "No asignado"),
