@@ -253,6 +253,12 @@ export function WorkProgressForm({
     return name.includes("preparacion de terreno") || name.includes("taipas") || name.includes("savannagh")
   }
 
+  const isControlExoticaTemplate = (templateName?: string) => {
+    if (!templateName) return false
+    const name = templateName.toLowerCase()
+    return name.includes("control de exotica") || name.includes("control de exótica") || name.includes("exotica") || name.includes("exótica")
+  }
+
   // Función para calcular tiempo automáticamente
   const calcularTiempo = (r8: string, r7: string) => {
     if (!r8 || !r7) return ""
@@ -832,6 +838,19 @@ export function WorkProgressForm({
       }
     }
   }, [isEditing, initialData, activeTemplate, workOrder?.campo, cuadrillas, viveros, clones, especies])
+
+  // Cargar especies y clones cuando cambia el vivero (para formulario genérico)
+  useEffect(() => {
+    if (formData.vivero && isPlantationTemplate(activeTemplate?.nombre)) {
+      const especiesDelVivero = getEspeciesDelVivero(formData.vivero)
+      const clonesDelVivero = getClonesDelVivero(formData.vivero)
+      setEspecies(especiesDelVivero)
+      setClones(clonesDelVivero)
+    } else if (!formData.vivero) {
+      setEspecies([])
+      setClones([])
+    }
+  }, [formData.vivero, activeTemplate?.nombre, viveros, allEspecies])
 
   // Renderizar formulario específico para QUEMAS CONTROLADAS
   const renderQuemasControladasForm = () => {
@@ -3041,6 +3060,17 @@ export function WorkProgressForm({
         setError("El año de plantación debe estar entre 1900 y 2030")
         return false
       }
+      // Validar que tipoCarga esté seleccionado
+      if (!formData.tipoCarga || formData.tipoCarga.trim() === "") {
+        setError("Debe seleccionar el tipo de carga")
+        return false
+      }
+      // Validar densidad
+      const densidad = Number(formData.densidad)
+      if (densidad <= 0) {
+        setError("La densidad debe ser mayor a 0")
+        return false
+      }
     } else if (isControlHormigasTemplate(activeTemplate?.nombre)) {
       requiredFields.push("numerosNidos", "especieHormiga", "producto", "cantidad")
     } else if (isControlMalezasTemplate(activeTemplate?.nombre)) {
@@ -3056,7 +3086,10 @@ export function WorkProgressForm({
     } else if (isRaleoTemplate(activeTemplate?.nombre)) {
       requiredFields.push("especie")
     } else if (isQuemasControladasTemplate(activeTemplate?.nombre)) {
-              requiredFields.push("horaR29", "horaR8", "horaR7", "horaR28", "cantPersonal", "jornada")
+      requiredFields.push("horaR29", "horaR8", "horaR7", "horaR28", "cantPersonal", "jornada")
+    } else if (isControlExoticaTemplate(activeTemplate?.nombre)) {
+      // Campos específicos para Control de exótica
+      requiredFields.push("estado", "fecha", "predio", "rodal", "cuadrilla", "implemento", "operarios", "jornales", "superficie")
     } else if (activeTemplate?.nombre === "MANEJO REBROTE") {
       // Validaciones específicas para Manejo de rebrote
       const operarios = Number(formData.operarios)
@@ -3125,6 +3158,21 @@ export function WorkProgressForm({
       const jornal = Number(formData.jornal)
       if (jornal <= 0) {
         setError("El jornal debe ser mayor a 0")
+        return false
+      }
+    }
+    
+    // Validaciones específicas para Control de exótica
+    if (isControlExoticaTemplate(activeTemplate?.nombre)) {
+      const operarios = Number(formData.operarios)
+      if (operarios <= 0) {
+        setError("Los operarios deben ser mayor a 0")
+        return false
+      }
+      
+      const jornales = Number(formData.jornales)
+      if (jornales <= 0) {
+        setError("Los jornales deben ser mayor a 0")
         return false
       }
     }
@@ -3221,6 +3269,22 @@ export function WorkProgressForm({
           anioPlantacion: Number(formData.anioPlantacion || 0),
           observaciones: formData.observaciones || "",
         }
+      } else if (isControlExoticaTemplate(activeTemplate?.nombre)) {
+        // Para Control de exótica, construir el objeto específico
+        submitData = {
+          ...submitData,
+          estado: formData.estado || "Pendiente",
+          fecha: formatDateForArgentina(formData.fecha || getCurrentDateForArgentina()),
+          predio: formData.predio || workOrder?.campo || "",
+          rodal: formData.rodal || "",
+          cuadrilla: formData.cuadrilla || "",
+          cuadrillaId: formData.cuadrillaId || "",
+          implemento: formData.implemento || "",
+          operarios: Number(formData.operarios || 0),
+          jornales: Number(formData.jornales || 0),
+          superficie: Number(formData.superficie || 0),
+          observaciones: formData.observaciones || "",
+        }
       } else {
         // Para otras plantillas, usar la lógica existente
         submitData = {
@@ -3313,8 +3377,18 @@ export function WorkProgressForm({
         })
       }
 
-      // Agregar el supervisorId desde la orden de trabajo
-      submitData.supervisorId = workOrder.supervisor_id || null;
+      // Agregar el supervisorId desde la orden de trabajo (asegurar que sea número)
+      const supervisorIdFromOrder = workOrder.supervisor_id || workOrder.supervisorId || null
+      if (supervisorIdFromOrder !== null && supervisorIdFromOrder !== undefined) {
+        // Convertir a número si es string
+        const supervisorIdNum = Number(supervisorIdFromOrder)
+        submitData.supervisorId = !isNaN(supervisorIdNum) ? supervisorIdNum : supervisorIdFromOrder
+        // También guardar como supervisor_id para compatibilidad
+        submitData.supervisor_id = submitData.supervisorId
+      } else {
+        submitData.supervisorId = null
+        submitData.supervisor_id = null
+      }
 
       // Siempre guardar el nombre y el ID de la cuadrilla, para todas las plantillas
       submitData.cuadrilla = formData.cuadrilla || ""
@@ -3531,79 +3605,230 @@ export function WorkProgressForm({
             </div>
           )}
           {/* Renderizar el resto de los campos que no son de sistema */}
-          {activeTemplate.campos.filter(campo => !camposSistema.includes(campo.id)).map((campo: ActivityField) => (
-            <div key={campo.id} className="space-y-2">
-              <Label htmlFor={campo.id}>
-                {campo.nombre} {campo.requerido && <span className="text-red-500">*</span>}
-              </Label>
-              {campo.tipo === "texto" && (
-                <Input
-                  id={campo.id}
-                  type="text"
-                  value={formData[campo.id] || ""}
-                  onChange={(e) => handleInputChange(campo.id, e.target.value)}
-                  placeholder={campo.placeholder}
-                  required={campo.requerido}
-                />
-              )}
-              {campo.tipo === "numero" && (
-                <div className="relative">
+          {activeTemplate.campos.filter(campo => !camposSistema.includes(campo.id)).map((campo: ActivityField) => {
+            // Manejo especial para campos dinámicos de plantación
+            if (campo.id === "vivero" && isPlantationTemplate(activeTemplate?.nombre)) {
+              return (
+                <div key={campo.id} className="space-y-2">
+                  <Label htmlFor={campo.id}>
+                    {campo.nombre} {campo.requerido && <span className="text-red-500">*</span>}
+                  </Label>
+                  <Select
+                    value={formData.vivero || ""}
+                    onValueChange={(newValue) => {
+                      handleInputChange("vivero", newValue)
+                      // Limpiar especie y clon cuando cambia el vivero
+                      handleInputChange("especie_forestal", "")
+                      handleInputChange("clon", "")
+                      // Cargar especies y clones del nuevo vivero
+                      const especiesDelVivero = getEspeciesDelVivero(newValue)
+                      const clonesDelVivero = getClonesDelVivero(newValue)
+                      setEspecies(especiesDelVivero)
+                      setClones(clonesDelVivero)
+                    }}
+                  >
+                    <SelectTrigger id={campo.id}>
+                      <SelectValue placeholder="Seleccionar vivero">
+                        {formData.vivero
+                          ? (() => {
+                              const vivero = viveros.find((v) => (v._id || v.id) === formData.vivero)
+                              return vivero
+                                ? vivero.nombre || vivero.descripcion || vivero.vivero || `Vivero ${formData.vivero}`
+                                : formData.vivero
+                            })()
+                          : "Seleccionar vivero"}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {viveros.map((vivero) => {
+                        const id = vivero._id || vivero.id || ""
+                        const nombre = vivero.nombre || vivero.descripcion || vivero.vivero || `Vivero ${id}`
+                        return (
+                          <SelectItem key={id} value={id}>
+                            {nombre}
+                          </SelectItem>
+                        )
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )
+            }
+            
+            if (campo.id === "especie_forestal" && isPlantationTemplate(activeTemplate?.nombre)) {
+              return (
+                <div key={campo.id} className="space-y-2">
+                  <Label htmlFor={campo.id}>
+                    {campo.nombre} {campo.requerido && <span className="text-red-500">*</span>}
+                  </Label>
+                  <Select
+                    value={formData.especie_forestal || ""}
+                    onValueChange={(newValue) => {
+                      handleInputChange("especie_forestal", newValue)
+                      // Limpiar clon cuando cambia la especie
+                      handleInputChange("clon", "")
+                    }}
+                    disabled={!formData.vivero}
+                  >
+                    <SelectTrigger id={campo.id}>
+                      <SelectValue placeholder={formData.vivero ? "Seleccionar especie" : "Primero seleccione un vivero"}>
+                        {formData.especie_forestal
+                          ? (() => {
+                              const especie = especies.find((e) => (e._id || e.id) === formData.especie_forestal)
+                              return especie
+                                ? especie.especie || especie.nombre || `Especie ${formData.especie_forestal}`
+                                : formData.especie_forestal
+                            })()
+                          : formData.vivero ? "Seleccionar especie" : "Primero seleccione un vivero"}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {especies.length > 0 ? (
+                        especies.map((especie) => {
+                          const id = especie._id || especie.id || ""
+                          const nombre = especie.especie || especie.nombre || `Especie ${id}`
+                          return (
+                            <SelectItem key={id} value={id}>
+                              {nombre}
+                            </SelectItem>
+                          )
+                        })
+                      ) : (
+                        <SelectItem value="" disabled>
+                          {formData.vivero ? "No hay especies disponibles" : "Seleccione un vivero primero"}
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )
+            }
+            
+            if (campo.id === "clon" && isPlantationTemplate(activeTemplate?.nombre)) {
+              return (
+                <div key={campo.id} className="space-y-2">
+                  <Label htmlFor={campo.id}>
+                    {campo.nombre} {campo.requerido && <span className="text-red-500">*</span>}
+                  </Label>
+                  <Select
+                    value={formData.clon || ""}
+                    onValueChange={(newValue) => handleInputChange("clon", newValue)}
+                    disabled={!formData.vivero}
+                  >
+                    <SelectTrigger id={campo.id}>
+                      <SelectValue placeholder={
+                        !formData.vivero ? "Primero seleccione un vivero" :
+                        "Seleccionar clon"
+                      }>
+                        {formData.clon
+                          ? (() => {
+                              const clon = clones.find((c) => (c._id || c.id) === formData.clon)
+                              return clon
+                                ? clon.codigo || clon.codigoClon || clon.nombre || clon.clon || `Clon ${formData.clon}`
+                                : formData.clon
+                            })()
+                          : !formData.vivero ? "Primero seleccione un vivero" :
+                            "Seleccionar clon"}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {clones.length > 0 ? (
+                        clones.map((clon) => {
+                          const id = clon._id || clon.id || ""
+                          const codigo = clon.codigo || clon.codigoClon || clon.nombre || clon.clon || `Clon ${id}`
+                          return (
+                            <SelectItem key={id} value={id}>
+                              {codigo}
+                            </SelectItem>
+                          )
+                        })
+                      ) : (
+                        <SelectItem value="" disabled>
+                          {!formData.vivero ? "Seleccione un vivero primero" :
+                           "No hay clones disponibles"}
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )
+            }
+            
+            // Renderizado estándar para otros campos
+            return (
+              <div key={campo.id} className="space-y-2">
+                <Label htmlFor={campo.id}>
+                  {campo.nombre} {campo.requerido && <span className="text-red-500">*</span>}
+                </Label>
+                {campo.tipo === "texto" && (
                   <Input
                     id={campo.id}
-                    type="number"
-                    step={campo.id.includes("superficie") || campo.id === "ha" ? "0.0001" : "1"}
-                    min="0"
+                    type="text"
                     value={formData[campo.id] || ""}
                     onChange={(e) => handleInputChange(campo.id, e.target.value)}
                     placeholder={campo.placeholder}
                     required={campo.requerido}
-                    className={campo.unidad ? "pr-12" : ""}
                   />
-                  {campo.unidad && (
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                      {campo.unidad}
-                    </span>
-                  )}
-                </div>
-              )}
-              {campo.tipo === "fecha" && (
-                <Input
-                  id={campo.id}
-                  type="date"
-                  value={formData[campo.id] || ""}
-                  onChange={(e) => handleInputChange(campo.id, e.target.value)}
-                  required={campo.requerido}
-                />
-              )}
-              {campo.tipo === "seleccion" && (
-                <Select
-                  value={formData[campo.id] || ""}
-                  onValueChange={(newValue) => handleInputChange(campo.id, newValue)}
-                >
-                  <SelectTrigger id={campo.id}>
-                    <SelectValue placeholder={campo.placeholder || `Seleccionar ${campo.nombre.toLowerCase()}`} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {campo.opciones?.map((opcion) => (
-                      <SelectItem key={opcion} value={opcion}>
-                        {opcion}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-              {(campo.tipo === "area" || campo.tipo === "textarea") && (
-                <Textarea
-                  id={campo.id}
-                  value={formData[campo.id] || ""}
-                  onChange={(e) => handleInputChange(campo.id, e.target.value)}
-                  placeholder={campo.placeholder}
-                  className="min-h-[100px]"
-                  required={campo.requerido}
-                />
-              )}
-            </div>
-          ))}
+                )}
+                {campo.tipo === "numero" && (
+                  <div className="relative">
+                    <Input
+                      id={campo.id}
+                      type="number"
+                      step={campo.id.includes("superficie") || campo.id === "ha" ? "0.0001" : "1"}
+                      min="0"
+                      value={formData[campo.id] || ""}
+                      onChange={(e) => handleInputChange(campo.id, e.target.value)}
+                      placeholder={campo.placeholder}
+                      required={campo.requerido}
+                      className={campo.unidad ? "pr-12" : ""}
+                    />
+                    {campo.unidad && (
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                        {campo.unidad}
+                      </span>
+                    )}
+                  </div>
+                )}
+                {campo.tipo === "fecha" && (
+                  <Input
+                    id={campo.id}
+                    type="date"
+                    value={formData[campo.id] || ""}
+                    onChange={(e) => handleInputChange(campo.id, e.target.value)}
+                    required={campo.requerido}
+                  />
+                )}
+                {campo.tipo === "seleccion" && (
+                  <Select
+                    value={formData[campo.id] || ""}
+                    onValueChange={(newValue) => handleInputChange(campo.id, newValue)}
+                  >
+                    <SelectTrigger id={campo.id}>
+                      <SelectValue placeholder={campo.placeholder || `Seleccionar ${campo.nombre.toLowerCase()}`} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {campo.opciones?.map((opcion) => (
+                        <SelectItem key={opcion} value={opcion}>
+                          {opcion}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                {(campo.tipo === "area" || campo.tipo === "textarea") && (
+                  <Textarea
+                    id={campo.id}
+                    value={formData[campo.id] || ""}
+                    onChange={(e) => handleInputChange(campo.id, e.target.value)}
+                    placeholder={campo.placeholder}
+                    className="min-h-[100px]"
+                    required={campo.requerido}
+                  />
+                )}
+              </div>
+            )
+          })}
         </div>
       </>
     )

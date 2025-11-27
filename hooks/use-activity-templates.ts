@@ -228,7 +228,19 @@ const DEFAULT_TEMPLATES: ActivityTemplate[] = [
     actividadCodigo: "SAP003",
     categoria: "Silvicultura",
     unidad: "Ha",
-    patronesCoincidencia: ["plantacion", "plantación", "plantado", "implantacion", "implantación"],
+    patronesCoincidencia: [
+      "plantacion", 
+      "plantación", 
+      "plantado", 
+      "implantacion", 
+      "implantación",
+      "replantacion",
+      "replantación",
+      "reposicion de fallas",
+      "reposición de fallas",
+      "reposicion fallas",
+      "reposición fallas"
+    ],
     campos: [
       { id: "fecha", nombre: "Fecha", tipo: "fecha", requerido: true, orden: 1, esDelSistema: true },
       { id: "rodal", nombre: "Rodal", tipo: "seleccion", requerido: true, orden: 2, esDelSistema: true },
@@ -263,7 +275,7 @@ const DEFAULT_TEMPLATES: ActivityTemplate[] = [
         esDelSistema: true,
       },
       {
-        id: "especie",
+        id: "especie_forestal",
         nombre: "Especie Forestal",
         tipo: "seleccion",
         requerido: true,
@@ -901,7 +913,7 @@ const DEFAULT_TEMPLATES: ActivityTemplate[] = [
   },
 ]
 
-const FRONTEND_VERSION = "2025-09-30-1"; // Cambia este valor en cada deploy relevante
+const FRONTEND_VERSION = "2025-01-15-1"; // Cambia este valor en cada deploy relevante
 
 try {
   const lastVersion = localStorage.getItem("frontend-version");

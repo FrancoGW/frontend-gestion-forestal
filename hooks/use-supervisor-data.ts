@@ -196,9 +196,16 @@ export function useSupervisorData() {
         }
       }
 
-      // Filtrar órdenes por supervisor_id
+      // Filtrar órdenes por supervisor_id (manejar tanto números como strings)
       const ordenesDelSupervisor = ordenesData.filter((orden: any) => {
-        return supervisorId && (orden.supervisor_id === supervisorId || orden.usuario_id === supervisorId)
+        if (!supervisorId) return false
+        const ordenSupervisorId = Number(orden.supervisor_id ?? orden.supervisorId ?? 0)
+        const ordenUsuarioId = Number(orden.usuario_id ?? orden.usuarioId ?? 0)
+        // Comparar tanto numéricamente como por string
+        return (ordenSupervisorId === supervisorId) || 
+               (ordenUsuarioId === supervisorId) ||
+               (String(orden.supervisor_id) === String(supervisorId)) ||
+               (String(orden.supervisorId) === String(supervisorId))
       })
 
       console.log(`Órdenes encontradas para supervisor ${supervisorId}:`, ordenesDelSupervisor.length)
@@ -238,8 +245,18 @@ export function useSupervisorData() {
         }
       }
 
-      // Filtrar avances por supervisorId
-      const avancesDelSupervisor = avancesData.filter((avance: any) => Number(avance.supervisorId) === supervisorId)
+      // Filtrar avances por supervisorId (buscando tanto supervisorId como supervisor_id)
+      // Manejar tanto números como strings
+      const avancesDelSupervisor = avancesData.filter((avance: any) => {
+        const supervisorIdRaw = avance.supervisorId ?? avance.supervisor_id ?? null
+        if (supervisorIdRaw !== null && supervisorIdRaw !== undefined) {
+          const avanceSupervisorId = Number(supervisorIdRaw)
+          // Comparar tanto numéricamente como por string
+          return (!isNaN(avanceSupervisorId) && avanceSupervisorId === supervisorId) ||
+                 (String(supervisorIdRaw) === String(supervisorId))
+        }
+        return false
+      })
       
       console.log(`Avances encontrados para supervisor ${supervisorId}:`, avancesDelSupervisor.length)
 
@@ -302,10 +319,26 @@ export function useSupervisorData() {
       const supervisorId = getSupervisorIdFromEmail(supervisor?.email || "")
      
 
-      // Filtrar órdenes por supervisor_id
+      // Filtrar órdenes por supervisor_id (manejar tanto números como strings)
       const ordenesFiltradas = ordenesData.filter((orden: any) => {
-        // Filtrado principal por supervisor_id
-        if (supervisorId && (orden.supervisor_id === supervisorId || orden.usuario_id === supervisorId)) {
+        if (!supervisorId) {
+          // Si no hay supervisorId, usar filtrado por nombre como respaldo
+          const supervisorNombre = supervisor?.nombre || ""
+          if (supervisorNombre && (orden.supervisor === supervisorNombre || orden.emisor === supervisorNombre)) {
+            return true
+          }
+          return false
+        }
+        
+        // Filtrado principal por supervisor_id (manejar números y strings)
+        const ordenSupervisorId = Number(orden.supervisor_id ?? orden.supervisorId ?? 0)
+        const ordenUsuarioId = Number(orden.usuario_id ?? orden.usuarioId ?? 0)
+        
+        // Comparar tanto numéricamente como por string
+        if ((ordenSupervisorId === supervisorId) || 
+            (ordenUsuarioId === supervisorId) ||
+            (String(orden.supervisor_id) === String(supervisorId)) ||
+            (String(orden.supervisorId) === String(supervisorId))) {
           return true
         }
 
@@ -416,9 +449,223 @@ export function useSupervisorData() {
         return []
       }
 
-      // Filtrar avances por supervisorId
-      const avancesFiltrados = avancesData.filter((avance: any) => Number(avance.supervisorId) === supervisorId)
+      // Crear Sets con los IDs y números de las órdenes del supervisor para búsqueda rápida
+      // También incluir el número de orden como alternativa, ya que los avances pueden usar ordenTrabajoId = numeroOrden
+      const ordenesIdsDelSupervisor = new Set<number>()
+      const ordenesNumerosDelSupervisor = new Set<string>()
+      const ordenesIdsComoString = new Set<string>()
+      
+      // También necesitamos mapear los ObjectIds originales de las órdenes desde la API
+      // Cargar las órdenes originales para obtener los _id reales
+      let ordenesOriginalesConIds: any[] = []
+      try {
+        const responseOrdenes = await workOrdersAPI.getAll()
+        if (responseOrdenes) {
+          if (Array.isArray(responseOrdenes)) {
+            ordenesOriginalesConIds = responseOrdenes
+          } else if (responseOrdenes.data && Array.isArray(responseOrdenes.data)) {
+            ordenesOriginalesConIds = responseOrdenes.data
+          } else if (responseOrdenes.ordenes && Array.isArray(responseOrdenes.ordenes)) {
+            ordenesOriginalesConIds = responseOrdenes.ordenes
+          }
+        }
+      } catch (err) {
+        console.warn('No se pudieron cargar órdenes originales para matching:', err)
+      }
+      
+      // Filtrar solo las órdenes del supervisor (usar el supervisorId ya declarado arriba)
+      const ordenesOriginalesDelSupervisor = ordenesOriginalesConIds.filter((orden: any) => {
+        if (!supervisorId) return false
+        const ordenSupervisorId = Number(orden.supervisor_id ?? orden.supervisorId ?? 0)
+        return ordenSupervisorId === supervisorId || String(orden.supervisor_id) === String(supervisorId)
+      })
+      
+      ordenesData.forEach(orden => {
+        // Agregar ID numérico transformado
+        ordenesIdsDelSupervisor.add(orden.id)
+        ordenesIdsComoString.add(String(orden.id))
+        
+        // Agregar número de orden como string
+        ordenesNumerosDelSupervisor.add(String(orden.numero))
+        ordenesIdsComoString.add(String(orden.numero))
+        
+        // También intentar convertir el número de orden a número si es posible
+        const numeroComoNumero = Number(orden.numero)
+        if (!isNaN(numeroComoNumero) && numeroComoNumero > 0) {
+          ordenesIdsDelSupervisor.add(numeroComoNumero)
+        }
+        
+        // Si el número de orden es un ObjectId (24 caracteres hex), también agregarlo
+        if (String(orden.numero).length === 24 && /^[a-fA-F0-9]{24}$/.test(String(orden.numero))) {
+          ordenesIdsComoString.add(String(orden.numero))
+        }
+      })
+      
+      // Agregar los ObjectIds originales (_id) de las órdenes del supervisor
+      ordenesOriginalesDelSupervisor.forEach((ordenOriginal: any) => {
+        const ordenIdOriginal = ordenOriginal._id || ordenOriginal.id
+        if (ordenIdOriginal) {
+          ordenesIdsComoString.add(String(ordenIdOriginal))
+          // Si es un ObjectId, también intentar convertirlo a número
+          if (String(ordenIdOriginal).length === 24 && /^[a-fA-F0-9]{24}$/.test(String(ordenIdOriginal))) {
+            try {
+              const idComoNumero = Number.parseInt(String(ordenIdOriginal).slice(-6), 16)
+              if (!isNaN(idComoNumero)) {
+                ordenesIdsDelSupervisor.add(idComoNumero)
+              }
+            } catch (e) {
+              // Ignorar errores de conversión
+            }
+          }
+        }
+      })
+      
+      console.log('Órdenes del supervisor:', ordenesIdsDelSupervisor.size)
+      console.log('IDs de órdenes del supervisor (numéricos):', Array.from(ordenesIdsDelSupervisor).slice(0, 10))
+      console.log('Números de órdenes del supervisor (strings):', Array.from(ordenesNumerosDelSupervisor).slice(0, 10))
+      console.log('IDs de órdenes como strings (incluye ObjectIds):', Array.from(ordenesIdsComoString).slice(0, 10))
+      console.log('Total IDs únicos para matching:', ordenesIdsComoString.size)
+
+      // Filtrar avances por supervisorId (buscando tanto supervisorId como supervisor_id)
+      // También incluir avances que pertenezcan a órdenes del supervisor
+      let avancesPorSupervisorId = 0
+      let avancesPorOrden = 0
+      let avancesRechazados = 0
+      
+      // Primero, mostrar algunos avances de ejemplo para debugging
+      console.log('Ejemplos de avances antes del filtro (primeros 10):')
+      avancesData.slice(0, 10).forEach((avance: any, idx: number) => {
+        const supId = avance.supervisorId ?? avance.supervisor_id
+        const ordId = avance.ordenTrabajoId ?? avance.numeroOrden
+        const coincideSup = supId !== null && supId !== undefined && 
+          (Number(supId) === supervisorId || String(supId) === String(supervisorId))
+        const coincideOrd = ordId !== null && ordId !== undefined && 
+          (ordenesIdsComoString.has(String(ordId)) || ordenesNumerosDelSupervisor.has(String(ordId)))
+        
+        console.log(`  Avance ${idx + 1}:`, {
+          _id: avance._id,
+          supervisorId: avance.supervisorId,
+          supervisor_id: avance.supervisor_id,
+          ordenTrabajoId: avance.ordenTrabajoId,
+          ordenTrabajo_id: avance.ordenTrabajo_id,
+          numeroOrden: avance.numeroOrden,
+          ordenTrabajo: avance.ordenTrabajo,
+          proveedorId: avance.proveedorId,
+          proveedorNombre: avance.proveedorNombre,
+          coincideSupervisorId: coincideSup,
+          coincideOrden: coincideOrd,
+          deberiaIncluirse: coincideSup || coincideOrd
+        })
+      })
+      
+      const avancesFiltrados = avancesData.filter((avance: any) => {
+        // Verificar si el avance tiene supervisorId o supervisor_id que coincida
+        // Manejar tanto números como strings, y comparaciones estrictas y flexibles
+        const supervisorIdRaw = avance.supervisorId ?? avance.supervisor_id ?? null
+        if (supervisorIdRaw !== null && supervisorIdRaw !== undefined) {
+          // Intentar convertir a número
+          const avanceSupervisorId = Number(supervisorIdRaw)
+          // Comparar tanto numéricamente como por string (para casos donde uno es string y otro número)
+          if ((!isNaN(avanceSupervisorId) && avanceSupervisorId === supervisorId) ||
+              (String(supervisorIdRaw) === String(supervisorId))) {
+            avancesPorSupervisorId++
+            return true
+          }
+        }
+        
+        // Si no tiene supervisorId directo, verificar si pertenece a una orden del supervisor
+        // Verificar múltiples campos que pueden contener el ID de la orden
+        const ordenIdRaw = avance.ordenTrabajoId ?? avance.ordenTrabajo_id ?? avance.numeroOrden ?? avance.ordenTrabajo ?? null
+        if (ordenIdRaw !== null && ordenIdRaw !== undefined) {
+          const ordenId = Number(ordenIdRaw)
+          const ordenIdString = String(ordenIdRaw).trim()
+          
+          // Verificar por ID numérico
+          if (!isNaN(ordenId) && ordenId > 0) {
+            if (ordenesIdsDelSupervisor.has(ordenId)) {
+              avancesPorOrden++
+              return true
+            }
+          }
+          
+          // Verificar por string (tanto número como ObjectId) - esta es la verificación más importante
+          if (ordenesIdsComoString.has(ordenIdString) || ordenesNumerosDelSupervisor.has(ordenIdString)) {
+            avancesPorOrden++
+            return true
+          }
+          
+          // Verificar si el ordenIdRaw es un ObjectId (24 caracteres hex)
+          if (ordenIdString.length === 24 && /^[a-fA-F0-9]{24}$/.test(ordenIdString)) {
+            // Buscar si alguna orden tiene este ObjectId
+            if (ordenesIdsComoString.has(ordenIdString)) {
+              avancesPorOrden++
+              return true
+            }
+            // También intentar convertir el ObjectId a número y buscar
+            try {
+              const idComoNumero = Number.parseInt(ordenIdString.slice(-6), 16)
+              if (!isNaN(idComoNumero) && ordenesIdsDelSupervisor.has(idComoNumero)) {
+                avancesPorOrden++
+                return true
+              }
+            } catch (e) {
+              // Ignorar errores de conversión
+            }
+          }
+        }
+        
+        avancesRechazados++
+        return false
+      })
       console.log('Avances después del filtro por supervisorId:', avancesFiltrados.length)
+      console.log(`  - Avances con supervisorId directo: ${avancesPorSupervisorId}`)
+      console.log(`  - Avances por orden del supervisor: ${avancesPorOrden}`)
+      console.log(`  - Avances rechazados: ${avancesRechazados}`)
+      console.log(`  - Total avances procesados: ${avancesData.length}`)
+      
+      // Mostrar algunos ejemplos de avances filtrados
+      if (avancesFiltrados.length > 0) {
+        console.log('Ejemplos de avances filtrados (primeros 3):')
+        avancesFiltrados.slice(0, 3).forEach((avance: any, idx: number) => {
+          console.log(`  Avance filtrado ${idx + 1}:`, {
+            _id: avance._id,
+            supervisorId: avance.supervisorId,
+            ordenTrabajoId: avance.ordenTrabajoId,
+            proveedorId: avance.proveedorId,
+            proveedorNombre: avance.proveedorNombre
+          })
+        })
+      }
+      
+      // Si hay avances rechazados, mostrar algunos ejemplos
+      if (avancesRechazados > 0 && avancesPorSupervisorId < 10) {
+        console.log('⚠️ ADVERTENCIA: Muchos avances fueron rechazados. Ejemplos de avances rechazados:')
+        const rechazados = avancesData.filter((avance: any) => {
+          const supervisorIdRaw = avance.supervisorId ?? avance.supervisor_id ?? null
+          if (supervisorIdRaw !== null && supervisorIdRaw !== undefined) {
+            const avanceSupervisorId = Number(supervisorIdRaw)
+            if (!isNaN(avanceSupervisorId) && avanceSupervisorId === supervisorId) {
+              return false
+            }
+          }
+          const ordenIdRaw = avance.ordenTrabajoId ?? avance.ordenTrabajo_id ?? null
+          if (ordenIdRaw !== null && ordenIdRaw !== undefined) {
+            const ordenId = Number(ordenIdRaw)
+            if (!isNaN(ordenId) && ordenId > 0 && ordenesIdsDelSupervisor.has(ordenId)) {
+              return false
+            }
+          }
+          return true
+        })
+        rechazados.slice(0, 5).forEach((avance: any, idx: number) => {
+          console.log(`  Avance rechazado ${idx + 1}:`, {
+            supervisorId: avance.supervisorId,
+            supervisor_id: avance.supervisor_id,
+            ordenTrabajoId: avance.ordenTrabajoId,
+            proveedorId: avance.proveedorId
+          })
+        })
+      }
       
       const avancesTransformados = avancesFiltrados
         .map((avance: any) => {
