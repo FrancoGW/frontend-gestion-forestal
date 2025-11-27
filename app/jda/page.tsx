@@ -205,7 +205,7 @@ export default function JdaDashboard() {
     /* ------------------------------------------------------------------ */
     const excelData = datosTabla.map((item) => ({
       "FECHA REGISTRO": new Date(item.fecha).toLocaleDateString("es-AR"),
-      "ORDEN TR": item.ordenTrabajo,
+      "ORDEN TR": String(item.ordenTrabajo || "").replace(/^#/, ""),
       SUPERVISOR: item.supervisor,
       PREDIOS: item.predio,
       "PREDIO VECINO": item.vecino || item.predioVecino || "-",

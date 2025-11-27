@@ -634,7 +634,7 @@ export default function AvancesPage() {
             Tipo: "ORDEN",
             ID: orden._id || orden.id,
             Nombre: orden.descripcion || "Sin descripción",
-            Número: orden.numero || "N/A",
+            Número: String(orden.numero || "N/A").replace(/^#/, ""),
             "Superficie Total (ha)": superficieTotal.toString().replace(".", ","),
             "Superficie Completada (ha)": superficieCompletada.toString().replace(".", ","),
             "Progreso (%)": porcentajeAvance,
@@ -762,7 +762,7 @@ export default function AvancesPage() {
 
           return {
             "ID Orden": orden._id || orden.id,
-            Número: orden.numero || "N/A",
+            Número: String(orden.numero || "N/A").replace(/^#/, ""),
             Descripción: orden.descripcion || "Sin descripción",
             "Superficie Total (ha)": superficieTotal.toString().replace(".", ","),
             "Superficie Completada (ha)": superficieCompletada.toString().replace(".", ","),
@@ -783,7 +783,7 @@ export default function AvancesPage() {
 
           return {
             "ID Orden": avance.ordenTrabajoId,
-            "Número Orden": orden.numero || "N/A",
+            "Número Orden": String(orden.numero || "N/A").replace(/^#/, ""),
             "Descripción Orden": orden.descripcion || "Sin descripción",
             "Fecha Avance": formatDate(avance.fecha),
             "Predio/Campo": avance.predio || "-",
@@ -944,7 +944,7 @@ export default function AvancesPage() {
             Tipo: "ORDEN",
             ID: orden._id || orden.id,
             Nombre: orden.descripcion || "Sin descripción",
-            Número: orden.numero || "N/A",
+            Número: String(orden.numero || "N/A").replace(/^#/, ""),
             "Superficie Total (ha)": Number(superficieTotal),
             "Superficie Completada (ha)": Number(superficieCompletada),
             "Progreso (%)": Number(porcentajeAvance),
