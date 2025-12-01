@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { usuariosAdminAPI } from "@/lib/api-client"
+import { usuariosAdminAPI, empresasAPI } from "@/lib/api-client"
 
 interface User {
   id: string
@@ -160,7 +160,47 @@ export function useAuth() {
 
           // Agregar IDs específicos según el rol como NÚMEROS
           if (user.rol === "provider") {
-            user.providerId = Number.parseInt(user.id, 10)
+            // Buscar la empresa asociada al proveedor para obtener su ID numérico
+            try {
+              const empresasResponse = await empresasAPI.getAll()
+              const empresas = Array.isArray(empresasResponse) 
+                ? empresasResponse 
+                : (empresasResponse?.data || empresasResponse?.empresas || [])
+              
+              // Buscar por email o nombre de empresa
+              const empresa = empresas.find((e: any) => 
+                e.email === user.email || 
+                e.empresa?.toLowerCase().includes(user.nombre.toLowerCase()) ||
+                e.nombre?.toLowerCase().includes(user.nombre.toLowerCase())
+              )
+              
+              if (empresa) {
+                // Usar idempresa, cod_empres, o _id numérico como providerId
+                const providerIdNum = empresa.idempresa || empresa.cod_empres || 
+                  (typeof empresa._id === 'number' ? empresa._id : 
+                   typeof empresa.id === 'number' ? empresa.id : null)
+                
+                if (providerIdNum !== null && providerIdNum !== undefined) {
+                  user.providerId = Number(providerIdNum)
+                  console.log(`✅ ProviderId asignado desde empresa: ${user.providerId}`)
+                } else {
+                  // Fallback: intentar parsear el _id si es string numérico
+                  const fallbackId = typeof empresa._id === 'string' && /^\d+$/.test(empresa._id)
+                    ? Number.parseInt(empresa._id, 10)
+                    : null
+                  user.providerId = fallbackId || Number.parseInt(user.id, 10)
+                  console.log(`⚠️  Usando fallback para providerId: ${user.providerId}`)
+                }
+              } else {
+                // Si no se encuentra la empresa, usar el ID del usuario como fallback
+                user.providerId = Number.parseInt(user.id, 10)
+                console.log(`⚠️  Empresa no encontrada, usando ID de usuario como fallback: ${user.providerId}`)
+              }
+            } catch (empresaError) {
+              console.error("Error al buscar empresa para provider:", empresaError)
+              // Fallback: usar el ID del usuario
+              user.providerId = Number.parseInt(user.id, 10)
+            }
           } else if (user.rol === "supervisor") {
             user.supervisorId = Number.parseInt(user.id, 10)
           }
@@ -265,8 +305,36 @@ export function useAuth() {
 
         if (storedUser) {
           // Asegurar que providerId esté definido como número para usuarios con rol "provider"
-          if (storedUser.rol === "provider" && !storedUser.providerId && storedUser.id) {
-            storedUser.providerId = Number.parseInt(storedUser.id, 10)
+          if (storedUser.rol === "provider" && !storedUser.providerId) {
+            // Intentar buscar la empresa asociada
+            try {
+              const empresasResponse = await empresasAPI.getAll()
+              const empresas = Array.isArray(empresasResponse) 
+                ? empresasResponse 
+                : (empresasResponse?.data || empresasResponse?.empresas || [])
+              
+              const empresa = empresas.find((e: any) => 
+                e.email === storedUser.email || 
+                e.empresa?.toLowerCase().includes(storedUser.nombre.toLowerCase()) ||
+                e.nombre?.toLowerCase().includes(storedUser.nombre.toLowerCase())
+              )
+              
+              if (empresa) {
+                const providerIdNum = empresa.idempresa || empresa.cod_empres || 
+                  (typeof empresa._id === 'number' ? empresa._id : 
+                   typeof empresa.id === 'number' ? empresa.id : null)
+                
+                if (providerIdNum !== null && providerIdNum !== undefined) {
+                  storedUser.providerId = Number(providerIdNum)
+                } else {
+                  storedUser.providerId = Number.parseInt(storedUser.id, 10)
+                }
+              } else {
+                storedUser.providerId = Number.parseInt(storedUser.id, 10)
+              }
+            } catch (error) {
+              storedUser.providerId = Number.parseInt(storedUser.id, 10)
+            }
           }
 
           // Asegurar que supervisorId esté definido como número para usuarios con rol "supervisor"

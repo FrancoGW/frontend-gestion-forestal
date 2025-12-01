@@ -1,8 +1,8 @@
 import axios from "axios"
 import axiosRetry from "axios-retry"
 
-// Corregir la URL base - eliminar el "/api" adicional
-const BASE_URL = "https://backend-gestion-forestal.vercel.app"
+// Usar URL externa si está configurada, sino usar rutas relativas (integración local)
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || ''
 
 // Control de logging
 const ENABLE_DETAILED_LOGGING = true // Activamos logging detallado para depurar
