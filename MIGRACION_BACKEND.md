@@ -163,3 +163,4 @@ Se creó `lib/api-helpers.ts` con la función `handleAdminCollectionRoute()` que
 - `lib/api-helpers.ts`: Helper para rutas CRUD genéricas
 - `scripts/generate-admin-routes.js`: Script para generar rutas administrativas automáticamente
 
+

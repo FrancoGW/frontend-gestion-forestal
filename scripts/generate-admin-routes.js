@@ -74,3 +74,4 @@ collections.forEach(collection => {
 
 console.log('✅ All admin collection routes generated!');
 
+

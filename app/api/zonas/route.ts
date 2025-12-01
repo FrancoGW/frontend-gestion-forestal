@@ -9,3 +9,4 @@ export async function POST(request: NextRequest) {
   return handleAdminCollectionRoute('zonas', request);
 }
 
+

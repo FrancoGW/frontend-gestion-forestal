@@ -131,3 +131,4 @@ NEXT_PUBLIC_API_URL=
 
 Todas estas variables (excepto `NEXT_PUBLIC_API_URL` y `CRON_SECRET`) son las mismas que tienes en el backend. Puedes copiarlas directamente desde tu proyecto backend en Vercel.
 
+
