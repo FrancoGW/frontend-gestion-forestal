@@ -51,8 +51,13 @@ async function obtenerOrdenesDeTrabajoAPI() {
     console.log(`Total de órdenes recibidas: ${ordenes.length}`);
     return ordenes;
   } catch (error: any) {
-    console.error('Error al obtener órdenes de trabajo:', error.message);
-    throw error;
+    const errorMessage = error.response 
+      ? `Status ${error.response.status}: ${error.response.statusText} - ${error.response.data?.message || error.message}`
+      : error.message;
+    console.error('Error al obtener órdenes de trabajo:', errorMessage);
+    console.error('URL:', WORK_ORDERS_API_URL);
+    console.error('From date:', WORK_ORDERS_FROM_DATE);
+    throw new Error(errorMessage);
   }
 }
 
@@ -119,7 +124,7 @@ async function procesarOrdenesDeTrabajoAPI(db: any, ordenes: any[]) {
     }
     
     const coleccion = db.collection('ordenesTrabajoAPI');
-    await coleccion.createIndex({ _id: 1 }, { unique: true });
+    // El índice _id ya es único por defecto en MongoDB, no necesitamos crearlo
     
     let procesadas = 0;
     let errores = 0;
@@ -186,21 +191,53 @@ export async function GET(request: NextRequest) {
     // Conectar a MongoDB
     const db = await getDB();
     
-    // Obtener datos de las APIs
-    const [datosAdmin, ordenesTrabajoAPI, datosProteccion] = await Promise.all([
-      obtenerDatosAdministrativos(),
-      obtenerOrdenesDeTrabajoAPI(),
-      obtenerDatosProteccion()
-    ]);
+    // Ejecutar cada parte del ETL independientemente para que no falle todo si una parte falla
+    const resultados: any = {
+      datosAdministrativos: { exito: false, error: null },
+      ordenesTrabajo: { exito: false, error: null, cantidad: 0 },
+      datosProteccion: { exito: false, error: null }
+    };
     
-    // Procesar los datos
-    await procesarDatosAdministrativos(db, datosAdmin);
-    await procesarOrdenesDeTrabajoAPI(db, ordenesTrabajoAPI);
-    await procesarDatosProteccion(db, datosProteccion);
+    // Procesar datos administrativos
+    try {
+      const datosAdmin = await obtenerDatosAdministrativos();
+      await procesarDatosAdministrativos(db, datosAdmin);
+      resultados.datosAdministrativos.exito = true;
+    } catch (error: any) {
+      resultados.datosAdministrativos.error = error.message;
+      console.error('Error en datos administrativos:', error);
+    }
+    
+    // Procesar órdenes de trabajo
+    try {
+      const ordenesTrabajoAPI = await obtenerOrdenesDeTrabajoAPI();
+      await procesarOrdenesDeTrabajoAPI(db, ordenesTrabajoAPI);
+      resultados.ordenesTrabajo.exito = true;
+      resultados.ordenesTrabajo.cantidad = Array.isArray(ordenesTrabajoAPI) ? ordenesTrabajoAPI.length : 0;
+    } catch (error: any) {
+      resultados.ordenesTrabajo.error = error.message;
+      console.error('Error en órdenes de trabajo:', error);
+    }
+    
+    // Procesar datos de protección
+    try {
+      const datosProteccion = await obtenerDatosProteccion();
+      await procesarDatosProteccion(db, datosProteccion);
+      resultados.datosProteccion.exito = true;
+    } catch (error: any) {
+      resultados.datosProteccion.error = error.message;
+      console.error('Error en datos de protección:', error);
+    }
+    
+    // Determinar si hubo al menos un éxito
+    const algunExito = resultados.datosAdministrativos.exito || 
+                       resultados.ordenesTrabajo.exito || 
+                       resultados.datosProteccion.exito;
     
     return NextResponse.json({ 
-      success: true, 
-      mensaje: 'Proceso ETL completado con éxito' 
+      success: algunExito,
+      mensaje: algunExito ? 'Proceso ETL completado (algunas partes pueden haber fallado)' : 'Proceso ETL falló completamente',
+      resultados
     });
   } catch (error: any) {
     console.error('Error en cron job ETL:', error);

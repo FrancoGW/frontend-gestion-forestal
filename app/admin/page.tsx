@@ -1,17 +1,21 @@
 "use client"
 
+import { useState } from "react"
 import { useWorkOrders } from "@/hooks/use-work-orders"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Clock, CheckCircle2, Calendar, ArrowRight } from "lucide-react"
+import { Clock, CheckCircle2, Calendar, ArrowRight, RefreshCw } from "lucide-react"
 import { BackendStatusAlert } from "@/components/backend-status-alert"
+import { useToast } from "@/hooks/use-toast"
 import Link from "next/link"
 
 export default function AdminDashboard() {
   const { workOrders, loading, error, backendStatus, retryConnection } = useWorkOrders()
+  const { toast } = useToast()
+  const [syncing, setSyncing] = useState(false)
 
   // Calcular estadísticas
   const pendingOrders = workOrders.filter((order) => order.estado === "pendiente")
@@ -31,6 +35,81 @@ export default function AdminDashboard() {
 
   // Calcular hectáreas totales del mes
   const currentMonthHectares = currentMonthOrders.reduce((total, order) => total + order.totalHectareas, 0)
+
+  // Función para sincronizar manualmente las órdenes
+  const handleSyncOrdenes = async () => {
+    setSyncing(true)
+    try {
+      const response = await fetch("/api/cron/etl", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        const resultados = data.resultados || {}
+        const ordenesInfo = resultados.ordenesTrabajo || {}
+        
+        if (data.success && ordenesInfo.exito) {
+          toast({
+            title: "✅ Sincronización completada",
+            description: `Se procesaron ${ordenesInfo.cantidad || 0} órdenes exitosamente.`,
+          })
+
+          // Recargar las órdenes después de un breve delay
+          setTimeout(() => {
+            window.location.reload()
+          }, 1500)
+        } else if (data.success) {
+          // Algunas partes fallaron pero el proceso continuó
+          const partesExitosas = [
+            resultados.datosAdministrativos?.exito && "datos administrativos",
+            resultados.ordenesTrabajo?.exito && "órdenes de trabajo",
+            resultados.datosProteccion?.exito && "datos de protección",
+          ].filter(Boolean)
+          
+          toast({
+            title: "⚠️ Sincronización parcial",
+            description: partesExitosas.length > 0
+              ? `Se completaron: ${partesExitosas.join(", ")}. Algunas partes pueden haber fallado.`
+              : "La sincronización se completó, pero algunas partes pueden haber fallado.",
+          })
+          
+          // Recargar solo si las órdenes se sincronizaron exitosamente
+          if (ordenesInfo.exito) {
+            setTimeout(() => {
+              window.location.reload()
+            }, 1500)
+          }
+        } else {
+          const errorMsg = data.mensaje || data.error || "Error desconocido"
+          toast({
+            title: "❌ Error en la sincronización",
+            description: errorMsg,
+            variant: "destructive",
+          })
+        }
+      } else {
+        const errorMsg = data.details || data.error || `Error ${response.status}`
+        toast({
+          title: "❌ Error en la sincronización",
+          description: errorMsg,
+          variant: "destructive",
+        })
+      }
+    } catch (error: any) {
+      toast({
+        title: "❌ Error en la sincronización",
+        description: error.message || "No se pudo conectar con el servidor",
+        variant: "destructive",
+      })
+    } finally {
+      setSyncing(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -68,9 +147,20 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">Bienvenido al panel de administración</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground">Bienvenido al panel de administración</p>
+        </div>
+        <Button
+          onClick={handleSyncOrdenes}
+          disabled={syncing}
+          variant="outline"
+          className="flex items-center gap-2"
+        >
+          <RefreshCw className={`h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
+          {syncing ? "Sincronizando..." : "Sincronizar Órdenes"}
+        </Button>
       </div>
 
       {/* Mostrar alerta de estado del backend si hay problemas de conexión */}

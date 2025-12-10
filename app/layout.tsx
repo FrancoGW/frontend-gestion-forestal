@@ -3,7 +3,8 @@ import type { Metadata } from "next"
 import { ReactQueryProvider } from "@/lib/react-query"
 import "./globals.css"
 import { useFrontendVersion } from "@/hooks/useFrontendVersion"
-import { FrontendVersionEffect } from "@/components/FrontendVersionEffect";
+import { FrontendVersionEffect } from "@/components/FrontendVersionEffect"
+import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
   title: "Sistema de Órdenes de Trabajo",
@@ -16,7 +17,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="es">
       <body>
         <FrontendVersionEffect />
-        {children}
+        <ReactQueryProvider>
+          {children}
+        </ReactQueryProvider>
+        <Toaster />
       </body>
     </html>
   );
