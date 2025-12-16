@@ -1939,6 +1939,9 @@ export function WorkProgressForm({
               }>
                 {formData.clon
                   ? (() => {
+                      if (formData.clon === "sin_clon") {
+                        return "Sin clon"
+                      }
                       const clon = clones.find((c) => (c._id || c.id) === formData.clon)
                       return clon
                         ? clon.codigo || clon.codigoClon || clon.nombre || clon.clon || `Clon ${formData.clon}`
@@ -1950,20 +1953,32 @@ export function WorkProgressForm({
             </SelectTrigger>
             <SelectContent>
               {clones.length > 0 ? (
-                clones.map((clon) => {
-                  const id = clon._id || clon.id || ""
-                  const codigo = clon.codigo || clon.codigoClon || clon.nombre || clon.clon || `Clon ${id}`
-                  return (
-                    <SelectItem key={id} value={id}>
-                      {codigo}
-                    </SelectItem>
-                  )
-                })
+                <>
+                  {clones.map((clon) => {
+                    const id = clon._id || clon.id || ""
+                    const codigo = clon.codigo || clon.codigoClon || clon.nombre || clon.clon || `Clon ${id}`
+                    return (
+                      <SelectItem key={id} value={id}>
+                        {codigo}
+                      </SelectItem>
+                    )
+                  })}
+                  <SelectItem value="sin_clon">
+                    Sin clon
+                  </SelectItem>
+                </>
               ) : (
-                <SelectItem value="" disabled>
-                  {!formData.vivero ? "Seleccione un vivero primero" :
-                   "No hay clones disponibles"}
-                </SelectItem>
+                <>
+                  {!formData.vivero ? (
+                    <SelectItem value="" disabled>
+                      Seleccione un vivero primero
+                    </SelectItem>
+                  ) : (
+                    <SelectItem value="sin_clon">
+                      Sin clon
+                    </SelectItem>
+                  )}
+                </>
               )}
             </SelectContent>
           </Select>
@@ -3128,6 +3143,10 @@ export function WorkProgressForm({
     for (const field of requiredFields) {
       const value = formData[field]
       console.log(`[VALIDACIÓN][DEBUG] Validando campo '${field}':`, value)
+      // Permitir "sin_clon" como valor válido para el campo clon
+      if (field === "clon" && value === "sin_clon") {
+        continue
+      }
       if (!value || (typeof value === "string" && value.trim() === "")) {
         console.log(`[VALIDACIÓN][ERROR] Campo '${field}' está vacío o es inválido`)
         console.log(`[VALIDACIÓN][ERROR] Valor del campo '${field}':`, value)
@@ -3722,6 +3741,9 @@ export function WorkProgressForm({
                       }>
                         {formData.clon
                           ? (() => {
+                              if (formData.clon === "sin_clon") {
+                                return "Sin clon"
+                              }
                               const clon = clones.find((c) => (c._id || c.id) === formData.clon)
                               return clon
                                 ? clon.codigo || clon.codigoClon || clon.nombre || clon.clon || `Clon ${formData.clon}`
@@ -3733,20 +3755,32 @@ export function WorkProgressForm({
                     </SelectTrigger>
                     <SelectContent>
                       {clones.length > 0 ? (
-                        clones.map((clon) => {
-                          const id = clon._id || clon.id || ""
-                          const codigo = clon.codigo || clon.codigoClon || clon.nombre || clon.clon || `Clon ${id}`
-                          return (
-                            <SelectItem key={id} value={id}>
-                              {codigo}
-                            </SelectItem>
-                          )
-                        })
+                        <>
+                          {clones.map((clon) => {
+                            const id = clon._id || clon.id || ""
+                            const codigo = clon.codigo || clon.codigoClon || clon.nombre || clon.clon || `Clon ${id}`
+                            return (
+                              <SelectItem key={id} value={id}>
+                                {codigo}
+                              </SelectItem>
+                            )
+                          })}
+                          <SelectItem value="sin_clon">
+                            Sin clon
+                          </SelectItem>
+                        </>
                       ) : (
-                        <SelectItem value="" disabled>
-                          {!formData.vivero ? "Seleccione un vivero primero" :
-                           "No hay clones disponibles"}
-                        </SelectItem>
+                        <>
+                          {!formData.vivero ? (
+                            <SelectItem value="" disabled>
+                              Seleccione un vivero primero
+                            </SelectItem>
+                          ) : (
+                            <SelectItem value="sin_clon">
+                              Sin clon
+                            </SelectItem>
+                          )}
+                        </>
                       )}
                     </SelectContent>
                   </Select>
