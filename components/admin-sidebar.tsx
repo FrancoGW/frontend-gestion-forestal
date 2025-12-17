@@ -52,6 +52,7 @@ export function AdminSidebar({ children }: { children?: React.ReactNode }) {
   const mainNavItems = [
     { href: "/admin", label: "Dashboard", icon: Home },
     { href: "/admin/usuarios", label: "Usuarios", icon: User },
+    { href: "/admin/usuarios-gis", label: "Usuarios GIS", icon: Map },
     { href: "/admin/supervisores", label: "Supervisores", icon: UserCheck },
     { href: "/admin/ordenes", label: "Órdenes de Trabajo", icon: FileText },
     { href: "/admin/avances", label: "Avances", icon: TrendingUp },

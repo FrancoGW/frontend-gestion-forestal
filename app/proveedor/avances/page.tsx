@@ -263,6 +263,15 @@ export default function ProviderAvancesPage() {
   // ✅ NUEVO: Estado para almacenar los datos completos de avances para exportación
   const [fullAvancesData, setFullAvancesData] = useState<any[]>([])
 
+  // Estado para supervisores
+  const [supervisorsMap, setSupervisorsMap] = useState<Record<string, string>>({})
+  const [supervisorsList, setSupervisorsList] = useState<{id: string, nombre: string}[]>([])
+  const [isLoadingSupervisors, setIsLoadingSupervisors] = useState(false)
+  const [selectedSupervisor, setSelectedSupervisor] = useState<string>("todos")
+
+  // Estado para controlar la transición smooth
+  const [isContentReady, setIsContentReady] = useState(false)
+
   // Calcular estadísticas
   const totalSuperficie = avances.reduce((sum, avance) => sum + avance.superficie, 0)
   const totalOrdenes = new Set(avances.map((avance) => avance.ordenId)).size
@@ -388,6 +397,77 @@ export default function ProviderAvancesPage() {
 
     loadCuadrillasNames()
   }, [avances])
+
+  // Cargar supervisores
+  useEffect(() => {
+    const loadSupervisors = async () => {
+      if (!user?.providerId) return
+      
+      setIsLoadingSupervisors(true)
+      try {
+        const supervisors = await supervisorsAPI.getAll()
+        const tempMap: Record<string, string> = {}
+        const tempList: {id: string, nombre: string}[] = []
+        
+        for (const supervisor of supervisors) {
+          const supervisorNombre = supervisor.nombre || `Supervisor ${supervisor._id?.substring(0, 6)}`
+          
+          if (Array.isArray(supervisor.proveedoresAsignados)) {
+            for (const prov of supervisor.proveedoresAsignados) {
+              if (prov.proveedorId) {
+                tempMap[String(prov.proveedorId)] = supervisorNombre
+              }
+            }
+          }
+          // También mapear por supervisorId directo
+          if (supervisor._id) {
+            tempMap[supervisor._id] = supervisorNombre
+            tempList.push({ id: supervisor._id, nombre: supervisorNombre })
+          }
+        }
+        
+        setSupervisorsMap(tempMap)
+        setSupervisorsList(tempList)
+      } catch (error) {
+        console.error("Error cargando supervisores:", error)
+      } finally {
+        setIsLoadingSupervisors(false)
+      }
+    }
+    
+    loadSupervisors()
+  }, [user?.providerId])
+
+  // Efecto para activar la transición smooth cuando los datos están listos
+  useEffect(() => {
+    if (!loading && avances.length >= 0) {
+      // Pequeño delay para permitir que el DOM se actualice
+      const timer = setTimeout(() => {
+        setIsContentReady(true)
+      }, 100)
+      return () => clearTimeout(timer)
+    }
+  }, [loading, avances])
+
+  // Función para obtener el nombre del supervisor
+  const getSupervisorName = (avance: AvanceExtendido): string => {
+    // Primero intentar con el supervisorId del avance original
+    const originalData = avance._originalData
+    if (originalData?.supervisorId && supervisorsMap[originalData.supervisorId]) {
+      return supervisorsMap[originalData.supervisorId]
+    }
+    
+    // Si no, buscar por el providerId del usuario actual
+    if (user?.providerId && supervisorsMap[String(user.providerId)]) {
+      return supervisorsMap[String(user.providerId)]
+    }
+    
+    if (isLoadingSupervisors) {
+      return "Cargando..."
+    }
+    
+    return "Sin asignar"
+  }
 
   // ✅ CORREGIR: Función para obtener el nombre de la cuadrilla
   const getCuadrillaName = (avance: AvanceExtendido): string => {
@@ -762,16 +842,28 @@ export default function ProviderAvancesPage() {
           }
         }
 
-        return matchesSearch && matchesDateRange
+        // Filtro por supervisor
+        let matchesSupervisor = true
+        if (selectedSupervisor && selectedSupervisor !== "todos") {
+          matchesSupervisor = avance.supervisorId === selectedSupervisor
+        }
+
+        return matchesSearch && matchesDateRange && matchesSupervisor
       })
 
       // ✅ NUEVA: Preparar datos completos para exportar con TODOS los campos posibles
       const dataToExport = filteredFullData.map((avance) => {
         const ordenNumero = orders.find((o) => o.id === avance.ordenTrabajoId)?.numero || String(avance.ordenTrabajoId || "")
 
+        // Obtener nombre del supervisor
+        const supervisorNombre = avance.supervisorId && supervisorsMap[avance.supervisorId] 
+          ? supervisorsMap[avance.supervisorId] 
+          : "Sin asignar"
+
         return {
           // Campos básicos comunes
           ID: generateShortId(avance._id || avance.id || ""),
+          Supervisor: supervisorNombre,
           Orden: ordenNumero,
           Fecha: formatDateArgentina(avance.fecha || ""),
           Actividad: capitalizeFirstLetter(avance.actividad) || "Sin especificar",
@@ -1017,7 +1109,14 @@ export default function ProviderAvancesPage() {
       }
     }
 
-    return matchesSearch && matchesDateRange
+    // Filtro por supervisor
+    let matchesSupervisor = true
+    if (selectedSupervisor && selectedSupervisor !== "todos") {
+      const avanceSupervisorId = avance._originalData?.supervisorId
+      matchesSupervisor = avanceSupervisorId === selectedSupervisor
+    }
+
+    return matchesSearch && matchesDateRange && matchesSupervisor
   })
 
   // Calcular paginación
@@ -1027,10 +1126,10 @@ export default function ProviderAvancesPage() {
   const endIndex = startIndex + itemsPerPage
   const paginatedAvances = filteredAvances.slice(startIndex, endIndex)
 
-  // Resetear página cuando cambia la búsqueda o filtros de fecha
+  // Resetear página cuando cambia la búsqueda o filtros de fecha o supervisor
   useEffect(() => {
     setCurrentPage(1)
-  }, [searchTerm, dateFrom, dateTo])
+  }, [searchTerm, dateFrom, dateTo, selectedSupervisor])
 
   // Función para manejar el envío del formulario de avance
   const handleSubmitProgress = async (progressData) => {
@@ -1216,24 +1315,16 @@ export default function ProviderAvancesPage() {
   if (loading) {
     return (
       <div className="container mx-auto p-6 space-y-6">
-        <div className="space-y-2">
-          <Skeleton className="h-8 w-64" />
-          <Skeleton className="h-4 w-96" />
+        <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+          <div className="relative">
+            <div className="w-16 h-16 border-4 border-primary/20 rounded-full animate-pulse"></div>
+            <div className="absolute top-0 left-0 w-16 h-16 border-4 border-transparent border-t-primary rounded-full animate-spin"></div>
+          </div>
+          <div className="text-center space-y-2">
+            <p className="text-lg font-medium text-foreground">Cargando avances...</p>
+            <p className="text-sm text-muted-foreground">Por favor espere mientras se cargan los registros</p>
+          </div>
         </div>
-
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-48" />
-            <Skeleton className="h-4 w-64" />
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {[...Array(5)].map((_, i) => (
-                <Skeleton key={i} className="h-12 w-full" />
-              ))}
-            </div>
-          </CardContent>
-        </Card>
       </div>
     )
   }
@@ -1253,7 +1344,11 @@ export default function ProviderAvancesPage() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div 
+      className={`container mx-auto p-6 space-y-6 transition-all duration-500 ease-out ${
+        isContentReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+      }`}
+    >
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Mis Avances</h1>
@@ -1350,7 +1445,9 @@ export default function ProviderAvancesPage() {
                     value={dateFrom ? format(dateFrom, "yyyy-MM-dd") : ""}
                     onChange={(e) => {
                       if (e.target.value) {
-                        setDateFrom(new Date(e.target.value))
+                        // Parsear la fecha correctamente para evitar problemas de zona horaria
+                        const [year, month, day] = e.target.value.split('-').map(Number)
+                        setDateFrom(new Date(year, month - 1, day, 0, 0, 0))
                       } else {
                         setDateFrom(undefined)
                       }
@@ -1369,7 +1466,9 @@ export default function ProviderAvancesPage() {
                     value={dateTo ? format(dateTo, "yyyy-MM-dd") : ""}
                     onChange={(e) => {
                       if (e.target.value) {
-                        setDateTo(new Date(e.target.value))
+                        // Parsear la fecha correctamente para evitar problemas de zona horaria
+                        const [year, month, day] = e.target.value.split('-').map(Number)
+                        setDateTo(new Date(year, month - 1, day, 23, 59, 59))
                       } else {
                         setDateTo(undefined)
                       }
@@ -1391,7 +1490,40 @@ export default function ProviderAvancesPage() {
                 )}
               </div>
 
-              {(dateFrom || dateTo) && (
+              {/* Filtro por supervisor */}
+              <div className="flex items-center gap-2">
+                <Label className="text-sm whitespace-nowrap">Supervisor:</Label>
+                <Select value={selectedSupervisor} onValueChange={setSelectedSupervisor}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Todos los supervisores">
+                      {selectedSupervisor === "todos" 
+                        ? "Todos los supervisores" 
+                        : supervisorsList.find(s => s.id === selectedSupervisor)?.nombre || selectedSupervisor}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos los supervisores</SelectItem>
+                    {supervisorsList.map((sup) => (
+                      <SelectItem key={sup.id} value={sup.id}>
+                        {sup.nombre}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedSupervisor !== "todos" && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedSupervisor("todos")}
+                    className="h-9 px-2"
+                    title="Limpiar filtro de supervisor"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+
+              {(dateFrom || dateTo || selectedSupervisor !== "todos") && (
                 <div className="text-xs text-muted-foreground">
                   {filteredAvances.length} registro{filteredAvances.length !== 1 ? "s" : ""} encontrado
                   {filteredAvances.length !== 1 ? "s" : ""}
@@ -1415,6 +1547,7 @@ export default function ProviderAvancesPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="sticky left-0 bg-white z-10 min-w-[80px]">ID</TableHead>
+                      <TableHead className="min-w-[120px]">Supervisor</TableHead>
                       <TableHead className="min-w-[100px]">Orden</TableHead>
                       <TableHead className="min-w-[100px]">Fecha</TableHead>
                       <TableHead className="min-w-[120px]">Cuadrilla</TableHead>
@@ -1441,6 +1574,7 @@ export default function ProviderAvancesPage() {
                       return (
                         <TableRow key={avance.id}>
                           <TableCell className="sticky left-0 bg-white z-10 font-mono text-xs">{shortId}</TableCell>
+                          <TableCell className="text-sm">{getSupervisorName(avance)}</TableCell>
                           <TableCell className="font-medium">{avance.numeroOrden}</TableCell>
                           <TableCell>{formatDateArgentina(avance.fecha)}</TableCell>
                           <TableCell>{getCuadrillaName(avance)}</TableCell>

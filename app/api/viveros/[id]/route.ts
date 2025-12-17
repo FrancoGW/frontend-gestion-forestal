@@ -22,3 +22,4 @@ export async function DELETE(
   return handleAdminCollectionRoute('viveros', request, params.id);
 }
 
+
