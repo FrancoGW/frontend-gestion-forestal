@@ -48,8 +48,11 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     const collection = db.collection(COLLECTION_NAME)
     const queryId = parseId(params.id)
 
+    // Excluir campos inmutables que no deben actualizarse
+    const { _id, id, createdAt, ...updateFields } = body
+
     const updateDoc = {
-      ...body,
+      ...updateFields,
       updatedAt: new Date().toISOString(),
     }
 
