@@ -776,7 +776,8 @@ export function WorkProgressForm({
         comentarios: initialData.comentarios || "",
         // Campos específicos para CONTROL DE REGENERACION DE PINOS
         ha: String(initialData.ha || initialData.superficie || ""),
-        operarios: String(initialData.operarios || ""),
+        // Mapear cantPersonal a operarios si no existe operarios (para Control de exótica)
+        operarios: String(initialData.operarios || initialData.cantPersonal || ""),
         jornales: String(initialData.jornales || ""),
         jornal: String(initialData.jornal || ""),
         implemento: initialData.implemento || "",
@@ -3290,6 +3291,7 @@ export function WorkProgressForm({
         }
       } else if (isControlExoticaTemplate(activeTemplate?.nombre)) {
         // Para Control de exótica, construir el objeto específico
+        const operariosValue = Number(formData.operarios || 0)
         submitData = {
           ...submitData,
           estado: formData.estado || "Pendiente",
@@ -3299,7 +3301,9 @@ export function WorkProgressForm({
           cuadrilla: formData.cuadrilla || "",
           cuadrillaId: formData.cuadrillaId || "",
           implemento: formData.implemento || "",
-          operarios: Number(formData.operarios || 0),
+          operarios: operariosValue,
+          // Mapear operarios a cantPersonal para que aparezca en la vista
+          cantPersonal: operariosValue,
           jornales: Number(formData.jornales || 0),
           superficie: Number(formData.superficie || 0),
           observaciones: formData.observaciones || "",

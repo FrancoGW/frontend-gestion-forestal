@@ -314,7 +314,8 @@ export default function ProviderAvancesPage() {
           cuadrilla: avance.cuadrilla || "",
           cuadrillaNombre: avance.cuadrillaNombre,
           cuadrillaId: avance.cuadrillaId,
-          cantPersonal: avance.cantPersonal || 0,
+          // Mapear operarios a cantPersonal si no existe cantPersonal (para Control de exótica)
+          cantPersonal: avance.cantPersonal || avance.operarios || 0,
           jornada: avance.jornada || 0,
           observaciones: avance.observaciones || "",
           usuario: avance.usuario || "",
@@ -571,7 +572,9 @@ export default function ProviderAvancesPage() {
         cuadrillaNombre: fullAvanceData.cuadrillaNombre || avance.cuadrillaNombre || "",
 
         // Personal y tiempo
-        cantPersonal: fullAvanceData.cantPersonal || avance.cantPersonal || 0,
+        // Mapear operarios a cantPersonal si no existe cantPersonal (para Control de exótica)
+        cantPersonal: fullAvanceData.cantPersonal || fullAvanceData.operarios || avance.cantPersonal || avance.operarios || 0,
+        operarios: fullAvanceData.operarios || fullAvanceData.cantPersonal || avance.operarios || avance.cantPersonal || 0,
         jornada: fullAvanceData.jornada || avance.jornada || 8,
 
         // Superficie
@@ -637,6 +640,11 @@ export default function ProviderAvancesPage() {
         tiempoHs: fullAvanceData.tiempoHs || 0,
         jornadaHs: fullAvanceData.jornadaHs || 0,
         comentarios: fullAvanceData.comentarios || "",
+
+        // CONTROL DE EXÓTICA / REGENERACION DE PINOS - Campos específicos
+        ha: fullAvanceData.ha || fullAvanceData.superficie || 0,
+        jornales: fullAvanceData.jornales || 0,
+        implemento: fullAvanceData.implemento || "",
 
         // AVANCES SIN ORDEN - Campos específicos
         ubicacion: fullAvanceData.ubicacion || fullAvanceData.predio || "",
