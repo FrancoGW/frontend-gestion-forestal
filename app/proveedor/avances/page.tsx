@@ -412,18 +412,30 @@ export default function ProviderAvancesPage() {
         
         for (const supervisor of supervisors) {
           const supervisorNombre = supervisor.nombre || `Supervisor ${supervisor._id?.substring(0, 6)}`
+          const supervisorId = supervisor._id || supervisor.id
           
           if (Array.isArray(supervisor.proveedoresAsignados)) {
             for (const prov of supervisor.proveedoresAsignados) {
               if (prov.proveedorId) {
-                tempMap[String(prov.proveedorId)] = supervisorNombre
+                // Mapear en múltiples formatos para asegurar compatibilidad
+                const provIdStr = String(prov.proveedorId)
+                const provIdNum = Number(prov.proveedorId)
+                tempMap[provIdStr] = supervisorNombre
+                if (!isNaN(provIdNum)) {
+                  tempMap[provIdNum] = supervisorNombre
+                }
               }
             }
           }
-          // También mapear por supervisorId directo
-          if (supervisor._id) {
-            tempMap[supervisor._id] = supervisorNombre
-            tempList.push({ id: supervisor._id, nombre: supervisorNombre })
+          // También mapear por supervisorId directo en múltiples formatos
+          if (supervisorId) {
+            const supIdStr = String(supervisorId)
+            const supIdNum = Number(supervisorId)
+            tempMap[supIdStr] = supervisorNombre
+            if (!isNaN(supIdNum)) {
+              tempMap[supIdNum] = supervisorNombre
+            }
+            tempList.push({ id: supIdStr, nombre: supervisorNombre })
           }
         }
         
@@ -452,19 +464,45 @@ export default function ProviderAvancesPage() {
 
   // Función para obtener el nombre del supervisor
   const getSupervisorName = (avance: AvanceExtendido): string => {
+    if (isLoadingSupervisors) {
+      return "Cargando..."
+    }
+    
     // Primero intentar con el supervisorId del avance original
     const originalData = avance._originalData
-    if (originalData?.supervisorId && supervisorsMap[originalData.supervisorId]) {
-      return supervisorsMap[originalData.supervisorId]
+    const supervisorId = originalData?.supervisorId || originalData?.supervisor_id
+    
+    if (supervisorId) {
+      // Buscar en múltiples formatos
+      const supIdStr = String(supervisorId)
+      const supIdNum = Number(supervisorId)
+      
+      if (supervisorsMap[supIdStr]) {
+        return supervisorsMap[supIdStr]
+      }
+      if (!isNaN(supIdNum) && supervisorsMap[supIdNum]) {
+        return supervisorsMap[supIdNum]
+      }
+      // Buscar en la lista directamente
+      const supervisor = supervisorsList.find(s => 
+        String(s.id) === supIdStr || 
+        String(s.id) === String(supIdNum)
+      )
+      if (supervisor) {
+        return supervisor.nombre
+      }
     }
     
     // Si no, buscar por el providerId del usuario actual
-    if (user?.providerId && supervisorsMap[String(user.providerId)]) {
-      return supervisorsMap[String(user.providerId)]
-    }
-    
-    if (isLoadingSupervisors) {
-      return "Cargando..."
+    if (user?.providerId) {
+      const providerIdStr = String(user.providerId)
+      const providerIdNum = Number(user.providerId)
+      if (supervisorsMap[providerIdStr]) {
+        return supervisorsMap[providerIdStr]
+      }
+      if (!isNaN(providerIdNum) && supervisorsMap[providerIdNum]) {
+        return supervisorsMap[providerIdNum]
+      }
     }
     
     return "Sin asignar"
@@ -863,10 +901,42 @@ export default function ProviderAvancesPage() {
       const dataToExport = filteredFullData.map((avance) => {
         const ordenNumero = orders.find((o) => o.id === avance.ordenTrabajoId)?.numero || String(avance.ordenTrabajoId || "")
 
-        // Obtener nombre del supervisor
-        const supervisorNombre = avance.supervisorId && supervisorsMap[avance.supervisorId] 
-          ? supervisorsMap[avance.supervisorId] 
-          : "Sin asignar"
+        // Obtener nombre del supervisor - buscar en múltiples formatos
+        let supervisorNombre = "Sin asignar"
+        const supervisorId = avance.supervisorId || avance.supervisor_id
+        
+        if (supervisorId) {
+          // Intentar buscar en el mapa con diferentes formatos
+          const supervisorIdStr = String(supervisorId)
+          const supervisorIdNum = Number(supervisorId)
+          
+          // Buscar en el mapa por string
+          if (supervisorsMap[supervisorIdStr]) {
+            supervisorNombre = supervisorsMap[supervisorIdStr]
+          }
+          // Buscar en el mapa por número
+          else if (!isNaN(supervisorIdNum) && supervisorsMap[supervisorIdNum]) {
+            supervisorNombre = supervisorsMap[supervisorIdNum]
+          }
+          // Buscar en la lista de supervisores directamente
+          else {
+            const supervisor = supervisorsList.find(s => 
+              String(s.id) === supervisorIdStr || 
+              String(s.id) === String(supervisorIdNum)
+            )
+            if (supervisor) {
+              supervisorNombre = supervisor.nombre
+            }
+          }
+        }
+        
+        // Si aún no se encontró, intentar buscar por providerId
+        if (supervisorNombre === "Sin asignar" && user?.providerId) {
+          const providerIdStr = String(user.providerId)
+          if (supervisorsMap[providerIdStr]) {
+            supervisorNombre = supervisorsMap[providerIdStr]
+          }
+        }
 
         return {
           // Campos básicos comunes
