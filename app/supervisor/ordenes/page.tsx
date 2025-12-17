@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
+import { PageLoader } from "@/components/ui/page-loader"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useSupervisorWorkOrders } from "@/hooks/use-supervisor-work-orders"
 import { AlertCircle, FileSpreadsheet, Search, RefreshCcw, X, Hash } from "lucide-react"
@@ -94,31 +94,7 @@ export default function SupervisorOrdersPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold tracking-tight">
-            <Skeleton className="h-9 w-64" />
-          </h1>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Array(6)
-            .fill(0)
-            .map((_, i) => (
-              <Card key={i} className="overflow-hidden">
-                <CardHeader className="p-4">
-                  <Skeleton className="h-6 w-3/4" />
-                  <Skeleton className="h-4 w-1/2" />
-                </CardHeader>
-                <CardContent className="p-4">
-                  <div className="space-y-3">
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-3/4" />
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-        </div>
+        <PageLoader message="Cargando órdenes..." submessage="Obteniendo tus órdenes de trabajo" />
       </div>
     )
   }

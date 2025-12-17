@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useWorkOrders } from "@/hooks/use-work-orders"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Skeleton } from "@/components/ui/skeleton"
+import { PageLoader } from "@/components/ui/page-loader"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Clock, CheckCircle2, Calendar, ArrowRight, RefreshCw } from "lucide-react"
@@ -114,33 +114,7 @@ export default function AdminDashboard() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">Bienvenido al panel de administración</p>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3].map((i) => (
-            <Card key={i}>
-              <CardHeader className="pb-2">
-                <Skeleton className="h-5 w-40" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-8 w-20" />
-                <Skeleton className="h-4 w-32 mt-2" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-48" />
-          </CardHeader>
-          <CardContent>
-            <Skeleton className="h-64 w-full" />
-          </CardContent>
-        </Card>
+        <PageLoader message="Cargando dashboard..." submessage="Obteniendo estadísticas y órdenes" />
       </div>
     )
   }

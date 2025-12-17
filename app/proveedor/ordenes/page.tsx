@@ -5,7 +5,7 @@ import { useProviderOrders } from "@/hooks/use-provider-orders"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Skeleton } from "@/components/ui/skeleton"
+import { PageLoader } from "@/components/ui/page-loader"
 import {
   Calendar,
   ArrowRight,
@@ -170,15 +170,7 @@ export default function ProviderOrdersPage() {
   if (ordersLoading || progressLoading) {
     return (
       <div className="space-y-6 p-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Mis Órdenes</h1>
-          <p className="text-muted-foreground">Gestiona tus órdenes de trabajo</p>
-        </div>
-
-        <div className="space-y-4">
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-96 w-full" />
-        </div>
+        <PageLoader message="Cargando órdenes..." submessage="Obteniendo tus órdenes de trabajo" />
       </div>
     )
   }

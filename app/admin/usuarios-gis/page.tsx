@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Database, AlertTriangle, Search, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { PageLoader } from "@/components/ui/page-loader"
 
 interface AdminData {
   [key: string]: any[]
@@ -70,11 +71,8 @@ export default function UsuariosGISPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-4"></div>
-          <p>Cargando datos administrativos GIS...</p>
-        </div>
+      <div className="container mx-auto p-6">
+        <PageLoader message="Cargando datos GIS..." submessage="Obteniendo información administrativa" />
       </div>
     )
   }

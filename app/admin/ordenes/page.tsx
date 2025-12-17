@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Pagination, PaginationContent, PaginationItem, PaginationLink } from "@/components/ui/pagination"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Skeleton } from "@/components/ui/skeleton"
+import { PageLoader } from "@/components/ui/page-loader"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useWorkOrders } from "@/hooks/use-work-orders"
 import { AlertCircle, FileSpreadsheet, Search, RefreshCcw } from "lucide-react"
@@ -122,32 +122,7 @@ export default function WorkOrdersPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold tracking-tight">
-            <Skeleton className="h-9 w-64" />
-          </h1>
-          <Skeleton className="h-10 w-32" />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Array(6)
-            .fill(0)
-            .map((_, i) => (
-              <Card key={i} className="overflow-hidden">
-                <CardHeader className="p-4">
-                  <Skeleton className="h-6 w-3/4" />
-                  <Skeleton className="h-4 w-1/2" />
-                </CardHeader>
-                <CardContent className="p-4">
-                  <div className="space-y-3">
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-3/4" />
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-        </div>
+        <PageLoader message="Cargando órdenes..." submessage="Obteniendo órdenes de trabajo" />
       </div>
     )
   }

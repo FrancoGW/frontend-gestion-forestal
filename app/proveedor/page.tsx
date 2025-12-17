@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Skeleton } from "@/components/ui/skeleton"
+import { PageLoader } from "@/components/ui/page-loader"
 
 export default function ProviderDashboard() {
   const router = useRouter()
@@ -22,15 +22,7 @@ export default function ProviderDashboard() {
   if (loading) {
     return (
       <div className="container mx-auto p-4">
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-8 w-1/3" />
-          </CardHeader>
-          <CardContent>
-            <Skeleton className="h-4 w-full mb-2" />
-            <Skeleton className="h-4 w-2/3" />
-          </CardContent>
-        </Card>
+        <PageLoader message="Cargando dashboard..." submessage="Verificando autenticación" />
       </div>
     )
   }
