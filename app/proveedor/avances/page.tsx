@@ -888,10 +888,26 @@ export default function ProviderAvancesPage() {
           }
         }
 
-        // Filtro por supervisor
+        // Filtro por supervisor - comparar en múltiples formatos
         let matchesSupervisor = true
         if (selectedSupervisor && selectedSupervisor !== "todos") {
-          matchesSupervisor = avance.supervisorId === selectedSupervisor
+          const avanceSupervisorId = avance.supervisorId || avance.supervisor_id
+          
+          if (avanceSupervisorId) {
+            // Comparar en múltiples formatos para asegurar compatibilidad
+            const avanceSupIdStr = String(avanceSupervisorId)
+            const avanceSupIdNum = Number(avanceSupervisorId)
+            const selectedSupIdStr = String(selectedSupervisor)
+            const selectedSupIdNum = Number(selectedSupervisor)
+            
+            matchesSupervisor = 
+              avanceSupIdStr === selectedSupIdStr ||
+              avanceSupIdStr === String(selectedSupIdNum) ||
+              String(avanceSupIdNum) === selectedSupIdStr ||
+              (!isNaN(avanceSupIdNum) && !isNaN(selectedSupIdNum) && avanceSupIdNum === selectedSupIdNum)
+          } else {
+            matchesSupervisor = false
+          }
         }
 
         return matchesSearch && matchesDateRange && matchesSupervisor
@@ -1187,11 +1203,26 @@ export default function ProviderAvancesPage() {
       }
     }
 
-    // Filtro por supervisor
+    // Filtro por supervisor - comparar en múltiples formatos
     let matchesSupervisor = true
     if (selectedSupervisor && selectedSupervisor !== "todos") {
-      const avanceSupervisorId = avance._originalData?.supervisorId
-      matchesSupervisor = avanceSupervisorId === selectedSupervisor
+      const avanceSupervisorId = avance._originalData?.supervisorId || avance._originalData?.supervisor_id
+      
+      if (avanceSupervisorId) {
+        // Comparar en múltiples formatos para asegurar compatibilidad
+        const avanceSupIdStr = String(avanceSupervisorId)
+        const avanceSupIdNum = Number(avanceSupervisorId)
+        const selectedSupIdStr = String(selectedSupervisor)
+        const selectedSupIdNum = Number(selectedSupervisor)
+        
+        matchesSupervisor = 
+          avanceSupIdStr === selectedSupIdStr ||
+          avanceSupIdStr === String(selectedSupIdNum) ||
+          String(avanceSupIdNum) === selectedSupIdStr ||
+          (!isNaN(avanceSupIdNum) && !isNaN(selectedSupIdNum) && avanceSupIdNum === selectedSupIdNum)
+      } else {
+        matchesSupervisor = false
+      }
     }
 
     return matchesSearch && matchesDateRange && matchesSupervisor
