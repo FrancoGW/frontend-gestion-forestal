@@ -1,6 +1,11 @@
 "use client"
 
 import type React from "react"
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { RefreshCw, Database } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
 
 import { useAdminCollection } from "@/hooks/use-admin-collection"
 import { AdminDataTable } from "@/components/admin-data-table"
@@ -25,6 +30,7 @@ interface AdminCollectionPageProps {
   }[]
   isLoading?: boolean
   hideHeader?: boolean
+  syncEndpoint?: string
 }
 
 export function AdminCollectionPage({
@@ -35,6 +41,7 @@ export function AdminCollectionPage({
   formFields,
   isLoading,
   hideHeader = false,
+  syncEndpoint,
 }: AdminCollectionPageProps) {
   const {
     data,
@@ -45,6 +52,42 @@ export function AdminCollectionPage({
     updateItem,
     deleteItem,
   } = useAdminCollection(collectionName)
+  const [syncing, setSyncing] = useState(false)
+  const [syncResult, setSyncResult] = useState<any>(null)
+  const { toast } = useToast()
+
+  const handleSync = async () => {
+    if (!syncEndpoint) return
+
+    setSyncing(true)
+    setSyncResult(null)
+    try {
+      const response = await fetch(syncEndpoint, {
+        method: "POST",
+      })
+      const result = await response.json()
+
+      if (result.success) {
+        setSyncResult(result.resumen)
+        toast({
+          title: "Sincronización exitosa",
+          description: `Procesados: ${result.resumen.procesados}, Nuevos: ${result.resumen.nuevos}, Actualizados: ${result.resumen.actualizados}`,
+        })
+        // Recargar datos
+        await refreshData()
+      } else {
+        throw new Error(result.message || "Error en la sincronización")
+      }
+    } catch (err: any) {
+      toast({
+        title: "Error en sincronización",
+        description: err.message || "No se pudo sincronizar con Usuarios GIS",
+        variant: "destructive",
+      })
+    } finally {
+      setSyncing(false)
+    }
+  }
 
   // Procesamiento especial para campos específicos
   const processFormData = (formData: any) => {
@@ -85,9 +128,25 @@ export function AdminCollectionPage({
   return (
     <div className="space-y-4">
       {!hideHeader && (
-        <>
+        <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold">{title}</h1>
-        </>
+          {syncEndpoint && (
+            <Button onClick={handleSync} disabled={syncing} variant="outline">
+              <RefreshCw className={`w-4 h-4 mr-2 ${syncing ? "animate-spin" : ""}`} />
+              {syncing ? "Sincronizando..." : "Sincronizar con GIS"}
+            </Button>
+          )}
+        </div>
+      )}
+      {syncResult && (
+        <Alert>
+          <Database className="w-4 h-4 text-green-600" />
+          <AlertDescription>
+            ✅ Sincronización completada: {syncResult.procesados} procesados, {syncResult.nuevos} nuevos,{" "}
+            {syncResult.actualizados} actualizados
+            {syncResult.errores > 0 && `, ${syncResult.errores} errores`}
+          </AlertDescription>
+        </Alert>
       )}
       <AdminDataTable
         title={title}

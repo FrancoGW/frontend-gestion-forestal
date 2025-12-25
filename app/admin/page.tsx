@@ -1,13 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useWorkOrders } from "@/hooks/use-work-orders"
+import { avancesTrabajoAPI } from "@/lib/api-client"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { PageLoader } from "@/components/ui/page-loader"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Clock, CheckCircle2, Calendar, ArrowRight, RefreshCw } from "lucide-react"
+import { Clock, CheckCircle2, Calendar, ArrowRight, RefreshCw, FileText } from "lucide-react"
 import { BackendStatusAlert } from "@/components/backend-status-alert"
 import { useToast } from "@/hooks/use-toast"
 import Link from "next/link"
@@ -16,11 +17,70 @@ export default function AdminDashboard() {
   const { workOrders, loading, error, backendStatus, retryConnection } = useWorkOrders()
   const { toast } = useToast()
   const [syncing, setSyncing] = useState(false)
+  const [allAvances, setAllAvances] = useState<any[]>([])
+  const [loadingAvances, setLoadingAvances] = useState(false)
 
-  // Calcular estadísticas
-  const pendingOrders = workOrders.filter((order) => order.estado === "pendiente")
+  // Cargar todos los avances
+  useEffect(() => {
+    const fetchAvances = async () => {
+      try {
+        setLoadingAvances(true)
+        const avances = await avancesTrabajoAPI.getAll()
+        const avancesArray = Array.isArray(avances) ? avances : avances?.data || avances?.avances || []
+        setAllAvances(avancesArray)
+      } catch (err) {
+        console.error("Error al cargar avances:", err)
+        setAllAvances([])
+      } finally {
+        setLoadingAvances(false)
+      }
+    }
+    fetchAvances()
+  }, [])
+
+  // Función para determinar el estado de una orden basado en sus avances
+  const getOrderStatusFromAvances = (orderId: number) => {
+    const orderAvances = allAvances.filter((avance) => avance.ordenTrabajoId === orderId)
+    
+    if (orderAvances.length === 0) {
+      return "pendiente" // Sin avances = pendiente
+    }
+
+    // Verificar si todos los avances están terminados
+    const allTerminated = orderAvances.every((avance) => {
+      const estado = String(avance.estado || "").toLowerCase()
+      return estado.includes("terminado") || estado.includes("r7") || estado === "finalizado"
+    })
+
+    if (allTerminated && orderAvances.length > 0) {
+      return "terminado"
+    }
+
+    // Verificar si hay al menos un avance terminado
+    const hasTerminated = orderAvances.some((avance) => {
+      const estado = String(avance.estado || "").toLowerCase()
+      return estado.includes("terminado") || estado.includes("r7") || estado === "finalizado"
+    })
+
+    if (hasTerminated) {
+      return "en_progreso" // Algunos terminados pero no todos
+    }
+
+    return "pendiente" // Tiene avances pero ninguno terminado
+  }
+
+  // Calcular estadísticas basadas en avances
+  const pendingOrders = workOrders.filter((order) => {
+    const statusFromAvances = getOrderStatusFromAvances(order.id)
+    return statusFromAvances === "pendiente"
+  })
+
+  const completedOrders = workOrders.filter((order) => {
+    const statusFromAvances = getOrderStatusFromAvances(order.id)
+    return statusFromAvances === "terminado"
+  })
+
   const approvedOrders = workOrders.filter((order) => order.estado === "aprobado")
-  const completedOrders = workOrders.filter((order) => order.estado === "finalizado")
 
   // Obtener el mes actual
   const currentDate = new Date()
@@ -33,8 +93,49 @@ export default function AdminDashboard() {
     return orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear
   })
 
-  // Calcular hectáreas totales del mes
-  const currentMonthHectares = currentMonthOrders.reduce((total, order) => total + order.totalHectareas, 0)
+  // Calcular hectáreas del mes basadas en avances terminados
+  const currentMonthHectares = allAvances
+    .filter((avance) => {
+      // Filtrar avances terminados del mes actual
+      const estado = String(avance.estado || "").toLowerCase()
+      const isTerminated = estado.includes("terminado") || estado.includes("r7") || estado === "finalizado"
+      
+      if (!isTerminated) return false
+      
+      // Verificar que sea del mes actual
+      const avanceDate = new Date(avance.fecha || avance.fechaRegistro || avance.createdAt)
+      return (
+        avanceDate.getMonth() === currentMonth &&
+        avanceDate.getFullYear() === currentYear
+      )
+    })
+    .reduce((total, avance) => {
+      const superficie = avance.superficie || 0
+      return total + (typeof superficie === 'number' ? superficie : Number.parseFloat(String(superficie)) || 0)
+    }, 0)
+
+  // Calcular total de órdenes (todas)
+  const totalOrdenes = workOrders.length
+
+  // Calcular hectáreas totales (todas las órdenes)
+  const totalHectareas = workOrders.reduce((total, order) => {
+    // Intentar obtener hectáreas de diferentes campos
+    let hectares = 0
+    if (order.totalHectareas) {
+      hectares = typeof order.totalHectareas === 'number' ? order.totalHectareas : Number.parseFloat(String(order.totalHectareas)) || 0
+    } else if (order.rodales && Array.isArray(order.rodales)) {
+      // Calcular desde rodales si no hay totalHectareas
+      hectares = order.rodales.reduce((sum: number, rodal: any) => {
+        const sup = rodal.superficie || rodal.supha || rodal.sup_ha || 0
+        return sum + (typeof sup === 'number' ? sup : Number.parseFloat(String(sup)) || 0)
+      }, 0)
+    } else if (order.cantidad) {
+      // Intentar parsear desde cantidad
+      const cantidadStr = String(order.cantidad).replace(/[^\d.,]/g, '')
+      hectares = Number.parseFloat(cantidadStr.replace(',', '.')) || 0
+    }
+    return total + hectares
+  }, 0)
 
   // Función para sincronizar manualmente las órdenes
   const handleSyncOrdenes = async () => {
@@ -148,7 +249,29 @@ export default function AdminDashboard() {
         </Card>
       )}
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total de Órdenes</CardTitle>
+            <FileText className="h-4 w-4 text-blue-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalOrdenes}</div>
+            <p className="text-xs text-muted-foreground">Todas las órdenes del sistema</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Hectáreas Totales</CardTitle>
+            <CheckCircle2 className="h-4 w-4 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalHectareas.toFixed(1)} ha</div>
+            <p className="text-xs text-muted-foreground">Superficie total de todas las órdenes</p>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Órdenes Pendientes</CardTitle>
@@ -156,14 +279,14 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{pendingOrders.length}</div>
-            <p className="text-xs text-muted-foreground">Órdenes que requieren aprobación</p>
+            <p className="text-xs text-muted-foreground">Sin avances o avances pendientes</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Órdenes del Mes</CardTitle>
-            <Calendar className="h-4 w-4 text-blue-500" />
+            <Calendar className="h-4 w-4 text-purple-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{currentMonthOrders.length}</div>
@@ -175,13 +298,26 @@ export default function AdminDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Órdenes Terminadas</CardTitle>
+            <CheckCircle2 className="h-4 w-4 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{completedOrders.length}</div>
+            <p className="text-xs text-muted-foreground">Órdenes completadas según avances</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Hectáreas del Mes</CardTitle>
             <CheckCircle2 className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{currentMonthHectares.toFixed(1)} ha</div>
             <p className="text-xs text-muted-foreground">
-              Superficie total en órdenes de {new Date().toLocaleString("es", { month: "long" })}
+              Superficie de avances terminados en {new Date().toLocaleString("es", { month: "long" })}
             </p>
           </CardContent>
         </Card>

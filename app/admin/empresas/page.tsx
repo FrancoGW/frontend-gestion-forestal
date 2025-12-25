@@ -4,6 +4,20 @@ import { AdminCollectionPage } from "@/components/admin-collection-page"
 
 const columns = [
   {
+    header: "ID",
+    accessorKey: "_id",
+    cell: (item: any) => (
+      <span className="font-mono text-sm">
+        {item._id || item.idempresa || item.cod_empres || "-"}
+        {item.sincronizadoDesdeGIS && (
+          <span className="ml-2 text-xs text-blue-600" title="Sincronizado desde GIS">
+            🔄
+          </span>
+        )}
+      </span>
+    ),
+  },
+  {
     header: "Nombre",
     accessorKey: "empresa",
     cell: (item: any) => item.empresa || item.nombre || "-",
@@ -11,14 +25,17 @@ const columns = [
   {
     header: "CUIT",
     accessorKey: "cuit",
+    cell: (item: any) => item.cuit || "-",
   },
   {
     header: "Teléfono",
     accessorKey: "telefono",
+    cell: (item: any) => item.telefono || "-",
   },
   {
     header: "Email",
     accessorKey: "email",
+    cell: (item: any) => item.email || "-",
   },
   {
     header: "Rubros",
@@ -55,12 +72,13 @@ const formFields = [
     type: "text",
     required: true,
     placeholder: "Ingrese el nombre de la empresa",
+    description: "Este campo se sincroniza automáticamente desde GIS",
   },
   {
     name: "cuit",
     label: "CUIT",
     type: "text",
-    required: true,
+    required: false,
     placeholder: "XX-XXXXXXXX-X",
   },
   {
@@ -76,6 +94,7 @@ const formFields = [
     type: "email",
     required: false,
     placeholder: "contacto@empresa.com",
+    description: "Configurar email para empresas sincronizadas desde GIS",
   },
   {
     name: "rubros",
@@ -105,6 +124,7 @@ export default function EmpresasPage() {
       collectionName="empresas"
       columns={columns}
       formFields={formFields}
+      syncEndpoint="/api/empresas/sync"
     />
   )
 }

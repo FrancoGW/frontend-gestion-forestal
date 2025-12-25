@@ -1,12 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   Users,
   Building2,
@@ -19,16 +20,55 @@ import {
   Clock,
   CheckCircle,
   Filter,
+  RefreshCw,
+  Database,
 } from "lucide-react"
 import { useSupervisors } from "@/hooks/use-supervisors"
+import { useToast } from "@/hooks/use-toast"
 
 export default function SupervisoresPage() {
-  const { supervisors, totalSupervisors, totalProviders, totalOrders, loading, error } = useSupervisors()
+  const { supervisors, totalSupervisors, totalProviders, totalOrders, loading, error, loadSupervisors } = useSupervisors()
+  const [syncing, setSyncing] = useState(false)
+  const [syncResult, setSyncResult] = useState<any>(null)
+  const { toast } = useToast()
 
   const [searchTerm, setSearchTerm] = useState("")
   const [expandedSupervisors, setExpandedSupervisors] = useState<Set<string>>(new Set())
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [sortBy, setSortBy] = useState<string>("name")
+
+  const handleSync = async () => {
+    setSyncing(true)
+    setSyncResult(null)
+    try {
+      const response = await fetch("/api/supervisores/sync", {
+        method: "POST",
+      })
+      const result = await response.json()
+
+      if (result.success) {
+        setSyncResult(result.resumen)
+        toast({
+          title: "Sincronización exitosa",
+          description: `Procesados: ${result.resumen.procesados}, Nuevos: ${result.resumen.nuevos}, Actualizados: ${result.resumen.actualizados}`,
+        })
+        // Recargar datos
+        if (loadSupervisors) {
+          await loadSupervisors()
+        }
+      } else {
+        throw new Error(result.message || "Error en la sincronización")
+      }
+    } catch (err: any) {
+      toast({
+        title: "Error en sincronización",
+        description: err.message || "No se pudo sincronizar con Usuarios GIS",
+        variant: "destructive",
+      })
+    } finally {
+      setSyncing(false)
+    }
+  }
 
   const filteredSupervisors = supervisors
     .filter((supervisor) => {
@@ -176,7 +216,22 @@ export default function SupervisoresPage() {
           <h1 className="text-3xl font-bold tracking-tight">Supervisores</h1>
           <p className="text-muted-foreground">Lista de supervisores y sus proveedores asignados</p>
         </div>
+        <Button onClick={handleSync} disabled={syncing} variant="outline">
+          <RefreshCw className={`w-4 h-4 mr-2 ${syncing ? "animate-spin" : ""}`} />
+          {syncing ? "Sincronizando..." : "Sincronizar con GIS"}
+        </Button>
       </div>
+
+      {syncResult && (
+        <Alert>
+          <Database className="w-4 h-4 text-green-600" />
+          <AlertDescription>
+            ✅ Sincronización completada: {syncResult.procesados} procesados, {syncResult.nuevos} nuevos,{" "}
+            {syncResult.actualizados} actualizados
+            {syncResult.errores > 0 && `, ${syncResult.errores} errores`}
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Estadísticas generales */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -307,8 +362,16 @@ export default function SupervisoresPage() {
                     <div className="flex items-center gap-3">
                       <User className="h-5 w-5 text-blue-600" />
                       <div>
-                        <CardTitle className="text-lg">{supervisor.nombre}</CardTitle>
+                        <div className="flex items-center gap-2">
+                          <CardTitle className="text-lg">{supervisor.nombre}</CardTitle>
+                          {(supervisor as any).sincronizadoDesdeGIS && (
+                            <span className="text-xs text-blue-600" title="Sincronizado desde GIS">
+                              🔄
+                            </span>
+                          )}
+                        </div>
                         <CardDescription>
+                          ID: <span className="font-mono text-xs">{supervisor.id}</span> •{" "}
                           {supervisor.proveedores.length} proveedor(es) • {supervisor.estadisticas.totalOrdenes}{" "}
                           orden(es)
                         </CardDescription>

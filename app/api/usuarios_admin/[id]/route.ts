@@ -10,8 +10,13 @@ export async function GET(
     const db = await getDB();
     const id = params.id;
 
-    // Validar que el ID sea un ObjectId válido
-    if (!ObjectId.isValid(id)) {
+    // Determinar si es ObjectId o número
+    let queryId: any;
+    if (ObjectId.isValid(id) && id.length === 24) {
+      queryId = new ObjectId(id);
+    } else if (!isNaN(Number(id))) {
+      queryId = Number(id);
+    } else {
       return NextResponse.json(
         { 
           success: false,
@@ -21,8 +26,7 @@ export async function GET(
       );
     }
 
-    const objectId = new ObjectId(id);
-    const usuario = await db.collection('usuarios_admin').findOne({ _id: objectId });
+    const usuario = await db.collection('usuarios_admin').findOne({ _id: queryId });
     
     if (!usuario) {
       return NextResponse.json(
@@ -61,8 +65,13 @@ export async function PUT(
     const db = await getDB();
     const id = params.id;
 
-    // Validar que el ID sea un ObjectId válido
-    if (!ObjectId.isValid(id)) {
+    // Determinar si es ObjectId o número
+    let queryId: any;
+    if (ObjectId.isValid(id) && id.length === 24) {
+      queryId = new ObjectId(id);
+    } else if (!isNaN(Number(id))) {
+      queryId = Number(id);
+    } else {
       return NextResponse.json(
         {
           success: false,
@@ -71,8 +80,6 @@ export async function PUT(
         { status: 400 }
       );
     }
-
-    const objectId = new ObjectId(id);
     const {
       nombre,
       apellido,
@@ -85,7 +92,7 @@ export async function PUT(
     } = await request.json();
 
     // Verificar que el usuario existe
-    const usuarioExistente = await db.collection('usuarios_admin').findOne({ _id: objectId });
+    const usuarioExistente = await db.collection('usuarios_admin').findOne({ _id: queryId });
     if (!usuarioExistente) {
       return NextResponse.json(
         {
@@ -135,7 +142,7 @@ export async function PUT(
       // Verificar que el email sea único (excluyendo el usuario actual)
       const usuarioConMismoEmail = await db.collection('usuarios_admin').findOne({ 
         email: email.toLowerCase().trim(),
-        _id: { $ne: objectId },
+        _id: { $ne: queryId },
         activo: true 
       });
 
@@ -189,7 +196,7 @@ export async function PUT(
     if (activo !== undefined) actualizacion.activo = Boolean(activo);
 
     const result = await db.collection('usuarios_admin').updateOne(
-      { _id: objectId },
+      { _id: queryId },
       { $set: actualizacion }
     );
 
@@ -204,7 +211,7 @@ export async function PUT(
     }
 
     // Obtener el usuario actualizado
-    const usuarioActualizado = await db.collection('usuarios_admin').findOne({ _id: objectId });
+    const usuarioActualizado = await db.collection('usuarios_admin').findOne({ _id: queryId });
     const { password: _, ...usuarioSinPassword } = usuarioActualizado as any;
 
     return NextResponse.json({
@@ -233,8 +240,13 @@ export async function DELETE(
     const db = await getDB();
     const id = params.id;
 
-    // Validar que el ID sea un ObjectId válido
-    if (!ObjectId.isValid(id)) {
+    // Determinar si es ObjectId o número
+    let queryId: any;
+    if (ObjectId.isValid(id) && id.length === 24) {
+      queryId = new ObjectId(id);
+    } else if (!isNaN(Number(id))) {
+      queryId = Number(id);
+    } else {
       return NextResponse.json(
         {
           success: false,
@@ -244,10 +256,8 @@ export async function DELETE(
       );
     }
 
-    const objectId = new ObjectId(id);
-
     // Verificar que el usuario existe
-    const usuarioExistente = await db.collection('usuarios_admin').findOne({ _id: objectId });
+    const usuarioExistente = await db.collection('usuarios_admin').findOne({ _id: queryId });
     if (!usuarioExistente) {
       return NextResponse.json(
         {
@@ -278,7 +288,7 @@ export async function DELETE(
 
     // Soft delete - marcar como inactivo
     const result = await db.collection('usuarios_admin').updateOne(
-      { _id: objectId },
+      { _id: queryId },
       { 
         $set: { 
           activo: false,
@@ -300,7 +310,7 @@ export async function DELETE(
     return NextResponse.json({
       success: true,
       message: 'Usuario admin eliminado exitosamente',
-      data: { id: objectId }
+      data: { id: queryId }
     });
   } catch (error: any) {
     console.error('Error al eliminar usuario admin:', error);

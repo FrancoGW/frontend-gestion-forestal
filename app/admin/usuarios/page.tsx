@@ -17,8 +17,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Plus, Edit, Trash2, Users, UserCheck, UserX, AlertTriangle, Database, HardDrive } from "lucide-react"
+import { Plus, Edit, Trash2, Users, UserCheck, UserX, AlertTriangle, Database, HardDrive, RefreshCw, Key } from "lucide-react"
 import { usuariosAdminAPI } from "@/lib/api-client"
+import { useToast } from "@/hooks/use-toast"
 
 interface Usuario {
   _id: number
@@ -41,12 +42,16 @@ export default function UsuariosPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingUser, setEditingUser] = useState<Usuario | null>(null)
+  const [syncing, setSyncing] = useState(false)
+  const [syncResult, setSyncResult] = useState<any>(null)
+  const { toast } = useToast()
 
   // Estados para el formulario
   const [formData, setFormData] = useState({
     nombre: "",
     apellido: "",
     email: "",
+    password: "",
     rol: "provider" as "admin" | "supervisor" | "provider",
     activo: true,
     cuit: "",
@@ -189,11 +194,20 @@ export default function UsuariosPage() {
   const createUsuario = async () => {
     try {
       if (backendAvailable) {
-        const response = await usuariosAdminAPI.create(formData)
+        // Solo incluir password si está presente
+        const dataToSend = { ...formData }
+        if (!dataToSend.password) {
+          delete dataToSend.password
+        }
+        const response = await usuariosAdminAPI.create(dataToSend)
         if (response && response.success) {
           await loadUsuarios()
           setIsDialogOpen(false)
           resetForm()
+          toast({
+            title: "Usuario creado",
+            description: "El usuario ha sido creado exitosamente",
+          })
         }
       } else {
         // Simular creación en modo offline
@@ -208,6 +222,11 @@ export default function UsuariosPage() {
       }
     } catch (err: any) {
       setError(`Error al crear usuario: ${err.message}`)
+      toast({
+        title: "Error",
+        description: err.message,
+        variant: "destructive",
+      })
     }
   }
 
@@ -217,12 +236,21 @@ export default function UsuariosPage() {
 
     try {
       if (backendAvailable) {
-        const response = await usuariosAdminAPI.update(String(editingUser._id), formData)
+        // Solo incluir password si está presente (para actualizar contraseña)
+        const dataToSend = { ...formData }
+        if (!dataToSend.password) {
+          delete dataToSend.password
+        }
+        const response = await usuariosAdminAPI.update(String(editingUser._id), dataToSend)
         if (response && response.success) {
           await loadUsuarios()
           setIsDialogOpen(false)
           setEditingUser(null)
           resetForm()
+          toast({
+            title: "Usuario actualizado",
+            description: "El usuario ha sido actualizado exitosamente",
+          })
         }
       } else {
         // Simular actualización en modo offline
@@ -233,6 +261,11 @@ export default function UsuariosPage() {
       }
     } catch (err: any) {
       setError(`Error al actualizar usuario: ${err.message}`)
+      toast({
+        title: "Error",
+        description: err.message,
+        variant: "destructive",
+      })
     }
   }
 
@@ -245,6 +278,10 @@ export default function UsuariosPage() {
         const response = await usuariosAdminAPI.delete(String(id))
         if (response && response.success) {
           await loadUsuarios()
+          toast({
+            title: "Usuario eliminado",
+            description: "El usuario ha sido eliminado exitosamente",
+          })
         }
       } else {
         // Simular eliminación en modo offline
@@ -252,7 +289,22 @@ export default function UsuariosPage() {
       }
     } catch (err: any) {
       setError(`Error al eliminar usuario: ${err.message}`)
+      toast({
+        title: "Error",
+        description: err.message,
+        variant: "destructive",
+      })
     }
+  }
+
+  // Generar contraseña aleatoria
+  const generarPassword = () => {
+    const caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%&*"
+    let password = ""
+    for (let i = 0; i < 12; i++) {
+      password += caracteres.charAt(Math.floor(Math.random() * caracteres.length))
+    }
+    setFormData({ ...formData, password })
   }
 
   // Resetear formulario
@@ -261,11 +313,44 @@ export default function UsuariosPage() {
       nombre: "",
       apellido: "",
       email: "",
+      password: "",
       rol: "provider",
       activo: true,
       cuit: "",
       telefono: "",
     })
+  }
+
+  // Sincronizar con GIS
+  const handleSync = async () => {
+    setSyncing(true)
+    setSyncResult(null)
+    try {
+      const response = await fetch("/api/usuarios_admin/sync", {
+        method: "POST",
+      })
+      const result = await response.json()
+
+      if (result.success) {
+        setSyncResult(result.resumen)
+        toast({
+          title: "Sincronización exitosa",
+          description: `Procesados: ${result.resumen.procesados}, Nuevos: ${result.resumen.nuevos}, Actualizados: ${result.resumen.actualizados}`,
+        })
+        // Recargar usuarios
+        await loadUsuarios()
+      } else {
+        throw new Error(result.message || "Error en la sincronización")
+      }
+    } catch (err: any) {
+      toast({
+        title: "Error en sincronización",
+        description: err.message || "No se pudo sincronizar con Usuarios GIS",
+        variant: "destructive",
+      })
+    } finally {
+      setSyncing(false)
+    }
   }
 
   // Abrir dialog para editar
@@ -275,6 +360,7 @@ export default function UsuariosPage() {
       nombre: usuario.nombre,
       apellido: usuario.apellido,
       email: usuario.email,
+      password: "", // No mostrar contraseña existente
       rol: usuario.rol,
       activo: usuario.activo,
       cuit: usuario.cuit || "",
@@ -325,7 +411,12 @@ export default function UsuariosPage() {
           <h1 className="text-3xl font-bold">Gestión de Usuarios</h1>
           <p className="text-gray-600">Administra usuarios del sistema</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <div className="flex gap-2">
+          <Button onClick={handleSync} disabled={syncing} variant="outline">
+            <RefreshCw className={`w-4 h-4 mr-2 ${syncing ? "animate-spin" : ""}`} />
+            {syncing ? "Sincronizando..." : "Sincronizar con GIS"}
+          </Button>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={resetForm}>
               <Plus className="w-4 h-4 mr-2" />
@@ -369,6 +460,33 @@ export default function UsuariosPage() {
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   placeholder="usuario@empresa.com"
                 />
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <Label htmlFor="password">Contraseña</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={generarPassword}
+                    className="h-7 text-xs"
+                  >
+                    <Key className="w-3 h-3 mr-1" />
+                    Generar
+                  </Button>
+                </div>
+                <Input
+                  id="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  placeholder={editingUser ? "Dejar vacío para mantener la actual" : "Ingrese contraseña"}
+                />
+                {editingUser && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Dejar vacío para mantener la contraseña actual. Use "Generar" para crear una nueva.
+                  </p>
+                )}
               </div>
               <div>
                 <Label htmlFor="rol">Rol</Label>
@@ -432,7 +550,19 @@ export default function UsuariosPage() {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
+
+      {syncResult && (
+        <Alert>
+          <Database className="w-4 h-4 text-green-600" />
+          <AlertDescription>
+            ✅ Sincronización completada: {syncResult.procesados} procesados, {syncResult.nuevos} nuevos,{" "}
+            {syncResult.actualizados} actualizados
+            {syncResult.errores > 0 && `, ${syncResult.errores} errores`}
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Estado del backend */}
       <Alert>
@@ -554,18 +684,27 @@ export default function UsuariosPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredUsuarios.map((usuario) => (
-                <TableRow key={usuario._id}>
-                  <TableCell className="font-mono">{usuario._id}</TableCell>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">
-                        {usuario.nombre} {usuario.apellido}
+              {filteredUsuarios.map((usuario) => {
+                const usuarioConSync = usuario as Usuario & { sincronizadoDesdeGIS?: boolean }
+                return (
+                  <TableRow key={usuario._id}>
+                    <TableCell className="font-mono">
+                      {usuario._id}
+                      {usuarioConSync.sincronizadoDesdeGIS && (
+                        <span className="ml-2 text-xs text-blue-600" title="Sincronizado desde GIS">
+                          🔄
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">
+                          {usuario.nombre} {usuario.apellido}
+                        </div>
+                        {usuario.cuit && <div className="text-sm text-gray-500">CUIT: {usuario.cuit}</div>}
+                        {usuario.telefono && <div className="text-sm text-gray-500">Tel: {usuario.telefono}</div>}
                       </div>
-                      {usuario.cuit && <div className="text-sm text-gray-500">CUIT: {usuario.cuit}</div>}
-                      {usuario.telefono && <div className="text-sm text-gray-500">Tel: {usuario.telefono}</div>}
-                    </div>
-                  </TableCell>
+                    </TableCell>
                   <TableCell>{usuario.email}</TableCell>
                   <TableCell>
                     <Badge
@@ -602,7 +741,8 @@ export default function UsuariosPage() {
                     </div>
                   </TableCell>
                 </TableRow>
-              ))}
+                )
+              })}
             </TableBody>
           </Table>
         </CardContent>

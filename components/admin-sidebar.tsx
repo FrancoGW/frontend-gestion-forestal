@@ -46,13 +46,14 @@ export function AdminSidebar({ children }: { children?: React.ReactNode }) {
   /** Returns true when the supplied href should be considered "active" */
   const isActive = (path: string) => {
     if (path === "/admin") return pathname === "/admin"
-    return pathname.startsWith(path)
+    // Verificar que el pathname sea exactamente igual o que empiece con el path seguido de "/"
+    // Esto evita que "/admin/usuarios" coincida con "/admin/usuarios-gis"
+    return pathname === path || pathname.startsWith(path + "/")
   }
 
   const mainNavItems = [
     { href: "/admin", label: "Dashboard", icon: Home },
     { href: "/admin/usuarios", label: "Usuarios", icon: User },
-    { href: "/admin/usuarios-gis", label: "Usuarios GIS", icon: Map },
     { href: "/admin/supervisores", label: "Supervisores", icon: UserCheck },
     { href: "/admin/ordenes", label: "Órdenes de Trabajo", icon: FileText },
     { href: "/admin/avances", label: "Avances", icon: TrendingUp },

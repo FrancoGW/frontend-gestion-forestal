@@ -78,6 +78,9 @@ export function useSupervisors() {
         return {
           id: supervisor._id || Math.random().toString(36).substr(2, 9),
           nombre: supervisor.nombre,
+          email: supervisor.email || "",
+          telefono: supervisor.telefono || "",
+          sincronizadoDesdeGIS: supervisor.sincronizadoDesdeGIS || false,
           proveedores: proveedoresTransformados,
           estadisticas,
         }
@@ -321,6 +324,7 @@ export function useSupervisors() {
     loading,
     error,
     refetch,
+    loadSupervisors,
     getSupervisorByName,
     getActiveSupervisors,
   }
