@@ -218,6 +218,10 @@ export function WorkProgressForm({
   }
 
   const isRaleoTemplate = (templateName?: string) => {
+    // Excluir "raleo a desecho" de la validación de raleo general
+    if (templateName?.toLowerCase().includes("raleo a desecho")) {
+      return false
+    }
     if (!templateName) return false
     const name = templateName.toLowerCase()
     return name === "raleo"
