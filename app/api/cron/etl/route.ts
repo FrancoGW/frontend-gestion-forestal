@@ -11,17 +11,28 @@ const PROTECTION_API_URL = process.env.PROTECTION_API || 'https://gis.fasa.ibc.a
 
 async function obtenerDatosAdministrativos() {
   try {
-    const response = await axios.get(ADMIN_API_URL);
+    console.log(`Obteniendo datos administrativos desde: ${ADMIN_API_URL}`);
+    const response = await axios.get(ADMIN_API_URL, {
+      headers: {
+        'x-api-key': WORK_ORDERS_API_KEY,
+      },
+      timeout: 30000, // 30 segundos de timeout
+    });
     return response.data;
-  } catch (error) {
-    console.error('Error al obtener datos administrativos:', error);
-    throw error;
+  } catch (error: any) {
+    const errorMessage = error.response 
+      ? `Status ${error.response.status}: ${error.response.statusText} - ${error.response.data?.message || error.message}`
+      : error.message;
+    console.error('Error al obtener datos administrativos:', errorMessage);
+    console.error('URL:', ADMIN_API_URL);
+    throw new Error(errorMessage);
   }
 }
 
 async function obtenerOrdenesDeTrabajoAPI() {
   try {
     console.log(`Obteniendo órdenes desde: ${WORK_ORDERS_FROM_DATE}`);
+    console.log(`URL: ${WORK_ORDERS_API_URL}`);
     const response = await axios.get(WORK_ORDERS_API_URL, {
       headers: {
         'x-api-key': WORK_ORDERS_API_KEY,
@@ -29,6 +40,7 @@ async function obtenerOrdenesDeTrabajoAPI() {
       params: {
         from: WORK_ORDERS_FROM_DATE,
       },
+      timeout: 60000, // 60 segundos de timeout
     });
     
     let ordenes = response.data;
@@ -63,11 +75,21 @@ async function obtenerOrdenesDeTrabajoAPI() {
 
 async function obtenerDatosProteccion() {
   try {
-    const response = await axios.get(PROTECTION_API_URL);
+    console.log(`Obteniendo datos de protección desde: ${PROTECTION_API_URL}`);
+    const response = await axios.get(PROTECTION_API_URL, {
+      headers: {
+        'x-api-key': WORK_ORDERS_API_KEY,
+      },
+      timeout: 30000, // 30 segundos de timeout
+    });
     return response.data;
-  } catch (error) {
-    console.error('Error al obtener datos de protección:', error);
-    throw error;
+  } catch (error: any) {
+    const errorMessage = error.response 
+      ? `Status ${error.response.status}: ${error.response.statusText} - ${error.response.data?.message || error.message}`
+      : error.message;
+    console.error('Error al obtener datos de protección:', errorMessage);
+    console.error('URL:', PROTECTION_API_URL);
+    throw new Error(errorMessage);
   }
 }
 
@@ -120,6 +142,7 @@ async function procesarDatosAdministrativos(db: any, datosAdmin: any) {
 async function procesarOrdenesDeTrabajoAPI(db: any, ordenes: any[]) {
   try {
     if (!Array.isArray(ordenes) || ordenes.length === 0) {
+      console.log('No hay órdenes para procesar');
       return;
     }
     
@@ -127,30 +150,50 @@ async function procesarOrdenesDeTrabajoAPI(db: any, ordenes: any[]) {
     // El índice _id ya es único por defecto en MongoDB, no necesitamos crearlo
     
     let procesadas = 0;
+    let nuevas = 0;
+    let actualizadas = 0;
     let errores = 0;
+    
+    console.log(`Procesando ${ordenes.length} órdenes...`);
     
     for (const orden of ordenes) {
       try {
         if (!orden._id) {
+          console.warn(`Orden sin _id, saltando:`, JSON.stringify(orden).substring(0, 100));
           errores++;
           continue;
         }
+        
+        // Verificar si existe antes de actualizar
+        const existe = await coleccion.findOne({ _id: orden._id });
         
         await coleccion.updateOne(
           { _id: orden._id },
           { $set: orden },
           { upsert: true }
         );
+        
+        if (existe) {
+          actualizadas++;
+        } else {
+          nuevas++;
+        }
         procesadas++;
+        
+        // Mostrar progreso cada 100 órdenes
+        if (procesadas % 100 === 0) {
+          console.log(`Procesadas: ${procesadas}/${ordenes.length}...`);
+        }
       } catch (error: any) {
         console.error(`Error al procesar orden ${orden._id}:`, error.message);
         errores++;
       }
     }
     
-    console.log(`Órdenes procesadas: ${procesadas}, Errores: ${errores}`);
-  } catch (error) {
-    console.error('Error al procesar órdenes de trabajo:', error);
+    console.log(`Órdenes procesadas: ${procesadas} (Nuevas: ${nuevas}, Actualizadas: ${actualizadas}, Errores: ${errores})`);
+  } catch (error: any) {
+    console.error('Error al procesar órdenes de trabajo:', error.message);
+    throw error;
   }
 }
 
