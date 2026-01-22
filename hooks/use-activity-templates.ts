@@ -931,7 +931,7 @@ const DEFAULT_TEMPLATES: ActivityTemplate[] = [
       { id: "rodal", nombre: "Rodal", tipo: "texto", requerido: true, orden: 3, esDelSistema: true },
       { id: "predio", nombre: "Predio/Campo", tipo: "texto", requerido: true, orden: 4, esDelSistema: true },
       { id: "cuadrilla", nombre: "Cuadrilla", tipo: "seleccion", requerido: true, orden: 5, esDelSistema: true },
-      { id: "implemento", nombre: "Implemento", tipo: "seleccion", requerido: true, orden: 6, opciones: ["Machete", "Motisierra", "Guadaña"], esDelSistema: true },
+      { id: "implemento", nombre: "Implemento", tipo: "seleccion", requerido: true, orden: 6, opciones: ["Machete", "Motisierra", "Guadaña", "control quimico manual"], esDelSistema: true },
       { id: "operarios", nombre: "Operarios", tipo: "numero", requerido: true, orden: 7, esDelSistema: true },
       { id: "ha", nombre: "HA", tipo: "numero", requerido: true, orden: 8, esDelSistema: true },
       { id: "anioPlantacion", nombre: "Año de Plantación", tipo: "numero", requerido: true, orden: 9, esDelSistema: true },
@@ -1134,10 +1134,109 @@ export function useActivityTemplates() {
     }
   }, [templates])
 
+  const updateTemplate = (templateId: string, updatedTemplate: Partial<ActivityTemplate>) => {
+    try {
+      const updatedTemplates = templates.map((t) =>
+        t.id === templateId ? { ...t, ...updatedTemplate } : t
+      )
+      setTemplates(updatedTemplates)
+      localStorage.setItem("activity-templates", JSON.stringify(updatedTemplates))
+      return true
+    } catch (err) {
+      console.error("Error updating template:", err)
+      return false
+    }
+  }
+
+  const updateTemplateField = (
+    templateId: string,
+    fieldId: string,
+    updatedField: Partial<ActivityField>
+  ) => {
+    try {
+      const updatedTemplates = templates.map((t) => {
+        if (t.id === templateId) {
+          const updatedCampos = t.campos.map((c) =>
+            c.id === fieldId ? { ...c, ...updatedField } : c
+          )
+          return { ...t, campos: updatedCampos }
+        }
+        return t
+      })
+      setTemplates(updatedTemplates)
+      localStorage.setItem("activity-templates", JSON.stringify(updatedTemplates))
+      return true
+    } catch (err) {
+      console.error("Error updating template field:", err)
+      return false
+    }
+  }
+
+  const addTemplate = (newTemplate: ActivityTemplate) => {
+    try {
+      const updatedTemplates = [...templates, newTemplate]
+      setTemplates(updatedTemplates)
+      localStorage.setItem("activity-templates", JSON.stringify(updatedTemplates))
+      return true
+    } catch (err) {
+      console.error("Error adding template:", err)
+      return false
+    }
+  }
+
+  const deleteTemplate = (templateId: string) => {
+    try {
+      const updatedTemplates = templates.filter((t) => t.id !== templateId)
+      setTemplates(updatedTemplates)
+      localStorage.setItem("activity-templates", JSON.stringify(updatedTemplates))
+      return true
+    } catch (err) {
+      console.error("Error deleting template:", err)
+      return false
+    }
+  }
+
+  const refreshTemplates = () => {
+    try {
+      const storedTemplates = localStorage.getItem("activity-templates")
+      let finalTemplates = DEFAULT_TEMPLATES
+
+      if (storedTemplates) {
+        const parsed = JSON.parse(storedTemplates)
+        const mergedTemplates = DEFAULT_TEMPLATES.map((defaultTpl) => {
+          const localTpl = parsed.find((t: ActivityTemplate) => t.id === defaultTpl.id)
+          if (!localTpl) return defaultTpl
+          const camposIguales =
+            Array.isArray(localTpl.campos) &&
+            localTpl.campos.length === defaultTpl.campos.length &&
+            localTpl.campos.every((c: any, idx: number) => c.id === defaultTpl.campos[idx].id)
+          if (!camposIguales) return defaultTpl
+          return localTpl
+        })
+        const customTemplates = parsed.filter(
+          (t: ActivityTemplate) => !DEFAULT_TEMPLATES.find((dt) => dt.id === t.id)
+        )
+        finalTemplates = [...mergedTemplates, ...customTemplates]
+      }
+
+      setTemplates(finalTemplates)
+      localStorage.setItem("activity-templates", JSON.stringify(finalTemplates))
+    } catch (err) {
+      console.error("Error refreshing templates:", err)
+      setTemplates(DEFAULT_TEMPLATES)
+      localStorage.setItem("activity-templates", JSON.stringify(DEFAULT_TEMPLATES))
+    }
+  }
+
   return {
     templates,
     loading,
     error,
     getTemplateForWorkOrder,
+    updateTemplate,
+    updateTemplateField,
+    addTemplate,
+    deleteTemplate,
+    refreshTemplates,
   }
 }
