@@ -948,7 +948,9 @@ const DEFAULT_TEMPLATES: ActivityTemplate[] = [
     unidad: "Ha",
     patronesCoincidencia: [
       "preparacion de terreno",
-      "preparación de terreno", 
+      "preparación de terreno",
+      "preparacion de suelo",
+      "preparación de suelo",
       "taipas",
       "savannagh",
       "preparacion terreno",

@@ -214,9 +214,11 @@ export function useProviderWorkData() {
           return { success: false, error: "La superficie debe ser mayor a 0" }
         }
 
-        // Validar específicamente la cuadrilla - AHORA USANDO data.cuadrillaId
+        // Validar cuadrilla: se acepta cuadrillaId o "Sin cuadrillas" cuando no hay cuadrilla
         const cuadrillaId = data.cuadrillaId
-        if (!cuadrillaId || cuadrillaId.trim() === "") {
+        const cuadrillaNombre = (data.cuadrilla || "").trim()
+        const sinCuadrillas = cuadrillaNombre === "Sin cuadrillas" || cuadrillaNombre === "sin-cuadrillas"
+        if (!sinCuadrillas && (!cuadrillaId || cuadrillaId.trim() === "")) {
           console.error("❌ CUADRILLA ID VACÍA:")
           console.error("- data.cuadrillaId:", data.cuadrillaId)
           setError("Debe seleccionar una cuadrilla")
@@ -316,8 +318,9 @@ export function useProviderWorkData() {
         console.log("- cuadrilla (nombre):", serverData.cuadrilla)
         console.log("- datos completos:", serverData)
 
-        // Validación final antes de enviar - AHORA USANDO cuadrillaId
-        if (!serverData.cuadrillaId || serverData.cuadrillaId.trim() === "") {
+        // Validación final: se acepta cuadrillaId vacío cuando es "Sin cuadrillas"
+        const cuadrillaOk = (serverData.cuadrilla || "").trim() === "Sin cuadrillas" || (serverData.cuadrilla || "").trim() === "sin-cuadrillas"
+        if (!cuadrillaOk && (!serverData.cuadrillaId || String(serverData.cuadrillaId).trim() === "")) {
           console.error("❌ VALIDACIÓN FINAL FALLIDA: cuadrillaId vacío")
           setError("Error: ID de cuadrilla no válido")
           return { success: false, error: "Error: ID de cuadrilla no válido" }

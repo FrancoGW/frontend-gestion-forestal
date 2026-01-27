@@ -254,7 +254,7 @@ export function WorkProgressForm({
   const isPreparacionTerrenoTemplate = (templateName?: string) => {
     if (!templateName) return false
     const name = templateName.toLowerCase()
-    return name.includes("preparacion de terreno") || name.includes("taipas") || name.includes("savannagh")
+    return name.includes("preparacion de terreno") || name.includes("preparacion de suelo") || name.includes("taipas") || name.includes("savannagh")
   }
 
   const isControlExoticaTemplate = (templateName?: string) => {
@@ -3152,6 +3152,10 @@ export function WorkProgressForm({
       if (field === "clon" && value === "sin_clon") {
         continue
       }
+      // Permitir "Sin cuadrillas" / "sin-cuadrillas" como valor válido para cuadrilla (ej. Preparación de terreno sin cuadrilla)
+      if (field === "cuadrilla" && (value === "Sin cuadrillas" || value === "sin-cuadrillas")) {
+        continue
+      }
       if (!value || (typeof value === "string" && value.trim() === "")) {
         console.log(`[VALIDACIÓN][ERROR] Campo '${field}' está vacío o es inválido`)
         console.log(`[VALIDACIÓN][ERROR] Valor del campo '${field}':`, value)
@@ -3587,8 +3591,13 @@ export function WorkProgressForm({
                 Cuadrilla <span className="text-red-500">*</span>
               </Label>
               <Select
-                value={formData.cuadrilla || ""}
+                value={formData.cuadrilla === "Sin cuadrillas" || formData.cuadrilla === "sin-cuadrillas" ? "Sin cuadrillas" : (formData.cuadrilla || "")}
                 onValueChange={(newValue) => {
+                  if (newValue === "Sin cuadrillas" || newValue === "sin-cuadrillas") {
+                    handleInputChange("cuadrillaId", "")
+                    handleInputChange("cuadrilla", "Sin cuadrillas")
+                    return
+                  }
                   let cuadrillaSeleccionada = cuadrillas.find((c) => {
                     const nombre = c.nombre || c.descripcion || ""
                     return nombre === newValue
@@ -3614,19 +3623,16 @@ export function WorkProgressForm({
                   <SelectValue placeholder="Seleccionar cuadrilla" />
                 </SelectTrigger>
                 <SelectContent>
-                  {cuadrillas && cuadrillas.length > 0 ? (
-                    cuadrillas.map((c) => {
-                      const id = c._id || c.id || c.idcuadrilla || ""
-                      const nombre = c.nombre || c.descripcion || `Cuadrilla ${id}`
-                      return (
-                        <SelectItem key={id} value={nombre}>
-                          {nombre}
-                        </SelectItem>
-                      )
-                    })
-                  ) : (
-                    <SelectItem value="sin-cuadrillas">Sin cuadrillas</SelectItem>
-                  )}
+                  <SelectItem value="Sin cuadrillas">Sin cuadrillas</SelectItem>
+                  {cuadrillas && cuadrillas.length > 0 && cuadrillas.map((c) => {
+                    const id = c._id || c.id || c.idcuadrilla || ""
+                    const nombre = c.nombre || c.descripcion || `Cuadrilla ${id}`
+                    return (
+                      <SelectItem key={id} value={nombre}>
+                        {nombre}
+                      </SelectItem>
+                    )
+                  })}
                 </SelectContent>
               </Select>
             </div>
