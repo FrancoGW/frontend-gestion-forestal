@@ -14,7 +14,8 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PageLoader } from "@/components/ui/page-loader"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useWorkOrders } from "@/hooks/use-work-orders"
-import { AlertCircle, FileSpreadsheet, Search, RefreshCcw } from "lucide-react"
+import { AlertCircle, FileSpreadsheet, Search, RefreshCcw, CloudDownload } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { workOrdersAPI } from "@/lib/api-client"
 
@@ -57,11 +58,37 @@ export default function WorkOrdersPage() {
 
   const [localSearchQuery, setLocalSearchQuery] = useState("")
   const [activeTab, setActiveTab] = useState("all")
+  const [syncing, setSyncing] = useState(false)
+  const { toast } = useToast()
 
   // Manejar la búsqueda
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     performSearch(localSearchQuery)
+  }
+
+  // Sincronizar órdenes desde GIS (misma URL que consume el sistema)
+  const handleSyncFromGIS = async () => {
+    setSyncing(true)
+    try {
+      const from = "2025-01-12"
+      const res = await fetch(`/api/ordenesTrabajoAPI/sync?from=${encodeURIComponent(from)}`)
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Error al sincronizar")
+      toast({
+        title: "Base de datos actualizada",
+        description: `Sincronizadas ${data.cantidad ?? 0} órdenes (${data.nuevas ?? 0} nuevas, ${data.actualizadas ?? 0} actualizadas).`,
+      })
+      retryConnection()
+    } catch (err: any) {
+      toast({
+        title: "Error al sincronizar",
+        description: err.message || "No se pudo actualizar desde GIS.",
+        variant: "destructive",
+      })
+    } finally {
+      setSyncing(false)
+    }
   }
 
   // Manejar cambio en el input de búsqueda
@@ -176,6 +203,16 @@ export default function WorkOrdersPage() {
           <Button onClick={handleExport} variant="outline" className="flex items-center gap-2">
             <FileSpreadsheet className="h-4 w-4" />
             Exportar a Excel
+          </Button>
+          <Button
+            onClick={handleSyncFromGIS}
+            disabled={syncing}
+            variant="outline"
+            className="flex items-center gap-2"
+            title="Actualizar órdenes desde GIS (from=2025-01-12)"
+          >
+            <CloudDownload className={`h-4 w-4 ${syncing ? "animate-pulse" : ""}`} />
+            {syncing ? "Sincronizando..." : "Actualizar desde GIS"}
           </Button>
         </div>
 

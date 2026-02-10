@@ -9,6 +9,26 @@ export async function GET(request: NextRequest) {
     
     const query: any = {};
     
+    // Búsqueda libre (ID, actividad, campo, emisor, empresa, etc.)
+    const busqueda = searchParams.get('busqueda')?.trim();
+    if (busqueda) {
+      const term = busqueda.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(term, 'i');
+      const num = parseInt(busqueda, 10);
+      const isNum = String(num) === busqueda;
+      query.$or = [
+        { actividad: regex },
+        { campo: regex },
+        { emisor: regex },
+        { empresa: regex },
+        { nombreCampo: regex },
+        { tipoActividad: regex },
+      ];
+      if (isNum) {
+        query.$or.push({ _id: num });
+      }
+    }
+    
     // Opciones de filtro
     if (searchParams.get('estado')) query.estado = parseInt(searchParams.get('estado')!);
     if (searchParams.get('cod_zona')) query.cod_zona = parseInt(searchParams.get('cod_zona')!);
