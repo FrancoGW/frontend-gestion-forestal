@@ -3,15 +3,24 @@ import axios from 'axios';
 import { getDB } from '@/lib/mongodb';
 
 const WORK_ORDERS_API_URL = process.env.WORK_ORDERS_API_URL || 'https://gis.fasa.ibc.ar/api/ordenes/listar';
-const WORK_ORDERS_API_KEY = process.env.WORK_ORDERS_API_KEY || 'c3kvEUZ3yqzjU7ePcqesLUOZfaijujtRbl1tswiscXY7XxcU2LuZtvlB9I0oAq2g';
+// Key obligatoria: env o la del curl (header x-api-key)
+const GIS_API_KEY = (process.env.WORK_ORDERS_API_KEY && process.env.WORK_ORDERS_API_KEY.trim()) || 'c3kvEUZ3yqzjU7ePcqesLUOZfaijujtRbl1tswiscXY7XxcU2LuZtvlB9I0oAq2g';
 const DEFAULT_FROM = '2025-01-12';
 
 async function fetchOrdenesFromGIS(from: string) {
-  const response = await axios.get(WORK_ORDERS_API_URL, {
-    headers: { 'x-api-key': WORK_ORDERS_API_KEY },
-    params: { from },
+  const url = `${WORK_ORDERS_API_URL}?from=${encodeURIComponent(from)}`;
+  const response = await axios.get(url, {
+    headers: {
+      'x-api-key': GIS_API_KEY,
+      'Accept': 'application/json',
+    },
     timeout: 120000,
+    validateStatus: () => true, // no lanzar por 4xx/5xx, revisamos abajo
   });
+  if (response.status !== 200) {
+    const msg = response.data?.message || response.data?.error || response.statusText || `HTTP ${response.status}`;
+    throw new Error(`GIS API: ${msg}`);
+  }
   let ordenes = response.data;
   if (ordenes && typeof ordenes === 'object' && !Array.isArray(ordenes)) {
     if (ordenes.data && Array.isArray(ordenes.data)) ordenes = ordenes.data;
