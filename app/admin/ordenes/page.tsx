@@ -59,7 +59,19 @@ export default function WorkOrdersPage() {
   const [localSearchQuery, setLocalSearchQuery] = useState("")
   const [activeTab, setActiveTab] = useState("all")
   const [syncing, setSyncing] = useState(false)
+  const [gisSession, setGisSession] = useState(() => {
+    if (typeof window === "undefined") return ""
+    return localStorage.getItem("gis-phpsessid") || ""
+  })
   const { toast } = useToast()
+
+  const saveGisSession = (value: string) => {
+    setGisSession(value)
+    if (typeof window !== "undefined") {
+      if (value.trim()) localStorage.setItem("gis-phpsessid", value.trim())
+      else localStorage.removeItem("gis-phpsessid")
+    }
+  }
 
   // Manejar la búsqueda
   const handleSearch = (e: React.FormEvent) => {
@@ -67,12 +79,14 @@ export default function WorkOrdersPage() {
     performSearch(localSearchQuery)
   }
 
-  // Sincronizar órdenes desde GIS (misma URL que consume el sistema)
+  // Sincronizar órdenes desde GIS (requiere sesión: ingresá a gis.fasa.ibc.ar y copiá PHPSESSID)
   const handleSyncFromGIS = async () => {
     setSyncing(true)
     try {
       const from = "2025-01-12"
-      const res = await fetch(`/api/ordenesTrabajoAPI/sync?from=${encodeURIComponent(from)}`)
+      const headers: Record<string, string> = {}
+      if (gisSession.trim()) headers["x-gis-session"] = gisSession.trim()
+      const res = await fetch(`/api/ordenesTrabajoAPI/sync?from=${encodeURIComponent(from)}`, { headers })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Error al sincronizar")
       toast({
@@ -209,7 +223,7 @@ export default function WorkOrdersPage() {
             disabled={syncing}
             variant="outline"
             className="flex items-center gap-2"
-            title="Actualizar órdenes desde GIS (from=2025-01-12)"
+            title="Actualizar órdenes desde GIS (from=2025-01-12). Si falla, agregá la sesión GIS abajo."
           >
             <CloudDownload className={`h-4 w-4 ${syncing ? "animate-pulse" : ""}`} />
             {syncing ? "Sincronizando..." : "Actualizar desde GIS"}
@@ -242,6 +256,22 @@ export default function WorkOrdersPage() {
             </Button>
           )}
         </form>
+      </div>
+
+      <div className="rounded-lg border bg-muted/30 p-3">
+        <label className="text-xs font-medium text-muted-foreground block mb-1.5">
+          Sesión GIS (PHPSESSID) — opcional
+        </label>
+        <p className="text-xs text-muted-foreground mb-2">
+          Si el sync dice &quot;Login Requerido&quot;, entrá a gis.fasa.ibc.ar, abrí DevTools → Application → Cookies y copiá el valor de PHPSESSID.
+        </p>
+        <Input
+          type="text"
+          placeholder="Ej: e3hgqto0d39aarvofnh8iusvvk"
+          value={gisSession}
+          onChange={(e) => saveGisSession(e.target.value)}
+          className="font-mono text-sm max-w-md"
+        />
       </div>
 
       {filteredOrders.length === 0 ? (

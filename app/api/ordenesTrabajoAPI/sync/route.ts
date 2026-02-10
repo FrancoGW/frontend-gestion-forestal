@@ -7,14 +7,18 @@ const WORK_ORDERS_API_URL = process.env.WORK_ORDERS_API_URL || 'https://gis.fasa
 const GIS_API_KEY = (process.env.WORK_ORDERS_API_KEY && process.env.WORK_ORDERS_API_KEY.trim()) || 'c3kvEUZ3yqzjU7ePcqesLUOZfaijujtRbl1tswiscXY7XxcU2LuZtvlB9I0oAq2g';
 const DEFAULT_FROM = '2025-01-12';
 
-async function fetchOrdenesFromGIS(from: string) {
+async function fetchOrdenesFromGIS(from: string, sessionCookie?: string | null) {
   const url = `${WORK_ORDERS_API_URL}?from=${encodeURIComponent(from)}`;
+  const headers: Record<string, string> = {
+    'x-api-key': GIS_API_KEY,
+    'Accept': 'application/json',
+    'User-Agent': 'Mozilla/5.0 (compatible; ForestalSync/1.0)',
+  };
+  if (sessionCookie?.trim()) {
+    headers['Cookie'] = `PHPSESSID=${sessionCookie.trim()}`;
+  }
   const response = await axios.get(url, {
-    headers: {
-      'x-api-key': GIS_API_KEY,
-      'Accept': 'application/json',
-      'User-Agent': 'Mozilla/5.0 (compatible; ForestalSync/1.0)',
-    },
+    headers,
     timeout: 120000,
     validateStatus: () => true,
   });
@@ -62,7 +66,8 @@ async function procesarOrdenes(db: any, ordenes: any[]) {
 export async function GET(request: NextRequest) {
   try {
     const from = request.nextUrl.searchParams.get('from') || DEFAULT_FROM;
-    const ordenes = await fetchOrdenesFromGIS(from);
+    const sessionCookie = request.nextUrl.searchParams.get('session') ?? request.headers.get('x-gis-session');
+    const ordenes = await fetchOrdenesFromGIS(from, sessionCookie);
     const db = await getDB();
     const { procesadas, nuevas, actualizadas, errores } = await procesarOrdenes(db, ordenes);
     return NextResponse.json({
@@ -83,5 +88,26 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  return GET(request);
+  try {
+    const body = await request.json().catch(() => ({}));
+    const from = body.from ?? request.nextUrl.searchParams.get('from') ?? DEFAULT_FROM;
+    const sessionCookie = body.session ?? request.headers.get('x-gis-session') ?? request.nextUrl.searchParams.get('session');
+    const ordenes = await fetchOrdenesFromGIS(from, sessionCookie);
+    const db = await getDB();
+    const { procesadas, nuevas, actualizadas, errores } = await procesarOrdenes(db, ordenes);
+    return NextResponse.json({
+      success: true,
+      mensaje: `Sincronizadas ${procesadas} órdenes desde GIS (from=${from})`,
+      cantidad: procesadas,
+      nuevas,
+      actualizadas,
+      errores,
+    });
+  } catch (error: any) {
+    console.error('Error en sync órdenes GIS:', error?.message || error);
+    return NextResponse.json(
+      { success: false, error: error?.message || 'Error al sincronizar órdenes' },
+      { status: 500 }
+    );
+  }
 }
