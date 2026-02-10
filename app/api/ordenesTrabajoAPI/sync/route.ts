@@ -13,13 +13,18 @@ async function fetchOrdenesFromGIS(from: string) {
     headers: {
       'x-api-key': GIS_API_KEY,
       'Accept': 'application/json',
+      'User-Agent': 'Mozilla/5.0 (compatible; ForestalSync/1.0)',
     },
     timeout: 120000,
-    validateStatus: () => true, // no lanzar por 4xx/5xx, revisamos abajo
+    validateStatus: () => true,
   });
   if (response.status !== 200) {
-    const msg = response.data?.message || response.data?.error || response.statusText || `HTTP ${response.status}`;
-    throw new Error(`GIS API: ${msg}`);
+    const body = response.data;
+    if (response.status >= 500) {
+      console.error('GIS API 5xx – body:', typeof body === 'object' ? JSON.stringify(body) : body);
+    }
+    const msg = body?.message || body?.error || body?.detail || response.statusText || `HTTP ${response.status}`;
+    throw new Error(`El servidor GIS respondió con error (${response.status}). Probalo de nuevo en unos minutos o revisá con el equipo de GIS. Detalle: ${msg}`);
   }
   let ordenes = response.data;
   if (ordenes && typeof ordenes === 'object' && !Array.isArray(ordenes)) {
