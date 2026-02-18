@@ -22,7 +22,7 @@ import { usuariosAdminAPI } from "@/lib/api-client"
 import { useToast } from "@/hooks/use-toast"
 
 interface Usuario {
-  _id: number
+  _id: number | string
   nombre: string
   apellido: string
   email: string
@@ -211,8 +211,12 @@ export default function UsuariosPage() {
         }
       } else {
         // Simular creación en modo offline
+        const maxId = Math.max(
+          ...usuarios.map((u) => (typeof u._id === "number" ? u._id : 0)),
+          0
+        )
         const newUser: Usuario = {
-          _id: Math.max(...usuarios.map((u) => u._id)) + 1,
+          _id: maxId + 1,
           ...formData,
           fechaCreacion: new Date().toISOString(),
         }
@@ -270,7 +274,7 @@ export default function UsuariosPage() {
   }
 
   // Eliminar usuario
-  const deleteUsuario = async (id: number) => {
+  const deleteUsuario = async (id: number | string) => {
     if (!confirm("¿Estás seguro de que quieres eliminar este usuario?")) return
 
     try {
@@ -689,7 +693,11 @@ export default function UsuariosPage() {
                 return (
                   <TableRow key={usuario._id}>
                     <TableCell className="font-mono">
-                      {usuario._id}
+                      {typeof usuario._id === "string" && usuario._id.startsWith("supervisor_")
+                        ? `Supervisor GIS ${usuario._id.replace("supervisor_", "")}`
+                        : typeof usuario._id === "string" && usuario._id.startsWith("provider_")
+                          ? `Proveedor GIS ${usuario._id.replace("provider_", "")}`
+                          : usuario._id}
                       {usuarioConSync.sincronizadoDesdeGIS && (
                         <span className="ml-2 text-xs text-blue-600" title="Sincronizado desde GIS">
                           🔄

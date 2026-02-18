@@ -10,10 +10,12 @@ export async function GET(
     const db = await getDB();
     const id = params.id;
 
-    // Determinar si es ObjectId o número
+    // Aceptar: ObjectId, número, o prefijos "supervisor_X" / "provider_X"
     let queryId: any;
-    if (ObjectId.isValid(id) && id.length === 24) {
+    if (ObjectId.isValid(id) && id.length === 24 && !id.includes('_')) {
       queryId = new ObjectId(id);
+    } else if (/^supervisor_\d+$|^provider_\d+$/.test(id)) {
+      queryId = id;
     } else if (!isNaN(Number(id))) {
       queryId = Number(id);
     } else {
@@ -65,10 +67,12 @@ export async function PUT(
     const db = await getDB();
     const id = params.id;
 
-    // Determinar si es ObjectId o número
+    // Aceptar: ObjectId, número, o prefijos "supervisor_X" / "provider_X"
     let queryId: any;
-    if (ObjectId.isValid(id) && id.length === 24) {
+    if (ObjectId.isValid(id) && id.length === 24 && !id.includes('_')) {
       queryId = new ObjectId(id);
+    } else if (/^supervisor_\d+$|^provider_\d+$/.test(id)) {
+      queryId = id;
     } else if (!isNaN(Number(id))) {
       queryId = Number(id);
     } else {
@@ -240,10 +244,12 @@ export async function DELETE(
     const db = await getDB();
     const id = params.id;
 
-    // Determinar si es ObjectId o número
+    // Aceptar: ObjectId, número, o prefijos "supervisor_X" / "provider_X"
     let queryId: any;
-    if (ObjectId.isValid(id) && id.length === 24) {
+    if (ObjectId.isValid(id) && id.length === 24 && !id.includes('_')) {
       queryId = new ObjectId(id);
+    } else if (/^supervisor_\d+$|^provider_\d+$/.test(id)) {
+      queryId = id;
     } else if (!isNaN(Number(id))) {
       queryId = Number(id);
     } else {

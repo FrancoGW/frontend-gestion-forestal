@@ -147,8 +147,9 @@ export function useAuth() {
           console.log("✅ Autenticación exitosa con base de datos")
           
           const dbUser = dbResponse.data
+          const rawId = dbUser._id ?? dbUser.id
           const user: User = {
-            id: dbUser._id || dbUser.id,
+            id: String(rawId),
             nombre: dbUser.nombre,
             apellido: dbUser.apellido || "",
             email: dbUser.email,
@@ -158,51 +159,44 @@ export function useAuth() {
             telefono: dbUser.telefono,
           }
 
-          // Agregar IDs específicos según el rol como NÚMEROS
+          // IDs numéricos GIS: supervisores usan gisSupervisorId, proveedores idempresa
           if (user.rol === "provider") {
-            // Buscar la empresa asociada al proveedor para obtener su ID numérico
-            try {
-              const empresasResponse = await empresasAPI.getAll()
-              const empresas = Array.isArray(empresasResponse) 
-                ? empresasResponse 
-                : (empresasResponse?.data || empresasResponse?.empresas || [])
-              
-              // Buscar por email o nombre de empresa
-              const empresa = empresas.find((e: any) => 
-                e.email === user.email || 
-                e.empresa?.toLowerCase().includes(user.nombre.toLowerCase()) ||
-                e.nombre?.toLowerCase().includes(user.nombre.toLowerCase())
-              )
-              
-              if (empresa) {
-                // Usar idempresa, cod_empres, o _id numérico como providerId
-                const providerIdNum = empresa.idempresa || empresa.cod_empres || 
-                  (typeof empresa._id === 'number' ? empresa._id : 
-                   typeof empresa.id === 'number' ? empresa.id : null)
-                
-                if (providerIdNum !== null && providerIdNum !== undefined) {
-                  user.providerId = Number(providerIdNum)
-                  console.log(`✅ ProviderId asignado desde empresa: ${user.providerId}`)
-                } else {
-                  // Fallback: intentar parsear el _id si es string numérico
-                  const fallbackId = typeof empresa._id === 'string' && /^\d+$/.test(empresa._id)
-                    ? Number.parseInt(empresa._id, 10)
-                    : null
-                  user.providerId = fallbackId || Number.parseInt(user.id, 10)
-                  console.log(`⚠️  Usando fallback para providerId: ${user.providerId}`)
+            const idempresa = dbUser.idempresa
+            if (idempresa != null && !isNaN(Number(idempresa))) {
+              user.providerId = Number(idempresa)
+            } else {
+              try {
+                const empresasResponse = await empresasAPI.getAll()
+                const empresas = Array.isArray(empresasResponse)
+                  ? empresasResponse
+                  : (empresasResponse?.data || empresasResponse?.empresas || [])
+                const empresa = empresas.find(
+                  (e: any) =>
+                    e.email === user.email ||
+                    e.empresa?.toLowerCase().includes(user.nombre.toLowerCase()) ||
+                    e.nombre?.toLowerCase().includes(user.nombre.toLowerCase())
+                )
+                if (empresa) {
+                  const n = empresa.idempresa ?? empresa.cod_empres ?? empresa._id ?? empresa.id
+                  user.providerId = typeof n === "number" ? n : /^\d+$/.test(String(n)) ? Number(n) : NaN
                 }
-              } else {
-                // Si no se encuentra la empresa, usar el ID del usuario como fallback
-                user.providerId = Number.parseInt(user.id, 10)
-                console.log(`⚠️  Empresa no encontrada, usando ID de usuario como fallback: ${user.providerId}`)
+                if (Number.isNaN(user.providerId)) {
+                  const m = String(rawId).match(/^provider_(\d+)$/)
+                  user.providerId = m ? Number(m[1]) : Number(rawId)
+                }
+              } catch {
+                const m = String(rawId).match(/^provider_(\d+)$/)
+                user.providerId = m ? Number(m[1]) : Number(rawId)
               }
-            } catch (empresaError) {
-              console.error("Error al buscar empresa para provider:", empresaError)
-              // Fallback: usar el ID del usuario
-              user.providerId = Number.parseInt(user.id, 10)
             }
           } else if (user.rol === "supervisor") {
-            user.supervisorId = Number.parseInt(user.id, 10)
+            const gisId = dbUser.gisSupervisorId
+            if (gisId != null && !isNaN(Number(gisId))) {
+              user.supervisorId = Number(gisId)
+            } else {
+              const m = String(rawId).match(/^supervisor_(\d+)$/)
+              user.supervisorId = m ? Number(m[1]) : Number(rawId)
+            }
           }
 
           // Guardar en sessionStorage y estado

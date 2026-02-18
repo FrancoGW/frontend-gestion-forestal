@@ -6,9 +6,17 @@ const ADMIN_API_URL = process.env.ADMIN_API_URL || "https://gis.fasa.ibc.ar/orde
 const WORK_ORDERS_API_KEY =
   process.env.WORK_ORDERS_API_KEY || "c3kvEUZ3yqzjU7ePcqesLUOZfaijujtRbl1tswiscXY7XxcU2LuZtvlB9I0oAq2g"
 
+/**
+ * IDs prefijados para evitar colisiones: la API GIS usa el mismo número para
+ * empresas (proveedores) y usuarios (supervisores). Ej: idempresa 14 = LOGISTICA S.R.L.
+ * y _id 14 = Marcelo Gasparri (supervisor). Usamos "supervisor_X" y "provider_X".
+ */
+const ID_SUPERVISOR = (gisId: number) => `supervisor_${gisId}`
+const ID_PROVIDER = (gisId: number) => `provider_${gisId}`
+
 export async function POST(_request: NextRequest) {
   try {
-    // 1. Obtener datos de Usuarios GIS
+    // 1. Obtener datos de la API GIS
     const response = await axios.get(ADMIN_API_URL, {
       headers: {
         "x-api-key": WORK_ORDERS_API_KEY,
@@ -16,8 +24,8 @@ export async function POST(_request: NextRequest) {
     })
 
     const gisData = response.data
-    const gisUsuarios = gisData.usuarios || [] // Supervisores
-    const gisEmpresas = gisData.empresas || [] // Proveedores
+    const gisUsuarios = gisData.usuarios || [] // Supervisores en GIS
+    const gisEmpresas = gisData.empresas || [] // Proveedores (empresas) en GIS
 
     // 2. Conectar a MongoDB
     const db = await getDB()
@@ -31,46 +39,64 @@ export async function POST(_request: NextRequest) {
     // 3. Sincronizar supervisores desde GIS "usuarios"
     for (const gisUser of gisUsuarios) {
       try {
-        const gisId = gisUser.id || gisUser._id || gisUser.idusuario || gisUser.cod_usuario
+        const gisIdRaw = gisUser.id ?? gisUser._id ?? gisUser.idusuario ?? gisUser.cod_usuario
+        const gisId = Number(gisIdRaw)
         const gisNombre = gisUser.nombre || gisUser.usuario || gisUser.nombre_completo || "Sin nombre"
 
-        if (!gisId) {
-          console.warn("⚠️ Usuario GIS sin ID, saltando:", gisNombre)
+        if (!gisIdRaw || isNaN(gisId)) {
+          console.warn("⚠️ Usuario GIS sin ID válido, saltando:", gisNombre)
           errores++
           continue
         }
 
-        // Verificar si existe en nuestro sistema
-        const existe = await collection.findOne({ _id: Number(gisId) })
+        const idDoc = ID_SUPERVISOR(gisId)
 
-        // Preparar documento para sincronizar
+        // Verificar si existe (prefijado, gisSupervisorId, o legacy _id numérico)
+        const existe = await collection.findOne({
+          $or: [
+            { _id: idDoc },
+            { gisSupervisorId: gisId, rol: "supervisor" },
+            { _id: gisId, rol: "supervisor" },
+          ],
+        })
+
         const documento = {
-          _id: Number(gisId),
+          _id: idDoc,
           nombre: gisNombre,
           apellido: gisUser.apellido || "",
           rol: "supervisor" as const,
-          // Mantener campos existentes si ya existe, o valores por defecto
+          gisSupervisorId: gisId,
           email: existe?.email || "",
-          password: existe?.password || "", // Mantener contraseña si existe
+          password: existe?.password || "",
           telefono: existe?.telefono || "",
           activo: existe?.activo !== undefined ? existe.activo : true,
           fechaCreacion: existe?.fechaCreacion || new Date().toISOString(),
-          // Marcar como sincronizado desde GIS
           sincronizadoDesdeGIS: true,
           ultimaSincronizacion: new Date(),
         }
 
-        // Actualizar o insertar
-        await collection.updateOne(
-          { _id: Number(gisId) },
-          { $set: documento },
-          { upsert: true }
-        )
-
-        if (existe) {
+        // Si existía con _id legacy numérico, no sobrescribir; crear con nuevo _id
+        if (existe && typeof existe._id === "number") {
+          await collection.updateOne(
+            { _id: existe._id },
+            {
+              $set: {
+                gisSupervisorId: gisId,
+                nombre: gisNombre,
+                sincronizadoDesdeGIS: true,
+                ultimaSincronizacion: new Date(),
+              },
+            }
+          )
           actualizados++
         } else {
-          nuevos++
+          await collection.updateOne(
+            { _id: idDoc },
+            { $set: documento },
+            { upsert: true }
+          )
+          if (existe) actualizados++
+          else nuevos++
         }
         procesados++
       } catch (error: any) {
@@ -82,52 +108,69 @@ export async function POST(_request: NextRequest) {
     // 4. Sincronizar proveedores desde GIS "empresas"
     for (const gisEmpresa of gisEmpresas) {
       try {
-        const gisId =
-          gisEmpresa.id ||
-          gisEmpresa._id ||
-          gisEmpresa.idempresa ||
-          gisEmpresa.cod_empres ||
+        const gisIdRaw =
+          gisEmpresa.id ??
+          gisEmpresa._id ??
+          gisEmpresa.idempresa ??
+          gisEmpresa.cod_empres ??
           gisEmpresa.codigo
-        const gisNombre = gisEmpresa.empresa || gisEmpresa.nombre || gisEmpresa.razon_social || "Sin nombre"
+        const gisId = Number(gisIdRaw)
+        const gisNombre =
+          gisEmpresa.empresa || gisEmpresa.nombre || gisEmpresa.razon_social || "Sin nombre"
 
-        if (!gisId) {
-          console.warn("⚠️ Empresa GIS sin ID, saltando:", gisNombre)
+        if (!gisIdRaw || isNaN(gisId)) {
+          console.warn("⚠️ Empresa GIS sin ID válido, saltando:", gisNombre)
           errores++
           continue
         }
 
-        // Verificar si existe en nuestro sistema
-        const existe = await collection.findOne({ _id: Number(gisId) })
+        const idDoc = ID_PROVIDER(gisId)
 
-        // Preparar documento para sincronizar
+        const existe = await collection.findOne({
+          $or: [
+            { _id: idDoc },
+            { idempresa: gisId, rol: "provider" },
+            { _id: gisId, rol: "provider" },
+          ],
+        })
+
         const documento = {
-          _id: Number(gisId),
+          _id: idDoc,
           nombre: gisNombre,
           apellido: "",
           rol: "provider" as const,
-          // Mantener campos existentes si ya existe, o valores por defecto
+          idempresa: gisId,
           email: existe?.email || "",
-          password: existe?.password || "", // Mantener contraseña si existe
+          password: existe?.password || "",
           telefono: existe?.telefono || gisEmpresa.telefono || "",
           cuit: existe?.cuit || gisEmpresa.cuit || "",
           activo: existe?.activo !== undefined ? existe.activo : true,
           fechaCreacion: existe?.fechaCreacion || new Date().toISOString(),
-          // Marcar como sincronizado desde GIS
           sincronizadoDesdeGIS: true,
           ultimaSincronizacion: new Date(),
         }
 
-        // Actualizar o insertar
-        await collection.updateOne(
-          { _id: Number(gisId) },
-          { $set: documento },
-          { upsert: true }
-        )
-
-        if (existe) {
+        if (existe && typeof existe._id === "number") {
+          await collection.updateOne(
+            { _id: existe._id },
+            {
+              $set: {
+                idempresa: gisId,
+                nombre: gisNombre,
+                sincronizadoDesdeGIS: true,
+                ultimaSincronizacion: new Date(),
+              },
+            }
+          )
           actualizados++
         } else {
-          nuevos++
+          await collection.updateOne(
+            { _id: idDoc },
+            { $set: documento },
+            { upsert: true }
+          )
+          if (existe) actualizados++
+          else nuevos++
         }
         procesados++
       } catch (error: any) {
