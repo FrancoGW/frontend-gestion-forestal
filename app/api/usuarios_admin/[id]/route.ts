@@ -121,12 +121,15 @@ export async function PUT(
     }
 
     if (apellido !== undefined) {
-      if (!apellido || typeof apellido !== 'string' || apellido.trim().length < 2) {
+      if (typeof apellido !== 'string') {
         return NextResponse.json(
-          {
-            success: false,
-            message: 'El apellido debe tener al menos 2 caracteres'
-          },
+          { success: false, message: 'El apellido debe ser texto' },
+          { status: 400 }
+        );
+      }
+      if (apellido.trim().length > 0 && apellido.trim().length < 2) {
+        return NextResponse.json(
+          { success: false, message: 'El apellido debe tener al menos 2 caracteres o estar vacío' },
           { status: 400 }
         );
       }
@@ -251,7 +254,18 @@ export async function DELETE(
     } else if (/^supervisor_\d+$|^provider_\d+$/.test(id)) {
       queryId = id;
     } else if (!isNaN(Number(id))) {
-      queryId = Number(id);
+      const numId = Number(id);
+      // Buscar por _id numérico o por IDs prefijados (por si el cliente envió solo el número)
+      const porId = await db.collection('usuarios_admin').findOne({ _id: numId });
+      if (porId) {
+        queryId = numId;
+      } else {
+        const porSupervisor = await db.collection('usuarios_admin').findOne({ gisSupervisorId: numId, rol: 'supervisor' });
+        const porProvider = await db.collection('usuarios_admin').findOne({ idempresa: numId, rol: 'provider' });
+        if (porSupervisor) queryId = porSupervisor._id;
+        else if (porProvider) queryId = porProvider._id;
+        else queryId = numId;
+      }
     } else {
       return NextResponse.json(
         {
