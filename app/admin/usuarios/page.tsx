@@ -694,12 +694,12 @@ export default function UsuariosPage() {
                   <TableRow key={usuario._id}>
                     <TableCell className="font-mono">
                       {typeof usuario._id === "string" && usuario._id.startsWith("supervisor_")
-                        ? `Supervisor GIS ${usuario._id.replace("supervisor_", "")}`
+                        ? usuario._id.replace("supervisor_", "")
                         : typeof usuario._id === "string" && usuario._id.startsWith("provider_")
-                          ? `Proveedor GIS ${usuario._id.replace("provider_", "")}`
+                          ? usuario._id.replace("provider_", "")
                           : usuario._id}
                       {usuarioConSync.sincronizadoDesdeGIS && (
-                        <span className="ml-2 text-xs text-blue-600" title="Sincronizado desde GIS">
+                        <span className="ml-1.5 text-xs text-blue-600" title="Sincronizado desde GIS">
                           🔄
                         </span>
                       )}
