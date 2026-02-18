@@ -41,7 +41,13 @@ export async function POST(_request: NextRequest) {
       try {
         const gisIdRaw = gisUser.id ?? gisUser._id ?? gisUser.idusuario ?? gisUser.cod_usuario
         const gisId = Number(gisIdRaw)
-        const gisNombre = gisUser.nombre || gisUser.usuario || gisUser.nombre_completo || "Sin nombre"
+        const gisNombre =
+          gisUser.name ||
+          gisUser.nombre ||
+          gisUser.usuario ||
+          gisUser.nombre_completo ||
+          gisUser.nombre_completo_gis ||
+          "Sin nombre"
 
         if (!gisIdRaw || isNaN(gisId)) {
           console.warn("⚠️ Usuario GIS sin ID válido, saltando:", gisNombre)
@@ -116,7 +122,11 @@ export async function POST(_request: NextRequest) {
           gisEmpresa.codigo
         const gisId = Number(gisIdRaw)
         const gisNombre =
-          gisEmpresa.empresa || gisEmpresa.nombre || gisEmpresa.razon_social || "Sin nombre"
+          gisEmpresa.empresa ||
+          gisEmpresa.name ||
+          gisEmpresa.nombre ||
+          gisEmpresa.razon_social ||
+          "Sin nombre"
 
         if (!gisIdRaw || isNaN(gisId)) {
           console.warn("⚠️ Empresa GIS sin ID válido, saltando:", gisNombre)
