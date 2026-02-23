@@ -82,41 +82,26 @@ export function useJdaData() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Función para obtener el ID numérico del jefe de área basado en el email
-  const getJdaIdFromEmail = (email: string): number | null => {
-    const emailToIdMap: { [key: string]: number } = {
-      "alejandro@sistema.com": 1234,
-      "stefan@sistema.com": 34,
-      // Agregar más mapeos según sea necesario
-    }
-    return emailToIdMap[email.toLowerCase()] || null
-  }
-
-  // Función para obtener datos del jefe de área
+  // Función para obtener datos del jefe de área desde la API (por email, sin hardcodear IDs)
   const loadJdaData = async (): Promise<JdaData | null> => {
     if (!user?.email) return null
 
     try {
-      // Mostrar el email y el ID que se va a buscar
-      const jdaId = getJdaIdFromEmail(user.email)
-      console.log("[JDA-DEBUG] Email del usuario:", user.email)
-      console.log("[JDA-DEBUG] ID de jefe de área calculado:", jdaId)
-      if (jdaId) {
-        const response = await apiClient.get(`/api/jefes_de_area/${jdaId}`)
-        console.log("[JDA-DEBUG] Respuesta cruda de la API de jefes_de_area:", response.data)
-        const data = response.data.data || response.data // Soporta ambas estructuras
-        if (data) {
-          return {
-            id: data._id || jdaId.toString(),
-            nombre: data.nombre || user.nombre || "Jefe de Área",
-            email: data.email || user.email,
-            telefono: data.telefono || "+54 11 3333-3333",
-            supervisoresAsignados: data.supervisoresAsignados || []
-          }
+      const response = await apiClient.get(
+        `/api/jefes_de_area?email=${encodeURIComponent(user.email)}`
+      )
+      const data = response.data?.data ?? response.data
+      if (data && (data._id !== undefined || data.email)) {
+        return {
+          id: String(data._id ?? data.id ?? ""),
+          nombre: data.nombre || user.nombre || "Jefe de Área",
+          email: data.email || user.email,
+          telefono: data.telefono || "+54 11 3333-3333",
+          supervisoresAsignados: data.supervisoresAsignados || []
         }
       }
 
-      // Fallback con datos del usuario
+      // Sin perfil JDA para este email: fallback con datos del usuario y sin supervisores
       return {
         id: user.id || "jda-1",
         nombre: user.nombre || "Jefe de Área",
@@ -124,7 +109,17 @@ export function useJdaData() {
         telefono: user.telefono || "+54 11 3333-3333",
         supervisoresAsignados: []
       }
-    } catch (err) {
+    } catch (err: any) {
+      // 404 = no hay JDA para este email, no es error de red
+      if (err?.response?.status === 404) {
+        return {
+          id: user.id || "jda-1",
+          nombre: user.nombre || "Jefe de Área",
+          email: user.email || "jda@sistema.com",
+          telefono: user.telefono || "+54 11 3333-3333",
+          supervisoresAsignados: []
+        }
+      }
       console.error("Error al cargar datos del JDA:", err)
       return null
     }

@@ -79,14 +79,13 @@ export default function WorkOrdersPage() {
     performSearch(localSearchQuery)
   }
 
-  // Sincronizar órdenes desde GIS (requiere sesión: ingresá a gis.fasa.ibc.ar y copiá PHPSESSID)
+  // Sincronizar todas las órdenes desde GIS (force=1 usa fecha antigua para traer todo el histórico)
   const handleSyncFromGIS = async () => {
     setSyncing(true)
     try {
-      const from = "2025-01-12"
       const headers: Record<string, string> = {}
       if (gisSession.trim()) headers["x-gis-session"] = gisSession.trim()
-      const res = await fetch(`/api/ordenesTrabajoAPI/sync?from=${encodeURIComponent(from)}`, { headers })
+      const res = await fetch(`/api/ordenesTrabajoAPI/sync?force=1`, { headers })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Error al sincronizar")
       toast({

@@ -6,6 +6,7 @@ const WORK_ORDERS_API_URL = process.env.WORK_ORDERS_API_URL || 'https://gis.fasa
 // Key obligatoria: env o la del curl (header x-api-key)
 const GIS_API_KEY = (process.env.WORK_ORDERS_API_KEY && process.env.WORK_ORDERS_API_KEY.trim()) || 'c3kvEUZ3yqzjU7ePcqesLUOZfaijujtRbl1tswiscXY7XxcU2LuZtvlB9I0oAq2g';
 const DEFAULT_FROM = '2025-01-12';
+const FORCE_FROM = process.env.WORK_ORDERS_FROM_DATE || '2020-01-01';
 
 async function fetchOrdenesFromGIS(from: string, sessionCookie?: string | null) {
   const url = `${WORK_ORDERS_API_URL}?from=${encodeURIComponent(from)}`;
@@ -65,7 +66,8 @@ async function procesarOrdenes(db: any, ordenes: any[]) {
 
 export async function GET(request: NextRequest) {
   try {
-    const from = request.nextUrl.searchParams.get('from') || DEFAULT_FROM;
+    const force = request.nextUrl.searchParams.get('force') === '1' || request.nextUrl.searchParams.get('force') === 'true';
+    const from = force ? FORCE_FROM : (request.nextUrl.searchParams.get('from') || DEFAULT_FROM);
     const sessionCookie = request.nextUrl.searchParams.get('session') ?? request.headers.get('x-gis-session');
     const ordenes = await fetchOrdenesFromGIS(from, sessionCookie);
     const db = await getDB();
@@ -90,7 +92,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}));
-    const from = body.from ?? request.nextUrl.searchParams.get('from') ?? DEFAULT_FROM;
+    const force = body.force === true || body.force === '1' || request.nextUrl.searchParams.get('force') === '1';
+    const from = force ? FORCE_FROM : (body.from ?? request.nextUrl.searchParams.get('from') ?? DEFAULT_FROM);
     const sessionCookie = body.session ?? request.headers.get('x-gis-session') ?? request.nextUrl.searchParams.get('session');
     const ordenes = await fetchOrdenesFromGIS(from, sessionCookie);
     const db = await getDB();
