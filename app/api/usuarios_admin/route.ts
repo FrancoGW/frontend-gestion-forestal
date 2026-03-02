@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDB } from '@/lib/mongodb';
+import { ROLES_GESTIONABLES_ADMIN, isRolGestionableAdmin } from '@/lib/constants/roles';
 
 export async function GET(request: NextRequest) {
   try {
@@ -43,7 +44,8 @@ export async function POST(request: NextRequest) {
       rol,
       cuit,
       telefono,
-      activo = true
+      activo = true,
+      jefesDeAreaAsignados
     } = await request.json();
 
     // Validaciones
@@ -87,20 +89,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!rol || !['admin', 'supervisor', 'provider'].includes(rol)) {
+    if (!rol || !isRolGestionableAdmin(rol)) {
       return NextResponse.json(
         {
           success: false,
-          message: 'El rol es requerido y debe ser: admin, supervisor, o provider'
+          message: `El rol es requerido y debe ser uno de: ${ROLES_GESTIONABLES_ADMIN.join(', ')}`
         },
         { status: 400 }
       );
     }
 
     // Verificar que el email sea único
-    const usuarioExistente = await db.collection('usuarios_admin').findOne({ 
+    const usuarioExistente = await db.collection('usuarios_admin').findOne({
       email: email.toLowerCase().trim(),
-      activo: true 
+      activo: true
     });
 
     if (usuarioExistente) {
@@ -113,7 +115,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const usuario = {
+    // Validar y normalizar jefesDeAreaAsignados solo para rol subgerente
+    let jefesDeAreaNormalizados = [];
+    if (rol === 'subgerente' && Array.isArray(jefesDeAreaAsignados) && jefesDeAreaAsignados.length > 0) {
+      const jdasCol = db.collection('jefes_de_area');
+      for (const item of jefesDeAreaAsignados) {
+        const jdaId = Number(item.jdaId ?? item._id ?? item.id);
+        if (!Number.isInteger(jdaId) || jdaId < 1) continue;
+        const jda = await jdasCol.findOne({ _id: jdaId });
+        if (!jda) {
+          return NextResponse.json(
+            { success: false, message: `Jefe de área con ID ${jdaId} no encontrado` },
+            { status: 400 }
+          );
+        }
+        jefesDeAreaNormalizados.push({
+          jdaId,
+          nombre: String(jda.nombre || '').trim() + (jda.apellido ? ' ' + String(jda.apellido).trim() : ''),
+          email: jda.email || '',
+          fechaAsignacion: item.fechaAsignacion || new Date().toISOString()
+        });
+      }
+    }
+
+    const usuario: Record<string, unknown> = {
       nombre: nombre.trim(),
       apellido: apellido.trim(),
       email: email.toLowerCase().trim(),
@@ -125,6 +150,9 @@ export async function POST(request: NextRequest) {
       fechaCreacion: new Date(),
       fechaActualizacion: new Date()
     };
+    if (rol === 'subgerente') {
+      usuario.jefesDeAreaAsignados = jefesDeAreaNormalizados;
+    }
 
     const result = await db.collection('usuarios_admin').insertOne(usuario);
 

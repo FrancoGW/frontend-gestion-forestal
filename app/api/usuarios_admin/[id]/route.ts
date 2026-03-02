@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDB } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
+import { ROLES_GESTIONABLES_ADMIN, isRolGestionableAdmin } from '@/lib/constants/roles';
 
 export async function GET(
   request: NextRequest,
@@ -92,7 +93,8 @@ export async function PUT(
       rol,
       cuit,
       telefono,
-      activo
+      activo,
+      jefesDeAreaAsignados
     } = await request.json();
 
     // Verificar que el usuario existe
@@ -177,11 +179,11 @@ export async function PUT(
     }
 
     if (rol !== undefined) {
-      if (!['admin', 'supervisor', 'provider'].includes(rol)) {
+      if (!isRolGestionableAdmin(rol)) {
         return NextResponse.json(
           {
             success: false,
-            message: 'El rol debe ser: admin, supervisor, o provider'
+            message: `El rol debe ser uno de: ${ROLES_GESTIONABLES_ADMIN.join(', ')}`
           },
           { status: 400 }
         );
@@ -201,6 +203,41 @@ export async function PUT(
     if (cuit !== undefined) actualizacion.cuit = cuit ? cuit.trim() : null;
     if (telefono !== undefined) actualizacion.telefono = telefono ? telefono.trim() : null;
     if (activo !== undefined) actualizacion.activo = Boolean(activo);
+
+    // Validar y normalizar jefesDeAreaAsignados para rol subgerente
+    if (jefesDeAreaAsignados !== undefined) {
+      const rolActual = rol !== undefined ? rol : usuarioExistente.rol;
+      if (rolActual === 'subgerente') {
+        if (!Array.isArray(jefesDeAreaAsignados)) {
+          return NextResponse.json(
+            { success: false, message: 'jefesDeAreaAsignados debe ser un array' },
+            { status: 400 }
+          );
+        }
+        const jdasCol = db.collection('jefes_de_area');
+        const jefesDeAreaNormalizados: Array<{ jdaId: number; nombre: string; email: string; fechaAsignacion: string }> = [];
+        for (const item of jefesDeAreaAsignados) {
+          const jdaId = Number(item.jdaId ?? item._id ?? item.id);
+          if (!Number.isInteger(jdaId) || jdaId < 1) continue;
+          const jda = await jdasCol.findOne({ _id: jdaId });
+          if (!jda) {
+            return NextResponse.json(
+              { success: false, message: `Jefe de área con ID ${jdaId} no encontrado` },
+              { status: 400 }
+            );
+          }
+          jefesDeAreaNormalizados.push({
+            jdaId,
+            nombre: String(jda.nombre || '').trim() + (jda.apellido ? ' ' + String(jda.apellido).trim() : ''),
+            email: jda.email || '',
+            fechaAsignacion: item.fechaAsignacion || new Date().toISOString()
+          });
+        }
+        actualizacion.jefesDeAreaAsignados = jefesDeAreaNormalizados;
+      } else {
+        actualizacion.jefesDeAreaAsignados = [];
+      }
+    }
 
     const result = await db.collection('usuarios_admin').updateOne(
       { _id: queryId },

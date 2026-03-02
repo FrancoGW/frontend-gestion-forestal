@@ -1,0 +1,10 @@
+[
+  {
+    "nombre": "Subgerente",
+    "apellido": "Sistema",
+    "email": "subgerente@sistema.com",
+    "password": "subgerente123",
+    "activo": true,
+    "telefono": ""
+  }
+]

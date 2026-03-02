@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/use-auth"
 
 interface ProtectedRouteProps {
   children: React.ReactNode
-  allowedRoles?: ("admin" | "supervisor" | "provider" | "jda")[]
+  allowedRoles?: ("admin" | "subgerente" | "supervisor" | "provider" | "jda")[]
   redirectTo?: string
 }
 
@@ -38,11 +38,17 @@ export function ProtectedRoute({ children, allowedRoles = [], redirectTo = "/log
         case "admin":
           router.push("/admin")
           break
+        case "subgerente":
+          router.push("/subgerente")
+          break
         case "supervisor":
           router.push("/supervisor")
           break
         case "provider":
           router.push("/proveedor")
+          break
+        case "jda":
+          router.push("/jda")
           break
         default:
           router.push("/login")

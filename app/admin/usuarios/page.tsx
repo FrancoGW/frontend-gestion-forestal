@@ -20,17 +20,27 @@ import {
 import { Plus, Edit, Trash2, Users, UserCheck, UserX, AlertTriangle, Database, HardDrive, RefreshCw, Key } from "lucide-react"
 import { usuariosAdminAPI } from "@/lib/api-client"
 import { useToast } from "@/hooks/use-toast"
+import type { RolGestionableAdmin } from "@/lib/constants/roles"
+import { ROL_LABEL } from "@/lib/constants/roles"
+
+interface JefeDeAreaAsignado {
+  jdaId: number
+  nombre: string
+  email?: string
+  fechaAsignacion?: string
+}
 
 interface Usuario {
   _id: number | string
   nombre: string
   apellido: string
   email: string
-  rol: "admin" | "supervisor" | "provider"
+  rol: RolGestionableAdmin
   activo: boolean
   fechaCreacion: string
   cuit?: string
   telefono?: string
+  jefesDeAreaAsignados?: JefeDeAreaAsignado[]
 }
 
 export default function UsuariosPage() {
@@ -52,11 +62,15 @@ export default function UsuariosPage() {
     apellido: "",
     email: "",
     password: "",
-    rol: "provider" as "admin" | "supervisor" | "provider",
+    rol: "provider" as RolGestionableAdmin,
     activo: true,
     cuit: "",
     telefono: "",
+    jefesDeAreaAsignados: [] as JefeDeAreaAsignado[],
   })
+
+  // Lista de jefes de área para asignar al subgerente
+  const [jefesDeAreaLista, setJefesDeAreaLista] = useState<Array<{ _id: number; nombre: string; apellido?: string; email: string }>>([])
 
   // Datos de fallback cuando el backend no está disponible
   const fallbackUsuarios: Usuario[] = [
@@ -195,9 +209,12 @@ export default function UsuariosPage() {
     try {
       if (backendAvailable) {
         // Solo incluir password si está presente
-        const dataToSend = { ...formData }
+        const dataToSend: Record<string, unknown> = { ...formData }
         if (!dataToSend.password) {
           delete dataToSend.password
+        }
+        if (formData.rol !== "subgerente") {
+          delete dataToSend.jefesDeAreaAsignados
         }
         const response = await usuariosAdminAPI.create(dataToSend)
         if (response && response.success) {
@@ -241,9 +258,12 @@ export default function UsuariosPage() {
     try {
       if (backendAvailable) {
         // Solo incluir password si está presente (para actualizar contraseña)
-        const dataToSend = { ...formData }
+        const dataToSend: Record<string, unknown> = { ...formData }
         if (!dataToSend.password) {
           delete dataToSend.password
+        }
+        if (formData.rol !== "subgerente") {
+          delete dataToSend.jefesDeAreaAsignados
         }
         const response = await usuariosAdminAPI.update(String(editingUser._id), dataToSend)
         if (response && response.success) {
@@ -322,6 +342,7 @@ export default function UsuariosPage() {
       activo: true,
       cuit: "",
       telefono: "",
+      jefesDeAreaAsignados: [],
     })
   }
 
@@ -364,13 +385,34 @@ export default function UsuariosPage() {
       nombre: usuario.nombre,
       apellido: usuario.apellido,
       email: usuario.email,
-      password: "", // No mostrar contraseña existente
+      password: "",
       rol: usuario.rol,
       activo: usuario.activo,
       cuit: usuario.cuit || "",
       telefono: usuario.telefono || "",
+      jefesDeAreaAsignados: usuario.jefesDeAreaAsignados || [],
     })
     setIsDialogOpen(true)
+  }
+
+  const toggleJdaAsignado = (jda: { _id: number; nombre: string; apellido?: string; email: string }) => {
+    const nombreCompleto = [jda.nombre, jda.apellido].filter(Boolean).join(" ").trim() || jda.nombre
+    const asignados = formData.jefesDeAreaAsignados || []
+    const yaAsignado = asignados.some((a) => a.jdaId === jda._id)
+    if (yaAsignado) {
+      setFormData({
+        ...formData,
+        jefesDeAreaAsignados: asignados.filter((a) => a.jdaId !== jda._id),
+      })
+    } else {
+      setFormData({
+        ...formData,
+        jefesDeAreaAsignados: [
+          ...asignados,
+          { jdaId: jda._id, nombre: nombreCompleto, email: jda.email, fechaAsignacion: new Date().toISOString() },
+        ],
+      })
+    }
   }
 
   // Filtrar usuarios
@@ -387,11 +429,34 @@ export default function UsuariosPage() {
   const stats = {
     total: usuarios.length,
     admins: usuarios.filter((u) => u.rol === "admin").length,
+    subgerentes: usuarios.filter((u) => u.rol === "subgerente").length,
     supervisors: usuarios.filter((u) => u.rol === "supervisor").length,
     providers: usuarios.filter((u) => u.rol === "provider").length,
     active: usuarios.filter((u) => u.activo).length,
     inactive: usuarios.filter((u) => !u.activo).length,
   }
+
+  // Cargar lista de jefes de área para asignar al subgerente
+  useEffect(() => {
+    const loadJefesDeArea = async () => {
+      try {
+        const res = await fetch("/api/jefes_de_area")
+        const data = await res.json()
+        const list = data?.data ?? (Array.isArray(data) ? data : [])
+        setJefesDeAreaLista(
+          list.map((j: any) => ({
+            _id: j._id,
+            nombre: j.nombre || "",
+            apellido: j.apellido || "",
+            email: j.email || "",
+          }))
+        )
+      } catch (e) {
+        console.error("Error al cargar jefes de área:", e)
+      }
+    }
+    loadJefesDeArea()
+  }, [])
 
   useEffect(() => {
     loadUsuarios()
@@ -494,14 +559,15 @@ export default function UsuariosPage() {
               </div>
               <div>
                 <Label htmlFor="rol">Rol</Label>
-                <Select value={formData.rol} onValueChange={(value: any) => setFormData({ ...formData, rol: value })}>
+                <Select value={formData.rol} onValueChange={(value: RolGestionableAdmin) => setFormData({ ...formData, rol: value })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="admin">Administrador</SelectItem>
-                    <SelectItem value="supervisor">Supervisor</SelectItem>
-                    <SelectItem value="provider">Proveedor</SelectItem>
+                    <SelectItem value="admin">{ROL_LABEL.admin}</SelectItem>
+                    <SelectItem value="subgerente">{ROL_LABEL.subgerente}</SelectItem>
+                    <SelectItem value="supervisor">{ROL_LABEL.supervisor}</SelectItem>
+                    <SelectItem value="provider">{ROL_LABEL.provider}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -524,6 +590,41 @@ export default function UsuariosPage() {
                       onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
                       placeholder="11-1234-5678"
                     />
+                  </div>
+                </div>
+              )}
+              {formData.rol === "subgerente" && (
+                <div>
+                  <Label>Jefes de área a cargo</Label>
+                  <p className="text-xs text-gray-500 mb-2">
+                    El subgerente verá en su panel todo lo que hacen estos JDAs y sus supervisores y proveedores.
+                  </p>
+                  <div className="border rounded-md p-3 max-h-48 overflow-y-auto space-y-2">
+                    {jefesDeAreaLista.length === 0 ? (
+                      <p className="text-sm text-gray-500">No hay jefes de área cargados. Cargalos desde Jefes de Área.</p>
+                    ) : (
+                      jefesDeAreaLista.map((jda) => {
+                        const nombreCompleto = [jda.nombre, jda.apellido].filter(Boolean).join(" ").trim() || jda.nombre
+                        const asignado = (formData.jefesDeAreaAsignados || []).some((a) => a.jdaId === jda._id)
+                        return (
+                          <label
+                            key={jda._id}
+                            className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={asignado}
+                              onChange={() => toggleJdaAsignado(jda)}
+                              className="rounded border-gray-300"
+                            />
+                            <span className="text-sm">
+                              {nombreCompleto}
+                              {jda.email && <span className="text-gray-500"> ({jda.email})</span>}
+                            </span>
+                          </label>
+                        )
+                      })
+                    )}
                   </div>
                 </div>
               )}
@@ -592,7 +693,7 @@ export default function UsuariosPage() {
       )}
 
       {/* Estadísticas */}
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-7 gap-4">
         <Card>
           <CardContent className="p-4 text-center">
             <Users className="w-8 h-8 mx-auto mb-2 text-blue-600" />
@@ -604,6 +705,12 @@ export default function UsuariosPage() {
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-purple-600">{stats.admins}</div>
             <div className="text-sm text-gray-600">Admins</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-teal-600">{stats.subgerentes}</div>
+            <div className="text-sm text-gray-600">Subgerentes</div>
           </CardContent>
         </Card>
         <Card>
@@ -658,9 +765,10 @@ export default function UsuariosPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="admin">Administrador</SelectItem>
-                  <SelectItem value="supervisor">Supervisor</SelectItem>
-                  <SelectItem value="provider">Proveedor</SelectItem>
+                  <SelectItem value="admin">{ROL_LABEL.admin}</SelectItem>
+                  <SelectItem value="subgerente">{ROL_LABEL.subgerente}</SelectItem>
+                  <SelectItem value="supervisor">{ROL_LABEL.supervisor}</SelectItem>
+                  <SelectItem value="provider">{ROL_LABEL.provider}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -717,14 +825,16 @@ export default function UsuariosPage() {
                   <TableCell>
                     <Badge
                       variant={
-                        usuario.rol === "admin" ? "destructive" : usuario.rol === "supervisor" ? "default" : "secondary"
+                        usuario.rol === "admin"
+                          ? "destructive"
+                          : usuario.rol === "subgerente"
+                            ? "default"
+                            : usuario.rol === "supervisor"
+                              ? "default"
+                              : "secondary"
                       }
                     >
-                      {usuario.rol === "admin"
-                        ? "Administrador"
-                        : usuario.rol === "supervisor"
-                          ? "Supervisor"
-                          : "Proveedor"}
+                      {ROL_LABEL[usuario.rol]}
                     </Badge>
                   </TableCell>
                   <TableCell>

@@ -3,18 +3,28 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { usuariosAdminAPI, empresasAPI } from "@/lib/api-client"
+import type { UserRol } from "@/lib/constants/roles"
+
+export interface JefeDeAreaAsignado {
+  jdaId: number
+  nombre: string
+  email?: string
+  fechaAsignacion?: string
+}
 
 interface User {
   id: string
   nombre: string
   apellido?: string
   email: string
-  rol: "admin" | "supervisor" | "provider" | "jda"
+  rol: UserRol
   activo: boolean
   providerId?: number
   supervisorId?: number
   cuit?: string
   telefono?: string
+  /** Solo para rol subgerente: JDAs que tiene a cargo (desde admin) */
+  jefesDeAreaAsignados?: JefeDeAreaAsignado[]
 }
 
 interface AuthState {
@@ -157,6 +167,7 @@ export function useAuth() {
             activo: dbUser.activo,
             cuit: dbUser.cuit,
             telefono: dbUser.telefono,
+            jefesDeAreaAsignados: dbUser.jefesDeAreaAsignados,
           }
 
           // IDs numéricos GIS: supervisores usan gisSupervisorId, proveedores idempresa

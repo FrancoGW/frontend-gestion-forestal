@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDB } from '@/lib/mongodb';
+import { ROLES_GESTIONABLES_ADMIN, isRolGestionableAdmin } from '@/lib/constants/roles';
 
 export async function GET(
   request: NextRequest,
@@ -8,14 +9,12 @@ export async function GET(
   try {
     const db = await getDB();
     const rol = params.rol;
-    
-    const rolesValidos = ['admin', 'supervisor', 'provider'];
-    
-    if (!rolesValidos.includes(rol)) {
+
+    if (!isRolGestionableAdmin(rol)) {
       return NextResponse.json(
         {
           success: false,
-          message: 'Rol inválido. Debe ser uno de: ' + rolesValidos.join(', ')
+          message: 'Rol inválido. Debe ser uno de: ' + ROLES_GESTIONABLES_ADMIN.join(', ')
         },
         { status: 400 }
       );

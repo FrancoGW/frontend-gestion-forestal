@@ -16,7 +16,7 @@ export function middleware(request: NextRequest) {
   }
 
   // Rutas privadas que requieren autenticación
-  const privateRoutes = ["/admin", "/supervisor", "/proveedor"]
+  const privateRoutes = ["/admin", "/subgerente", "/supervisor", "/proveedor", "/jda"]
   const isPrivateRoute = privateRoutes.some(route => path.startsWith(route))
 
   if (isPrivateRoute) {

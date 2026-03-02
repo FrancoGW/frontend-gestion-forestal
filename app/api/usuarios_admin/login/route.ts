@@ -44,6 +44,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Registrar acceso en login_logs (para control de ingresos de JDAs, etc.)
+    try {
+      await db.collection('login_logs').insertOne({
+        email: usuario.email,
+        rol: usuario.rol,
+        fecha: new Date(),
+      });
+    } catch (logErr) {
+      console.warn('Error al registrar login_log (no bloquea login):', logErr);
+    }
+
     // No devolver la contraseña en la respuesta
     const { password: _, ...usuarioSinPassword } = usuario;
 

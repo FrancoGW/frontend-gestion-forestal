@@ -39,6 +39,9 @@ export function LoginForm() {
           case "admin":
             router.push("/admin")
             break
+          case "subgerente":
+            router.push("/subgerente")
+            break
           case "supervisor":
             router.push("/supervisor")
             break
