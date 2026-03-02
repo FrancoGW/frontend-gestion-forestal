@@ -27,11 +27,12 @@ export default function SubgerenteAvancesPage() {
   const [jdaSeleccionado, setJdaSeleccionado] = useState<string>("all")
   const [supervisorSeleccionado, setSupervisorSeleccionado] = useState<string>("all")
   const [proveedorSeleccionado, setProveedorSeleccionado] = useState<string>("all")
+  const [actividadSeleccionada, setActividadSeleccionada] = useState<string>("all")
   const [paginaActual, setPaginaActual] = useState(1)
 
   useEffect(() => {
     setPaginaActual(1)
-  }, [fechaDesde, fechaHasta, jdaSeleccionado, supervisorSeleccionado, proveedorSeleccionado])
+  }, [fechaDesde, fechaHasta, jdaSeleccionado, supervisorSeleccionado, proveedorSeleccionado, actividadSeleccionada])
 
   useEffect(() => {
     if (jdaSeleccionado !== "all") setSupervisorSeleccionado("all")
@@ -96,11 +97,28 @@ export default function SubgerenteAvancesPage() {
     return Array.from(seen.values()).sort((a, b) => a.nombre.localeCompare(b.nombre))
   }, [avancesPorPeriodoYJerarquia])
 
+  const actividadesDisponibles = useMemo(() => {
+    const set = new Set<string>()
+    avancesPorPeriodoYJerarquia.forEach((av) => {
+      const a = (av.actividad || "").trim()
+      if (a) set.add(a)
+    })
+    return Array.from(set).sort((a, b) => a.localeCompare(b))
+  }, [avancesPorPeriodoYJerarquia])
+
   const avancesFiltrados = useMemo(() => {
-    if (proveedorSeleccionado === "all") return avancesPorPeriodoYJerarquia
-    const pid = Number(proveedorSeleccionado)
-    return avancesPorPeriodoYJerarquia.filter((av) => Number(av.proveedorId) === pid)
-  }, [avancesPorPeriodoYJerarquia, proveedorSeleccionado])
+    let list = avancesPorPeriodoYJerarquia
+    if (proveedorSeleccionado !== "all") {
+      const pid = Number(proveedorSeleccionado)
+      list = list.filter((av) => Number(av.proveedorId) === pid)
+    }
+    if (actividadSeleccionada !== "all") {
+      list = list.filter(
+        (av) => (av.actividad || "").trim().toLowerCase() === actividadSeleccionada.trim().toLowerCase()
+      )
+    }
+    return list
+  }, [avancesPorPeriodoYJerarquia, proveedorSeleccionado, actividadSeleccionada])
 
   const chartData = useMemo(() => {
     const map = new Map<string, number>()
@@ -365,7 +383,7 @@ export default function SubgerenteAvancesPage() {
         <CardHeader>
           <CardTitle>Filtros</CardTitle>
           <CardDescription>
-            Período, JDA, supervisor y proveedor en cascada. El resultado muestra las ha avanzadas.
+            Período, JDA, supervisor, proveedor y actividad. El resultado muestra las ha avanzadas.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -452,6 +470,26 @@ export default function SubgerenteAvancesPage() {
                   {proveedoresDisponibles.map((p) => (
                     <SelectItem key={p.id} value={String(p.id)}>
                       {p.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="actividad">Actividad</Label>
+              <Select value={actividadSeleccionada} onValueChange={setActividadSeleccionada}>
+                <SelectTrigger id="actividad" className="w-56">
+                  <SelectValue placeholder="Todas">
+                    {actividadSeleccionada === "all"
+                      ? "Todas las actividades"
+                      : actividadSeleccionada}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas las actividades</SelectItem>
+                  {actividadesDisponibles.map((act) => (
+                    <SelectItem key={act} value={act}>
+                      {act.length > 45 ? act.substring(0, 45) + "…" : act}
                     </SelectItem>
                   ))}
                 </SelectContent>
