@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertTriangle, ChevronLeft, ChevronRight, FileSpreadsheet, FileText } from "lucide-react"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from "recharts"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import * as XLSX from "xlsx"
 import jsPDF from "jspdf"
@@ -28,11 +28,12 @@ export default function SubgerenteAvancesPage() {
   const [supervisorSeleccionado, setSupervisorSeleccionado] = useState<string>("all")
   const [proveedorSeleccionado, setProveedorSeleccionado] = useState<string>("all")
   const [actividadSeleccionada, setActividadSeleccionada] = useState<string>("all")
+  const [predioSeleccionado, setPredioSeleccionado] = useState<string>("all")
   const [paginaActual, setPaginaActual] = useState(1)
 
   useEffect(() => {
     setPaginaActual(1)
-  }, [fechaDesde, fechaHasta, jdaSeleccionado, supervisorSeleccionado, proveedorSeleccionado, actividadSeleccionada])
+  }, [fechaDesde, fechaHasta, jdaSeleccionado, supervisorSeleccionado, proveedorSeleccionado, actividadSeleccionada, predioSeleccionado])
 
   useEffect(() => {
     if (jdaSeleccionado !== "all") setSupervisorSeleccionado("all")
@@ -106,6 +107,15 @@ export default function SubgerenteAvancesPage() {
     return Array.from(set).sort((a, b) => a.localeCompare(b))
   }, [avancesPorPeriodoYJerarquia])
 
+  const prediosDisponibles = useMemo(() => {
+    const set = new Set<string>()
+    avancesPorPeriodoYJerarquia.forEach((av) => {
+      const p = (av.predio || "").trim()
+      if (p) set.add(p)
+    })
+    return Array.from(set).sort((a, b) => a.localeCompare(b))
+  }, [avancesPorPeriodoYJerarquia])
+
   const avancesFiltrados = useMemo(() => {
     let list = avancesPorPeriodoYJerarquia
     if (proveedorSeleccionado !== "all") {
@@ -117,8 +127,13 @@ export default function SubgerenteAvancesPage() {
         (av) => (av.actividad || "").trim().toLowerCase() === actividadSeleccionada.trim().toLowerCase()
       )
     }
+    if (predioSeleccionado !== "all") {
+      list = list.filter(
+        (av) => (av.predio || "").trim().toLowerCase() === predioSeleccionado.trim().toLowerCase()
+      )
+    }
     return list
-  }, [avancesPorPeriodoYJerarquia, proveedorSeleccionado, actividadSeleccionada])
+  }, [avancesPorPeriodoYJerarquia, proveedorSeleccionado, actividadSeleccionada, predioSeleccionado])
 
   const chartData = useMemo(() => {
     const map = new Map<string, number>()
@@ -350,7 +365,7 @@ export default function SubgerenteAvancesPage() {
                 <BarChart
                   layout="vertical"
                   data={chartData}
-                  margin={{ top: 10, right: 30, left: 120, bottom: 10 }}
+                  margin={{ top: 10, right: 72, left: 120, bottom: 10 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                   <XAxis type="number" unit=" ha" tickFormatter={(v) => `${v}`} />
@@ -370,7 +385,14 @@ export default function SubgerenteAvancesPage() {
                   />
                 }
               />
-                  <Bar dataKey="ha" name="Ha" fill="hsl(173, 58%, 39%)" radius={[0, 4, 4, 0]} />
+                  <Bar dataKey="ha" name="Ha" fill="hsl(173, 58%, 39%)" radius={[0, 4, 4, 0]}>
+                  <LabelList
+                    dataKey="ha"
+                    position="right"
+                    formatter={(v: number) => `${Number(v).toLocaleString("es-AR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} ha`}
+                    style={{ fill: "#0f766e", fontWeight: 600, fontSize: 11 }}
+                  />
+                </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </ChartContainer>
@@ -383,7 +405,7 @@ export default function SubgerenteAvancesPage() {
         <CardHeader>
           <CardTitle>Filtros</CardTitle>
           <CardDescription>
-            Período, JDA, supervisor, proveedor y actividad. El resultado muestra las ha avanzadas.
+            Período, JDA, supervisor, proveedor, actividad y predio. El resultado muestra las ha avanzadas.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -490,6 +512,26 @@ export default function SubgerenteAvancesPage() {
                   {actividadesDisponibles.map((act) => (
                     <SelectItem key={act} value={act}>
                       {act.length > 45 ? act.substring(0, 45) + "…" : act}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="predio">Predio</Label>
+              <Select value={predioSeleccionado} onValueChange={setPredioSeleccionado}>
+                <SelectTrigger id="predio" className="w-56">
+                  <SelectValue placeholder="Todos">
+                    {predioSeleccionado === "all"
+                      ? "Todos los predios"
+                      : (predioSeleccionado.length > 40 ? predioSeleccionado.substring(0, 40) + "…" : predioSeleccionado)}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los predios</SelectItem>
+                  {prediosDisponibles.map((pred) => (
+                    <SelectItem key={pred} value={pred}>
+                      {pred.length > 50 ? pred.substring(0, 50) + "…" : pred}
                     </SelectItem>
                   ))}
                 </SelectContent>
