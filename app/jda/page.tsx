@@ -11,6 +11,8 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { FilterIcon, RefreshCw, AlertTriangle, FileSpreadsheet } from "lucide-react"
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from "recharts"
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { useJdaData } from "@/hooks/use-jda-data"
 import { useAuth } from "@/hooks/use-auth"
 import * as XLSX from "xlsx"
@@ -311,6 +313,24 @@ export default function JdaDashboard() {
     })
   }, [avances, fechaDesde, fechaHasta, proveedorSeleccionado, supervisorSeleccionado, rodalSeleccionado, ordenSeleccionada, estadoSeleccionado, actividadSeleccionada])
 
+  // Datos para el gráfico: ha por proveedor (avances del JDA, respetando filtros)
+  const chartDataJda = useMemo(() => {
+    const map = new Map<string, number>()
+    avancesFiltrados.forEach((av: any) => {
+      const nombre = av.proveedorNombre || av.proveedor || "Sin nombre"
+      const ha = Number(av.superficie) || 0
+      map.set(nombre, (map.get(nombre) ?? 0) + ha)
+    })
+    return Array.from(map.entries())
+      .map(([proveedor, ha]) => ({ proveedor, ha }))
+      .sort((a, b) => b.ha - a.ha)
+  }, [avancesFiltrados])
+
+  const totalHaChart = useMemo(
+    () => chartDataJda.reduce((sum, d) => sum + d.ha, 0),
+    [chartDataJda]
+  )
+
   // Agrupar avances por clave única (predio + orden + rodal + actividad)
   const datosTabla = useMemo(() => {
     const gruposPorClave = new Map<string, any[]>()
@@ -332,7 +352,6 @@ export default function JdaDashboard() {
       const tieneAvancesProgresivos = grupo.length > 1
 
       grupo.forEach((avance: any, index: number) => {
-        console.log('Avance dashboard:', avance);
         const estado = avance.estado || "Pendiente"
         const indicadorProgreso = `${index + 1}/${grupo.length}`
         
@@ -490,6 +509,62 @@ export default function JdaDashboard() {
           Actualizar
         </Button>
       </div>
+
+      {/* Gráfico Ha por proveedor */}
+      {chartDataJda.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Ha avanzadas por proveedor</CardTitle>
+            <CardDescription>
+              Total {totalHaChart.toLocaleString("es-AR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} ha en{" "}
+              {avancesFiltrados.length} registro(s). Los filtros de abajo aplican al gráfico y a la tabla.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer
+              config={{ ha: { label: "Hectáreas", color: "hsl(173, 58%, 39%)" } }}
+              className="h-[380px] w-full"
+            >
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  layout="vertical"
+                  data={chartDataJda}
+                  margin={{ top: 10, right: 72, left: 120, bottom: 10 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                  <XAxis type="number" tickFormatter={(v) => `${v}`} />
+                  <YAxis type="category" dataKey="proveedor" width={110} tick={{ fontSize: 12 }} />
+                  <ChartTooltip
+                    content={
+                      <ChartTooltipContent
+                        formatter={(value) => (
+                          <span>
+                            {Number(value).toLocaleString("es-AR", {
+                              minimumFractionDigits: 1,
+                              maximumFractionDigits: 1,
+                            })}{" "}
+                            ha
+                          </span>
+                        )}
+                      />
+                    }
+                  />
+                  <Bar dataKey="ha" name="Ha" fill="hsl(173, 58%, 39%)" radius={[0, 4, 4, 0]}>
+                    <LabelList
+                      dataKey="ha"
+                      position="right"
+                      formatter={(v: number) =>
+                        `${Number(v).toLocaleString("es-AR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} ha`
+                      }
+                      style={{ fill: "#0f766e", fontWeight: 600, fontSize: 11 }}
+                    />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Filtros */}
       <Card>
