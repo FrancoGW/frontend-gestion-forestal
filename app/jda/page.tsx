@@ -60,6 +60,7 @@ export default function JdaDashboard() {
   const [ordenSeleccionada, setOrdenSeleccionada] = useState("")
   const [estadoSeleccionado, setEstadoSeleccionado] = useState("")
   const [actividadSeleccionada, setActividadSeleccionada] = useState("")
+  const [predioSeleccionado, setPredioSeleccionado] = useState("")
 
   // Obtener todos los proveedores únicos de las órdenes (no solo los que están en el array proveedores)
   const todosLosProveedores = useMemo(() => {
@@ -179,6 +180,17 @@ export default function JdaDashboard() {
       }
     })
     return Array.from(actividadesSet).sort()
+  }, [avances])
+
+  // Obtener todos los predios únicos
+  const todosLosPredios = useMemo(() => {
+    const prediosSet = new Set<string>()
+    avances.forEach((avance) => {
+      if (avance.predio) {
+        prediosSet.add(String(avance.predio).trim())
+      }
+    })
+    return Array.from(prediosSet).filter(Boolean).sort()
   }, [avances])
 
   // Función para obtener el nombre del proveedor seleccionado
@@ -309,9 +321,14 @@ export default function JdaDashboard() {
         if (String(avance.actividad).toLowerCase() !== actividadSeleccionada.toLowerCase()) return false
       }
 
+      // Filtro por predio
+      if (predioSeleccionado && predioSeleccionado !== "all") {
+        if (String(avance.predio || "").trim() !== predioSeleccionado) return false
+      }
+
       return true
     })
-  }, [avances, fechaDesde, fechaHasta, proveedorSeleccionado, supervisorSeleccionado, rodalSeleccionado, ordenSeleccionada, estadoSeleccionado, actividadSeleccionada])
+  }, [avances, fechaDesde, fechaHasta, proveedorSeleccionado, supervisorSeleccionado, rodalSeleccionado, ordenSeleccionada, estadoSeleccionado, actividadSeleccionada, predioSeleccionado])
 
   // Datos para el gráfico: ha por proveedor (avances del JDA, respetando filtros)
   const chartDataJda = useMemo(() => {
@@ -576,7 +593,7 @@ export default function JdaDashboard() {
           <CardDescription>Selecciona los criterios para filtrar los datos</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-8 gap-4 items-end mb-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 items-end mb-4">
             <div className="space-y-2">
               <Label htmlFor="fecha-desde" className="text-sm font-medium bg-yellow-200 px-2 py-1 rounded">
                 Desde
@@ -605,7 +622,7 @@ export default function JdaDashboard() {
 
             <div className="space-y-2">
               <Label htmlFor="supervisor" className="text-sm font-medium bg-yellow-200 px-2 py-1 rounded">
-                SUPERVISOR
+                Supervisor
               </Label>
               <Select value={supervisorSeleccionado} onValueChange={setSupervisorSeleccionado}>
                 <SelectTrigger>
@@ -622,7 +639,7 @@ export default function JdaDashboard() {
 
             <div className="space-y-2">
               <Label htmlFor="proveedor" className="text-sm font-medium bg-yellow-200 px-2 py-1 rounded">
-                EMSEFOR
+                Emsefor
               </Label>
               <Select value={proveedorSeleccionado} onValueChange={setProveedorSeleccionado}>
                 <SelectTrigger>
@@ -638,8 +655,27 @@ export default function JdaDashboard() {
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="predio" className="text-sm font-medium bg-yellow-200 px-2 py-1 rounded">
+                Predio
+              </Label>
+              <Select value={predioSeleccionado} onValueChange={setPredioSeleccionado}>
+                <SelectTrigger>
+                  <SelectValue>{predioSeleccionado === "all" ? "Todos los predios" : predioSeleccionado || "Seleccionar predio"}</SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los predios</SelectItem>
+                  {todosLosPredios.map((predio) => (
+                    <SelectItem key={predio} value={predio}>
+                      {predio}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="rodal" className="text-sm font-medium bg-yellow-200 px-2 py-1 rounded">
-                RODAL
+                Rodal
               </Label>
               <Select value={rodalSeleccionado} onValueChange={setRodalSeleccionado}>
                 <SelectTrigger>
@@ -658,7 +694,7 @@ export default function JdaDashboard() {
 
             <div className="space-y-2">
               <Label htmlFor="orden" className="text-sm font-medium bg-yellow-200 px-2 py-1 rounded">
-                ORDEN
+                Orden
               </Label>
               <Select value={ordenSeleccionada} onValueChange={setOrdenSeleccionada}>
                 <SelectTrigger>
@@ -677,7 +713,7 @@ export default function JdaDashboard() {
 
             <div className="space-y-2">
               <Label htmlFor="estado" className="text-sm font-medium bg-yellow-200 px-2 py-1 rounded">
-                ESTADO
+                Estado
               </Label>
               <Select value={estadoSeleccionado} onValueChange={setEstadoSeleccionado}>
                 <SelectTrigger>
@@ -695,7 +731,7 @@ export default function JdaDashboard() {
 
             <div className="space-y-2">
               <Label htmlFor="actividad" className="text-sm font-medium bg-yellow-200 px-2 py-1 rounded">
-                ACTIVIDAD
+                Actividad
               </Label>
               <Select value={actividadSeleccionada} onValueChange={setActividadSeleccionada}>
                 <SelectTrigger>
@@ -724,6 +760,7 @@ export default function JdaDashboard() {
                 setOrdenSeleccionada("")
                 setEstadoSeleccionado("")
                 setActividadSeleccionada("")
+                setPredioSeleccionado("")
               }}
               variant="outline"
               size="sm"
