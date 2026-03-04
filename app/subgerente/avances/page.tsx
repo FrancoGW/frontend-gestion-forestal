@@ -138,12 +138,12 @@ export default function SubgerenteAvancesPage() {
   const chartData = useMemo(() => {
     const map = new Map<string, number>()
     avancesFiltrados.forEach((av) => {
-      const nombre = av.proveedorNombre || av.proveedor || "Sin nombre"
+      const nombre = (av.actividad || "").trim() || "Sin actividad"
       const ha = Number(av.superficie) || 0
       map.set(nombre, (map.get(nombre) ?? 0) + ha)
     })
     return Array.from(map.entries())
-      .map(([proveedor, ha]) => ({ proveedor, ha }))
+      .map(([actividad, ha]) => ({ actividad, ha }))
       .sort((a, b) => b.ha - a.ha)
   }, [avancesFiltrados])
 
@@ -338,14 +338,14 @@ export default function SubgerenteAvancesPage() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Avances</h1>
         <p className="text-gray-600 mt-1">
-          Hectáreas avanzadas por proveedor. Filtrá por período y proveedor.
+          Hectáreas avanzadas por actividad. Filtrá por período, proveedor y actividad.
         </p>
       </div>
 
       {/* Gráfico de barras horizontales */}
       <Card>
         <CardHeader>
-          <CardTitle>Ha avanzadas por proveedor</CardTitle>
+          <CardTitle>Ha avanzadas por actividad</CardTitle>
           <CardDescription>
             Total {totalHa.toLocaleString("es-AR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} ha en{" "}
             {avancesFiltrados.length} registro(s). Los filtros de abajo aplican al gráfico y a la tabla.
@@ -359,17 +359,18 @@ export default function SubgerenteAvancesPage() {
               config={{
                 ha: { label: "Hectáreas", color: "hsl(173, 58%, 39%)" },
               }}
-              className="h-[400px] w-full"
+              className="h-[520px] w-full"
             >
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   layout="vertical"
                   data={chartData}
-                  margin={{ top: 10, right: 72, left: 120, bottom: 10 }}
+                  margin={{ top: 16, right: 80, left: 220, bottom: 16 }}
+                  barCategoryGap="12%"
                 >
                   <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                   <XAxis type="number" unit=" ha" tickFormatter={(v) => `${v}`} />
-                  <YAxis type="category" dataKey="proveedor" width={110} tick={{ fontSize: 12 }} />
+                  <YAxis type="category" dataKey="actividad" width={200} tick={{ fontSize: 12 }} />
                   <ChartTooltip
                 content={
                   <ChartTooltipContent
