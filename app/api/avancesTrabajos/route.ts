@@ -32,6 +32,7 @@ export async function GET(request: NextRequest) {
       query.cuadrillaId = cuadrillaId
     }
 
+    // Sin .limit(): devolver todos los avances (incl. 2026) para vistas subgerente/JDA
     const cursor = collection.find(query).sort({ fecha: -1 })
     const items = await cursor.toArray()
 

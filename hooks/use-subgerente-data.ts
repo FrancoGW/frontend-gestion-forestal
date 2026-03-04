@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { useAuth } from "@/hooks/use-auth"
 import { apiClient } from "@/lib/api-client"
-import { workOrdersAPI, avancesTrabajoAPI } from "@/lib/api-client"
+import { workOrdersAPI, avancesTrabajoAPI, supervisorsAPI } from "@/lib/api-client"
 
 interface SupervisorData {
   id: string
@@ -180,7 +180,7 @@ export function useSubgerenteData() {
     }
   }
 
-  const loadOrdenes = async (supervisoresIds: number[]): Promise<OrdenData[]> => {
+  const loadOrdenes = async (supervisoresIds: number[], jdaIdsExtra: number[] = []): Promise<OrdenData[]> => {
     try {
       let pagina = 1
       let totalPaginas = 1
@@ -199,9 +199,11 @@ export function useSubgerenteData() {
         pagina++
       } while (pagina <= totalPaginas)
 
+      // Incluir órdenes de supervisores actuales Y de JDAs que antes eran supervisores
+      const idsPermitidos = new Set([...supervisoresIds, ...jdaIdsExtra])
       const ordenesFiltradas = todasLasOrdenes.filter((orden: any) => {
         const supervisorId = Number(orden.supervisor_id || orden.supervisorId || orden.usuario_id)
-        return supervisoresIds.includes(supervisorId)
+        return idsPermitidos.has(supervisorId)
       })
 
       const proveedoresData = await loadProveedores(supervisoresIds)
@@ -229,7 +231,11 @@ export function useSubgerenteData() {
     }
   }
 
-  const loadAvances = async (ordenesData: OrdenData[]): Promise<AvanceData[]> => {
+  const loadAvances = async (
+    ordenesData: OrdenData[],
+    supervisoresIds: number[],
+    jdaIdsNum: number[]
+  ): Promise<AvanceData[]> => {
     try {
       const response = await avancesTrabajoAPI.getAll()
       let avancesData: any[] = []
@@ -240,15 +246,22 @@ export function useSubgerenteData() {
       }
       const ordenIds = new Set(ordenesData.map((o) => o.id))
       const ordenMap = new Map(ordenesData.map((o) => [o.id, o]))
+      const setSupervisores = new Set(supervisoresIds)
+      const setJdas = new Set(jdaIdsNum)
 
       const avancesFiltrados = avancesData.filter((avance: any) => {
         const ordenId = Number(avance.ordenTrabajoId || avance.orden_id)
-        return ordenIds.has(ordenId)
+        const supervisorId = Number(avance.supervisorId ?? avance.supervisor_id ?? 0)
+        if (ordenIds.has(ordenId)) return true
+        if (supervisorId && setSupervisores.has(supervisorId)) return true
+        if (supervisorId && setJdas.has(supervisorId)) return true
+        return false
       })
 
       return avancesFiltrados.map((avance: any) => {
         const ordenId = Number(avance.ordenTrabajoId || avance.orden_id)
         const orden = ordenMap.get(ordenId)
+        const supervisorId = Number(avance.supervisorId ?? avance.supervisor_id ?? 0)
         return {
           _id: avance._id || avance.id,
           ordenTrabajoId: ordenId,
@@ -271,7 +284,7 @@ export function useSubgerenteData() {
           proveedor: avance.proveedor || orden?.proveedor || "",
           proveedorId: Number(avance.proveedorId || orden?.proveedorId || 0),
           proveedorNombre: avance.proveedorNombre || orden?.proveedor || "",
-          supervisorId: Number(avance.supervisorId || orden?.supervisor_id || 0),
+          supervisorId,
           supervisorNombre: avance.supervisorNombre || "",
           anioPlantacion: avance.anioPlantacion ? Number(avance.anioPlantacion) : undefined,
         }
@@ -304,12 +317,14 @@ export function useSubgerenteData() {
     setError(null)
 
     try {
-      const jdaIds = asignados.map((a) => a.jdaId).filter((id): id is number => Number.isInteger(id))
+      const jdaIds = asignados
+        .map((a) => (typeof a.jdaId === "number" ? a.jdaId : Number(a.jdaId)))
+        .filter((id) => !Number.isNaN(id) && id > 0)
       const jdas = await loadJdasCompletos(jdaIds)
       setJefesDeArea(jdas)
 
       const supervisoresIds: number[] = []
-      const supervisoresList: SupervisorData[] = []
+      let supervisoresList: SupervisorData[] = []
       jdas.forEach((jda) => {
         (jda.supervisoresAsignados || []).forEach((s: any) => {
           const sid = Number(s.supervisorId)
@@ -326,15 +341,71 @@ export function useSubgerenteData() {
           }
         })
       })
-      setSupervisores(supervisoresList)
+
+      // Buscar ex-supervisores promovidos a JDA: cruzar por email y nombre
+      // para incluir su antiguo supervisorId en el filtro de avances
+      try {
+        const todosSupervisores: any[] = await supervisorsAPI.getAll()
+        if (Array.isArray(todosSupervisores) && todosSupervisores.length > 0) {
+          // Normalizar: minúsculas sin espacios para comparar
+          const norm = (s?: string) => (s || "").toLowerCase().trim()
+          jdas.forEach((jda) => {
+            const jdaEmail = norm(jda.email)
+            const jdaNombre = norm(jda.nombre)
+            todosSupervisores.forEach((sup: any) => {
+              const supId = Number(sup._id ?? sup.id ?? 0)
+              if (!supId || supervisoresIds.includes(supId)) return
+              const supEmail = norm(sup.email)
+              const supNombre = norm(sup.nombre)
+              // Coincidencia por email (más fiable) o por nombre completo
+              if (
+                (jdaEmail && supEmail && jdaEmail === supEmail) ||
+                (jdaNombre && supNombre && (jdaNombre === supNombre || jdaNombre.startsWith(supNombre) || supNombre.startsWith(jdaNombre)))
+              ) {
+                supervisoresIds.push(supId)
+                if (!supervisoresList.find((s) => s.id === String(supId))) {
+                  supervisoresList.push({
+                    id: String(supId),
+                    nombre: jda.nombre,
+                    email: jda.email,
+                    telefono: "",
+                    jdaNombre: jda.nombre,
+                  })
+                }
+              }
+            })
+          })
+        }
+      } catch (_e) {
+        // Si falla la carga de supervisores extra, continuamos sin ellos
+      }
 
       const proveedoresData = await loadProveedores(supervisoresIds)
       setProveedores(proveedoresData)
 
-      const ordenesData = await loadOrdenes(supervisoresIds)
+      const ordenesData = await loadOrdenes(supervisoresIds, jdaIds)
       setOrdenes(ordenesData)
 
-      const avancesData = await loadAvances(ordenesData)
+      const avancesData = await loadAvances(ordenesData, supervisoresIds, jdaIds)
+
+      const idsEnLista = new Set(supervisoresList.map((s) => Number(s.id)))
+      const agregados = new Map<number, string>()
+      avancesData.forEach((av) => {
+        const sid = Number(av.supervisorId)
+        if (sid && !idsEnLista.has(sid) && !agregados.has(sid)) {
+          const nombre =
+            av.supervisorNombre ||
+            jdas.find((j) => Number(j.id) === sid)?.nombre ||
+            asignados.find((a) => Number(a.jdaId) === sid)?.nombre ||
+            `Supervisor ${sid}`
+          agregados.set(sid, nombre)
+        }
+      })
+      agregados.forEach((nombre, sid) => {
+        supervisoresList = [...supervisoresList, { id: String(sid), nombre, email: "", telefono: "" }]
+      })
+
+      setSupervisores(supervisoresList)
       setAvances(avancesData)
     } catch (err: any) {
       console.error("Error al cargar datos del subgerente:", err)

@@ -132,7 +132,12 @@ export default function SubgerenteAvancesPage() {
         (av) => (av.predio || "").trim().toLowerCase() === predioSeleccionado.trim().toLowerCase()
       )
     }
-    return list
+    // Ordenar por fecha descendente (más reciente primero)
+    return [...list].sort((a, b) => {
+      const da = new Date(a.fecha || 0).getTime()
+      const db2 = new Date(b.fecha || 0).getTime()
+      return db2 - da
+    })
   }, [avancesPorPeriodoYJerarquia, proveedorSeleccionado, actividadSeleccionada, predioSeleccionado])
 
   const chartData = useMemo(() => {
