@@ -126,7 +126,7 @@ export default function CuadrillasPage() {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Cuadrillas</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Cuadrillas</h1>
         <Button variant="outline" size="sm" onClick={handleReload} disabled={isReloading || isLoading}>
           <RefreshCw className={`h-4 w-4 mr-2 ${isReloading ? "animate-spin" : ""}`} />
           Actualizar

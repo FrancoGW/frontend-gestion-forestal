@@ -107,7 +107,7 @@ export default function ActividadesPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Actividades</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Actividades</h1>
           <p className="text-muted-foreground">Gestiona las actividades del sistema</p>
         </div>
 
@@ -138,7 +138,7 @@ export default function ActividadesPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Actividades</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Actividades</h1>
           <p className="text-muted-foreground">Gestiona las actividades del sistema</p>
         </div>
 
@@ -155,7 +155,7 @@ export default function ActividadesPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Actividades</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Actividades</h1>
           <p className="text-muted-foreground">Gestiona las actividades del sistema</p>
         </div>
 

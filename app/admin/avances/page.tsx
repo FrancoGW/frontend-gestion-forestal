@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { Search, Building2, ArrowRight, AlertCircle, Download, FileSpreadsheet, Loader2 } from "lucide-react"
+import { Search, Building2, ArrowRight, AlertCircle, Download, FileSpreadsheet } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
@@ -1074,192 +1074,158 @@ export default function AvancesPage() {
     }
   }
 
+  if (isLoading) {
+    return (
+      <div className="space-y-5">
+        <div className="flex justify-between items-center">
+          <div className="space-y-1.5">
+            <Skeleton className="h-7 w-52" />
+            <Skeleton className="h-4 w-36" />
+          </div>
+          <div className="flex gap-2">
+            <Skeleton className="h-9 w-36" />
+            <Skeleton className="h-9 w-32" />
+            <Skeleton className="h-9 w-32" />
+          </div>
+        </div>
+        <Skeleton className="h-9 w-72" />
+        <div className="border rounded-sm overflow-hidden">
+          <div className="flex gap-6 px-4 py-3 border-b bg-muted/40">
+            {["Proveedor", "Órdenes", "Completadas", "En progreso", "Progreso", ""].map((h) => (
+              <Skeleton key={h} className="h-3.5 w-20" />
+            ))}
+          </div>
+          {Array.from({ length: 10 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-6 px-4 py-3.5 border-b last:border-b-0">
+              <Skeleton className="h-4 w-48" />
+              <Skeleton className="h-4 w-8 ml-auto" />
+              <Skeleton className="h-4 w-8" />
+              <Skeleton className="h-4 w-8" />
+              <Skeleton className="h-2 w-28 rounded-sm" />
+              <Skeleton className="h-8 w-24" />
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
   if (error) {
     return (
-      <div className="p-6 bg-red-50 border border-red-200 rounded-lg">
-        <h2 className="text-lg font-semibold text-red-700 mb-2">Error al cargar los datos</h2>
-        <p className="text-red-600">{error}</p>
-        <p className="mt-4 text-sm text-gray-600">
-          Intente recargar la página. Si el problema persiste, contacte al administrador del sistema.
-        </p>
-        <div className="flex gap-2 mt-4">
-          <Button variant="outline" onClick={() => window.location.reload()}>
-            Recargar página
-          </Button>
-          <Button variant="outline" onClick={clearCache}>
-            Limpiar cache y recargar
-          </Button>
+      <div className="space-y-4">
+        <h1 className="text-2xl font-semibold tracking-tight">Avances por Proveedor</h1>
+        <div className="border border-red-200 bg-red-50 rounded-sm p-4">
+          <p className="text-sm font-medium text-red-700 mb-1">Error al cargar los datos</p>
+          <p className="text-sm text-red-600">{error}</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => window.location.reload()}>Recargar página</Button>
+          <Button variant="outline" size="sm" onClick={clearCache}>Limpiar caché</Button>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold tracking-tight">Avances por Proveedor</h1>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setShowExportDialog(true)} className="h-9">
+    <div className="space-y-5">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Avances por Proveedor</h1>
+          <p className="text-sm text-muted-foreground">{filteredProveedores.length} proveedor{filteredProveedores.length !== 1 ? "es" : ""}</p>
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="outline" size="sm" onClick={() => setShowExportDialog(true)}>
             <FileSpreadsheet className="mr-2 h-4 w-4" />
             Exportar Filtrado
           </Button>
-          <Button variant="outline" onClick={exportToExcelHierarchical} disabled={isExporting} className="h-9">
+          <Button variant="outline" size="sm" onClick={exportToExcelHierarchical} disabled={isExporting}>
             <FileSpreadsheet className="mr-2 h-4 w-4" />
             {isExporting ? "Exportando..." : "Exportar Todo"}
           </Button>
-          <Button variant="outline" onClick={exportRawData} className="h-9">
+          <Button variant="outline" size="sm" onClick={exportRawData}>
             <Download className="mr-2 h-4 w-4" />
             Exportar JSON
           </Button>
         </div>
       </div>
 
-      <div className="flex items-center space-x-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Buscar proveedor..."
-            className="pl-8"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
+      <div className="relative w-72">
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+        <Input
+          type="search"
+          placeholder="Buscar proveedor..."
+          className="pl-8 h-9 text-sm rounded-sm"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
       </div>
 
-      {isLoading ? (
-        <div className="space-y-4">
-          {loadingProgress.total > 0 && (
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4">
-                  <Loader2 className="h-6 w-6 animate-spin" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">{loadingProgress.phase}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {loadingProgress.current} de {loadingProgress.total}
-                    </p>
-                    <Progress value={(loadingProgress.current / loadingProgress.total) * 100} className="mt-2" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          <Card>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Proveedor</TableHead>
-                    <TableHead className="w-[100px] text-center">Órdenes</TableHead>
-                    <TableHead className="w-[100px] text-center">Completadas</TableHead>
-                    <TableHead className="w-[100px] text-center">En progreso</TableHead>
-                    <TableHead className="w-[150px]">Progreso</TableHead>
-                    <TableHead className="w-[100px] text-right">Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {[1, 2, 3, 4, 5, 6].map((i) => (
-                    <TableRow key={i}>
-                      <TableCell>
-                        <Skeleton className="h-5 w-[200px]" />
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Skeleton className="h-5 w-[30px] mx-auto" />
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Skeleton className="h-5 w-[30px] mx-auto" />
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Skeleton className="h-5 w-[30px] mx-auto" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-5 w-full" />
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Skeleton className="h-9 w-[100px] ml-auto" />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </div>
-      ) : filteredProveedores.length === 0 ? (
-        <div className="text-center py-10">
-          <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground" />
-          <h3 className="mt-4 text-lg font-semibold">No se encontraron proveedores</h3>
-          <p className="text-muted-foreground">No hay proveedores con órdenes de trabajo asignadas.</p>
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg text-left max-w-2xl mx-auto">
-            <h4 className="font-medium mb-2">Información de depuración:</h4>
-            <p className="text-sm text-gray-600 mb-2">
-              Se encontraron {proveedores.length} proveedores en total, pero ninguno tiene órdenes asignadas.
-            </p>
-            <p className="text-sm text-gray-600">
-              Revise la consola del navegador para ver los logs detallados de proveedores y órdenes.
-            </p>
-            <Button variant="outline" className="mt-4" onClick={exportRawData}>
-              <Download className="mr-2 h-4 w-4" />
-              Exportar datos para análisis
-            </Button>
-          </div>
-        </div>
-      ) : (
+      {filteredProveedores.length === 0 ? (
         <Card>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Proveedor</TableHead>
-                  <TableHead className="w-[100px] text-center">Órdenes</TableHead>
-                  <TableHead className="w-[100px] text-center">Completadas</TableHead>
-                  <TableHead className="w-[100px] text-center">En progreso</TableHead>
-                  <TableHead className="w-[150px]">Progreso</TableHead>
-                  <TableHead className="w-[100px] text-right">Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredProveedores.map((proveedor) => (
-                  <TableRow key={proveedor.id}>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        <Building2 className="h-4 w-4 text-muted-foreground" />
-                        {proveedor.nombre}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-center">{proveedor.ordenesTotal}</TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant="outline" className="bg-green-50">
-                        {proveedor.ordenesCompletadas}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant="outline" className="bg-amber-50">
-                        {proveedor.ordenesEnProgreso}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Progress value={proveedor.progresoTotal} className="h-2 flex-1" />
-                        <span className="text-sm font-medium w-9 text-right">{proveedor.progresoTotal}%</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Link href={`/admin/avances/proveedor/${proveedor.id}`} passHref>
-                        <Button size="sm" className="h-9">
-                          Ver Órdenes
-                          <ArrowRight className="ml-2 h-4 w-4" />
-                        </Button>
-                      </Link>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+          <CardContent className="flex flex-col items-center justify-center py-14">
+            <AlertCircle className="h-9 w-9 text-muted-foreground mb-3" />
+            <p className="text-sm font-medium">No se encontraron proveedores</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              {searchTerm ? `Sin resultados para "${searchTerm}"` : "No hay proveedores con órdenes asignadas."}
+            </p>
           </CardContent>
         </Card>
+      ) : (
+        <div className="border rounded-sm overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/40 hover:bg-muted/40">
+                <TableHead className="text-xs font-medium">Proveedor</TableHead>
+                <TableHead className="text-xs font-medium w-24 text-center">Órdenes</TableHead>
+                <TableHead className="text-xs font-medium w-28 text-center">Completadas</TableHead>
+                <TableHead className="text-xs font-medium w-28 text-center">En progreso</TableHead>
+                <TableHead className="text-xs font-medium w-44">Progreso</TableHead>
+                <TableHead className="text-xs font-medium w-28 text-right">Acciones</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredProveedores.map((proveedor) => (
+                <TableRow key={proveedor.id} className="text-sm">
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                      <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      {proveedor.nombre}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-center tabular-nums text-muted-foreground">
+                    {proveedor.ordenesTotal}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-0.5 rounded-sm text-xs bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      {proveedor.ordenesCompletadas}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-0.5 rounded-sm text-xs bg-amber-50 text-amber-700 border border-amber-200">
+                      {proveedor.ordenesEnProgreso}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Progress value={proveedor.progresoTotal} className="h-1.5 flex-1" />
+                      <span className="text-xs tabular-nums text-muted-foreground w-8 text-right">
+                        {proveedor.progresoTotal}%
+                      </span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Link href={`/admin/avances/proveedor/${proveedor.id}`} passHref>
+                      <Button variant="ghost" size="sm" className="h-7 text-xs rounded-sm gap-1">
+                        Ver Órdenes
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </Button>
+                    </Link>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       )}
       {/* Diálogo de filtros de exportación */}
       {showExportDialog && (

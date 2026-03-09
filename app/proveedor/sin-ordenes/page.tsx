@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast"
 import { FileX, Plus } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
 import { avancesTrabajoAPI, cuadrillasAPI } from "@/lib/api-client"
 import { Checkbox } from "@/components/ui/checkbox"
 import { formatDateArgentina } from "@/utils/date-utils"
@@ -382,58 +383,6 @@ export default function SinOrdenesPage() {
             Registra actividades que no requieren orden de trabajo asociada
           </p>
         </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Avances registrados desde el 15/10/2025</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {loadingAvances ? (
-              <p className="text-muted-foreground text-sm">Cargando avances...</p>
-            ) : avancesRecientes.length === 0 ? (
-              <p className="text-muted-foreground text-sm">
-                No hay avances registrados desde esa fecha.
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {avancesRecientes.map((avance) => {
-                  const key = avance._id || avance.id || avance.ordenTrabajoId || `${avance.fecha}-${avance.actividad}`
-                  return (
-                    <div
-                      key={key}
-                      className="rounded-lg border p-4 grid gap-2 md:grid-cols-4 md:items-center"
-                    >
-                      <div>
-                        <p className="text-sm font-semibold">Fecha</p>
-                        <p className="text-sm text-muted-foreground">
-                          {avance.fecha ? formatDateArgentina(avance.fecha) : "-"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold">Actividad</p>
-                        <p className="text-sm text-muted-foreground">
-                          {avance.actividad || "Sin actividad"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold">Ubicación</p>
-                        <p className="text-sm text-muted-foreground">
-                          {avance.predio || avance.ubicacion || "Sin datos"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold">Estado</p>
-                        <p className="text-sm text-muted-foreground">
-                          {avance.estado || "Sin estado"}
-                        </p>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
 
         <Card>
           <CardHeader>
@@ -1124,6 +1073,79 @@ export default function SinOrdenesPage() {
                 </form>
               </DialogContent>
             </Dialog>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Avances registrados desde el 15/10/2025</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {loadingAvances ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="rounded-lg border p-4 grid gap-2 md:grid-cols-4 md:items-center">
+                    <div className="space-y-2">
+                      <Skeleton className="h-3.5 w-12" />
+                      <Skeleton className="h-4 w-24" />
+                    </div>
+                    <div className="space-y-2">
+                      <Skeleton className="h-3.5 w-16" />
+                      <Skeleton className="h-4 w-36" />
+                    </div>
+                    <div className="space-y-2">
+                      <Skeleton className="h-3.5 w-16" />
+                      <Skeleton className="h-4 w-28" />
+                    </div>
+                    <div className="space-y-2">
+                      <Skeleton className="h-3.5 w-12" />
+                      <Skeleton className="h-4 w-20" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : avancesRecientes.length === 0 ? (
+              <p className="text-muted-foreground text-sm">
+                No hay avances registrados desde esa fecha.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {avancesRecientes.map((avance) => {
+                  const key = avance._id || avance.id || avance.ordenTrabajoId || `${avance.fecha}-${avance.actividad}`
+                  return (
+                    <div
+                      key={key}
+                      className="rounded-lg border p-4 grid gap-2 md:grid-cols-4 md:items-center"
+                    >
+                      <div>
+                        <p className="text-sm font-semibold">Fecha</p>
+                        <p className="text-sm text-muted-foreground">
+                          {avance.fecha ? formatDateArgentina(avance.fecha) : "-"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold">Actividad</p>
+                        <p className="text-sm text-muted-foreground">
+                          {avance.actividad || "Sin actividad"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold">Ubicación</p>
+                        <p className="text-sm text-muted-foreground">
+                          {avance.predio || avance.ubicacion || "Sin datos"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold">Estado</p>
+                        <p className="text-sm text-muted-foreground">
+                          {avance.estado || "Sin estado"}
+                        </p>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

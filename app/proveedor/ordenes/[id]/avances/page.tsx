@@ -230,8 +230,10 @@ export default function ProviderOrderAvancesPage({ params }: { params: { id: str
       </div>
 
       {isLoadingProgress ? (
-        <div className="flex justify-center p-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        <div className="space-y-3 mt-4">
+          {[...Array(3)].map((_, i) => (
+            <Skeleton key={i} className="h-14 w-full" />
+          ))}
         </div>
       ) : orderProgress.length > 0 ? (
         <WorkProgressTable avances={orderProgress} totalHectareas={workOrder.totalHectareas} />

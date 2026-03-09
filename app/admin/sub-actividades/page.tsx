@@ -166,7 +166,7 @@ export default function SubActividadesPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Sub Actividades</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Sub Actividades</h1>
           <p className="text-muted-foreground">Gestiona las sub actividades para control de malezas</p>
         </div>
         <div className="space-y-4">
@@ -190,7 +190,7 @@ export default function SubActividadesPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Sub Actividades</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Sub Actividades</h1>
           <p className="text-muted-foreground">
             Gestiona las sub actividades para control de malezas ({filteredSubActividades.length} total)
           </p>

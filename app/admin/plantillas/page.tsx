@@ -25,7 +25,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { ChevronDown, Edit, Trash2, RefreshCw, Plus, X, Save } from "lucide-react"
+import { ChevronDown, Edit, Trash2, RefreshCw, Plus, X, Save, Scissors, TreePine, Sprout, Axe, Wrench, Leaf, Bug, FileText, Lock } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
 import { useActivityTemplates, type ActivityTemplate, type ActivityField } from "@/hooks/use-activity-templates"
 import { useToast } from "@/hooks/use-toast"
 
@@ -56,16 +57,14 @@ export default function PlantillasPage() {
 
   const getTemplateIcon = (templateName: string) => {
     const name = templateName.toLowerCase()
-    if (name.includes("poda")) return "✂️"
-    if (name.includes("raleo")) return "🌲"
-    if (name.includes("plantacion")) return "🌱"
-    if (name.includes("cosecha")) return "🪓"
-    if (name.includes("mantenimiento")) return "🔧"
-    if (name.includes("replantacion")) return "🌿"
-    if (name.includes("hormigas")) return "🐜"
-    if (name.includes("malezas")) return "🌿"
-    if (name.includes("rebrote")) return "🌿"
-    return "📋"
+    if (name.includes("poda")) return <Scissors className="h-4 w-4" />
+    if (name.includes("raleo")) return <TreePine className="h-4 w-4" />
+    if (name.includes("plantacion") || name.includes("replantacion")) return <Sprout className="h-4 w-4" />
+    if (name.includes("cosecha")) return <Axe className="h-4 w-4" />
+    if (name.includes("mantenimiento")) return <Wrench className="h-4 w-4" />
+    if (name.includes("malezas") || name.includes("rebrote")) return <Leaf className="h-4 w-4" />
+    if (name.includes("hormigas")) return <Bug className="h-4 w-4" />
+    return <FileText className="h-4 w-4" />
   }
 
   const getTemplateBadgeColor = (categoria: string) => {
@@ -195,20 +194,15 @@ export default function PlantillasPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Plantillas de Actividades</h1>
-          <p className="text-muted-foreground">Gestiona las plantillas para diferentes actividades</p>
+        <div className="flex justify-between items-center">
+          <div className="space-y-2"><Skeleton className="h-7 w-64" /><Skeleton className="h-4 w-72" /></div>
+          <div className="flex gap-2"><Skeleton className="h-9 w-28" /><Skeleton className="h-9 w-36" /></div>
         </div>
         <div className="grid gap-4">
           {[1, 2, 3].map((i) => (
-            <Card key={i} className="animate-pulse">
-              <CardHeader>
-                <div className="h-6 bg-gray-200 rounded w-1/3"></div>
-                <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-              </CardHeader>
-              <CardContent>
-                <div className="h-4 bg-gray-200 rounded w-full"></div>
-              </CardContent>
+            <Card key={i}>
+              <CardHeader><Skeleton className="h-5 w-48" /><Skeleton className="h-4 w-72 mt-1" /></CardHeader>
+              <CardContent><Skeleton className="h-10 w-full" /></CardContent>
             </Card>
           ))}
         </div>
@@ -220,7 +214,7 @@ export default function PlantillasPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Plantillas de Actividades</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Plantillas de Actividades</h1>
           <p className="text-muted-foreground">Gestiona las plantillas para diferentes actividades</p>
         </div>
         <Card className="border-red-200 bg-red-50">
@@ -236,7 +230,7 @@ export default function PlantillasPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Plantillas de Actividades</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Plantillas de Actividades</h1>
           <p className="text-muted-foreground">Gestiona las plantillas para diferentes actividades</p>
         </div>
         <div className="flex gap-2">
@@ -261,14 +255,14 @@ export default function PlantillasPage() {
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <span>{getTemplateIcon(template.nombre)}</span>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <span className="text-muted-foreground">{getTemplateIcon(template.nombre)}</span>
                       <span>{template.nombre}</span>
-                      <Badge variant="outline" className="text-xs">
+                      <Badge variant="outline" className="text-xs rounded-sm">
                         {template.unidad}
                       </Badge>
-                      <Badge className={`text-xs ${getTemplateBadgeColor(template.categoria)}`}>
-                        {getTemplateIcon(template.categoria)} {template.categoria}
+                      <Badge className={`text-xs rounded-sm ${getTemplateBadgeColor(template.categoria)}`}>
+                        {template.categoria}
                       </Badge>
                       {!template.activo && (
                         <Badge variant="outline" className="text-xs text-gray-500">
@@ -308,7 +302,7 @@ export default function PlantillasPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="border rounded-md">
+                  <div className="border rounded-sm">
                   <button
                     className="w-full flex items-center justify-between p-3 text-left hover:bg-gray-50 focus:outline-none"
                     onClick={() => toggleTemplate(template.id)}
@@ -332,14 +326,14 @@ export default function PlantillasPage() {
                           .map((campo) => (
                             <div
                               key={campo.id}
-                              className={`border rounded-md p-3 ${
-                                campo.esDelSistema ? "bg-blue-50 border-blue-200" : "bg-gray-50"
+                              className={`border rounded-sm p-3 ${
+                                campo.esDelSistema ? "bg-blue-50 border-blue-200" : "bg-muted/30"
                               }`}
                             >
                               <div className="flex justify-between items-start">
                                 <div className="flex-1">
                                   <div className="font-medium text-sm flex items-center gap-1">
-                                    {campo.esDelSistema && <span className="text-blue-600 text-xs">🔒</span>}
+                                    {campo.esDelSistema && <Lock className="h-3 w-3 text-blue-500" />}
                                     {campo.nombre}
                                   </div>
                                   <div className="text-xs text-muted-foreground mt-1">

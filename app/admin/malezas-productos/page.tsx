@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { AlertCircle, CheckCircle, Edit, Plus, Trash2 } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
 import { useMalezasProductos, type MalezasProducto } from "@/hooks/use-malezas-productos"
 
 export default function MalezasProductosPage() {
@@ -117,11 +118,12 @@ export default function MalezasProductosPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mr-4"></div>
-          <span>Cargando productos de malezas...</span>
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2"><Skeleton className="h-7 w-56" /><Skeleton className="h-4 w-80" /></div>
+          <Skeleton className="h-9 w-36" />
         </div>
+        <Card><CardContent className="p-0">{Array.from({length:6}).map((_,i)=><div key={i} className="flex gap-4 px-6 py-3 border-b last:border-b-0"><Skeleton className="h-4 w-48" /><Skeleton className="h-4 w-32" /><Skeleton className="h-4 w-24 ml-auto" /></div>)}</CardContent></Card>
       </div>
     )
   }
@@ -131,7 +133,7 @@ export default function MalezasProductosPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Productos de Malezas</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Productos de Malezas</h1>
           <p className="text-muted-foreground">Gestiona los productos utilizados para el control de malezas</p>
         </div>
         <Button onClick={() => setShowForm(true)} className="flex items-center gap-2">
@@ -273,10 +275,7 @@ export default function MalezasProductosPage() {
                 </Button>
                 <Button type="submit" disabled={isSubmitting}>
                   {isSubmitting ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                      {editingProduct ? "Actualizando..." : "Creando..."}
-                    </>
+                    <>{editingProduct ? "Actualizando..." : "Creando..."}</>
                   ) : editingProduct ? (
                     "Actualizar Producto"
                   ) : (
@@ -292,10 +291,7 @@ export default function MalezasProductosPage() {
       {/* Lista de Productos */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <span>🧪</span>
-            Lista de Productos
-          </CardTitle>
+          <CardTitle>Lista de Productos</CardTitle>
           <CardDescription>{productos.length} productos registrados</CardDescription>
         </CardHeader>
         <CardContent>
@@ -325,10 +321,7 @@ export default function MalezasProductosPage() {
                     return (
                       <tr key={id} className="border-b hover:bg-muted/50">
                         <td className="p-2">
-                          <div className="flex items-center gap-2">
-                            <span>🧪</span>
-                            <span className="font-medium">{producto.nombre}</span>
-                          </div>
+                          <span className="font-medium">{producto.nombre}</span>
                         </td>
                         <td className="p-2">
                           <span className="text-sm text-muted-foreground">

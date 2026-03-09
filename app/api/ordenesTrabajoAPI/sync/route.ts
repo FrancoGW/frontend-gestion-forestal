@@ -42,26 +42,34 @@ async function fetchOrdenesFromGIS(from: string, sessionCookie?: string | null) 
 
 async function procesarOrdenes(db: any, ordenes: any[]) {
   const coleccion = db.collection('ordenesTrabajoAPI');
-  let procesadas = 0;
-  let nuevas = 0;
-  let actualizadas = 0;
-  let errores = 0;
-  for (const orden of ordenes) {
-    try {
-      if (!orden._id) {
-        errores++;
-        continue;
-      }
-      const existe = await coleccion.findOne({ _id: orden._id });
-      await coleccion.updateOne({ _id: orden._id }, { $set: orden }, { upsert: true });
-      if (existe) actualizadas++;
-      else nuevas++;
-      procesadas++;
-    } catch (_) {
-      errores++;
-    }
+
+  const sinId = ordenes.filter(o => o._id == null).length;
+
+  const operations = ordenes
+    .filter(o => o._id != null)
+    .map(orden => {
+      const { _id, ...resto } = orden;
+      return {
+        updateOne: {
+          filter: { _id },
+          update: { $set: resto },
+          upsert: true,
+        },
+      };
+    });
+
+  if (operations.length === 0) {
+    return { procesadas: 0, nuevas: 0, actualizadas: 0, errores: sinId };
   }
-  return { procesadas, nuevas, actualizadas, errores };
+
+  const result = await coleccion.bulkWrite(operations, { ordered: false });
+
+  return {
+    procesadas: result.upsertedCount + result.matchedCount,
+    nuevas: result.upsertedCount,
+    actualizadas: result.matchedCount,
+    errores: sinId + (result.writeErrors?.length ?? 0),
+  };
 }
 
 export async function GET(request: NextRequest) {

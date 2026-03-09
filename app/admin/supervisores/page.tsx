@@ -156,7 +156,7 @@ export default function SupervisoresPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Supervisores</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Supervisores</h1>
           <p className="text-muted-foreground">Lista de supervisores y sus proveedores asignados</p>
         </div>
 
@@ -196,7 +196,7 @@ export default function SupervisoresPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Supervisores</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Supervisores</h1>
           <p className="text-muted-foreground">Lista de supervisores y sus proveedores asignados</p>
         </div>
 
@@ -213,7 +213,7 @@ export default function SupervisoresPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Supervisores</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Supervisores</h1>
           <p className="text-muted-foreground">Lista de supervisores y sus proveedores asignados</p>
         </div>
         <Button onClick={handleSync} disabled={syncing} variant="outline">
@@ -226,7 +226,7 @@ export default function SupervisoresPage() {
         <Alert>
           <Database className="w-4 h-4 text-green-600" />
           <AlertDescription>
-            ✅ Sincronización completada: {syncResult.procesados} procesados, {syncResult.nuevos} nuevos,{" "}
+            Sincronización completada: {syncResult.procesados} procesados, {syncResult.nuevos} nuevos,{" "}
             {syncResult.actualizados} actualizados
             {syncResult.errores > 0 && `, ${syncResult.errores} errores`}
           </AlertDescription>
@@ -365,9 +365,7 @@ export default function SupervisoresPage() {
                         <div className="flex items-center gap-2">
                           <CardTitle className="text-lg">{supervisor.nombre}</CardTitle>
                           {(supervisor as any).sincronizadoDesdeGIS && (
-                            <span className="text-xs text-blue-600" title="Sincronizado desde GIS">
-                              🔄
-                            </span>
+                            <span className="text-xs text-blue-500 font-mono" title="Sincronizado desde GIS">GIS</span>
                           )}
                         </div>
                         <CardDescription>
@@ -398,7 +396,7 @@ export default function SupervisoresPage() {
                   <CardContent className="pt-0">
                     <div className="space-y-4">
                       {/* Estadísticas del supervisor */}
-                      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 p-4 bg-muted/30 rounded-lg">
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 p-4 bg-muted/30 rounded-sm">
                         <div className="text-center">
                           <div className="text-lg font-semibold text-blue-600">
                             {supervisor.estadisticas.ordenesPendientes}
@@ -434,7 +432,7 @@ export default function SupervisoresPage() {
                         <h4 className="font-medium mb-3">Proveedores Asignados</h4>
                         <div className="grid gap-3 md:grid-cols-2">
                           {supervisor.proveedores.map((proveedor) => (
-                            <div key={proveedor.codigo} className="border rounded-lg p-4">
+                            <div key={proveedor.codigo} className="border rounded-sm p-4">
                               <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
                                   <Building2 className="h-4 w-4 text-muted-foreground" />

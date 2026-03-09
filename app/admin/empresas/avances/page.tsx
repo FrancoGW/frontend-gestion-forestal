@@ -166,7 +166,7 @@ export default function AvancesProveedoresPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Avances de Proveedores</h2>
+          <h2 className="text-2xl font-semibold tracking-tight">Avances de Proveedores</h2>
           <p className="text-muted-foreground">Visualización de avances reportados por los proveedores</p>
         </div>
         <Button variant="outline" onClick={() => router.push("/admin/empresas")}>

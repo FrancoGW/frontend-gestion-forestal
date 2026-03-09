@@ -159,7 +159,7 @@ export default function EspeciesPage() {
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Especies Forestales</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Especies Forestales</h1>
         <p className="text-muted-foreground">Administración de especies para plantación y poda</p>
       </div>
 
@@ -167,8 +167,8 @@ export default function EspeciesPage() {
 
       <Tabs defaultValue="plantacion" value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-6">
-          <TabsTrigger value="plantacion">🌱 Especies para Plantación</TabsTrigger>
-          <TabsTrigger value="poda">✂️ Especies para Poda</TabsTrigger>
+          <TabsTrigger value="plantacion">Especies para Plantación</TabsTrigger>
+          <TabsTrigger value="poda">Especies para Poda</TabsTrigger>
         </TabsList>
 
         <TabsContent value="plantacion" className="space-y-4">

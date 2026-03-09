@@ -283,7 +283,7 @@ export default function WorkOrderDetailPage({ params }: { params: { id: string }
           Volver
         </Button>
 
-        <h1 className="text-3xl font-bold tracking-tight mt-4">
+        <h1 className="text-2xl font-semibold tracking-tight mt-4">
           <span className="flex items-center gap-2">
             <FileSpreadsheet className="h-6 w-6" />
             Orden de Trabajo #{workOrder.numero || params.id}

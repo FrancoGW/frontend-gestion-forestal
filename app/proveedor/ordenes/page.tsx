@@ -5,7 +5,7 @@ import { useProviderOrders } from "@/hooks/use-provider-orders"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { PageLoader } from "@/components/ui/page-loader"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Calendar,
   ArrowRight,
@@ -170,7 +170,31 @@ export default function ProviderOrdersPage() {
   if (ordersLoading || progressLoading) {
     return (
       <div className="space-y-6 p-6">
-        <PageLoader message="Cargando órdenes..." submessage="Obteniendo tus órdenes de trabajo" />
+        <div className="flex justify-between items-center">
+          <Skeleton className="h-9 w-48" />
+          <div className="flex gap-2">
+            <Skeleton className="h-9 w-32" />
+            <Skeleton className="h-9 w-40" />
+          </div>
+        </div>
+        <Card>
+          <CardContent className="p-0">
+            <div className="p-4 border-b">
+              <div className="grid grid-cols-7 gap-4">
+                {Array.from({ length: 7 }).map((_, i) => (
+                  <Skeleton key={i} className="h-4 w-full" />
+                ))}
+              </div>
+            </div>
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="grid grid-cols-7 gap-4 p-4 border-b last:border-b-0">
+                {Array.from({ length: 7 }).map((_, j) => (
+                  <Skeleton key={j} className="h-5 w-full" />
+                ))}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
       </div>
     )
   }
@@ -319,20 +343,37 @@ export default function ProviderOrdersPage() {
                         </div>
                       </TableCell>
                       <TableCell className="px-4 py-4">{order.actividad || "Sin actividad"}</TableCell>
-                      <TableCell className="px-4 py-4">
+                      <TableCell className="px-4 py-4 max-w-[220px]">
                         {Array.isArray(order.rodales) && order.rodales?.length > 0
-                          ? order.rodales.map((r: any, idx: number) => {
-                              const rodalNum = r.numero ?? r.nombre ?? ''
-                              const hect = r.hectareas ?? r.superficie ?? ''
-                              const isMatch = rodalSearch && rodalNum && String(rodalNum).toLowerCase() === rodalSearch.toLowerCase();
+                          ? (() => {
+                              const MAX_VISIBLE = 3;
+                              const visible = order.rodales.slice(0, MAX_VISIBLE);
+                              const remaining = order.rodales.length - MAX_VISIBLE;
                               return (
-                                <span key={idx} style={isMatch ? { background: '#bbf7d0', color: '#166534', borderRadius: '4px', padding: '0 4px' } : {}}>
-                                  {rodalNum}{hect ? ` (${hect} ha)` : ''}
-                                  {idx < order.rodales.length - 1 ? ', ' : ''}
+                                <span className="inline-flex flex-wrap gap-x-1 gap-y-0.5 items-center">
+                                  {visible.map((r: any, idx: number) => {
+                                    const rodalNum = r.numero ?? r.nombre ?? '';
+                                    const hect = r.hectareas ?? r.superficie ?? '';
+                                    const isMatch = rodalSearch && rodalNum && String(rodalNum).toLowerCase() === rodalSearch.toLowerCase();
+                                    return (
+                                      <span
+                                        key={idx}
+                                        className="whitespace-nowrap text-xs"
+                                        style={isMatch ? { background: '#bbf7d0', color: '#166534', borderRadius: '4px', padding: '0 4px' } : {}}
+                                      >
+                                        {rodalNum}{hect ? ` (${hect} ha)` : ''}{idx < visible.length - 1 || remaining > 0 ? ',' : ''}
+                                      </span>
+                                    );
+                                  })}
+                                  {remaining > 0 && (
+                                    <span className="text-xs font-medium text-muted-foreground bg-muted rounded px-1.5 py-0.5 whitespace-nowrap">
+                                      +{remaining} más
+                                    </span>
+                                  )}
                                 </span>
                               );
-                            })
-                          : "Sin rodales"}
+                            })()
+                          : <span className="text-muted-foreground text-xs">Sin rodales</span>}
                       </TableCell>
                       <TableCell className="px-4 py-4">{displayText}</TableCell>
                       <TableCell className="text-right px-6 py-4">
@@ -404,19 +445,37 @@ export default function ProviderOrdersPage() {
                     </div>
                     {/* Rodales */}
                     <div className="text-sm">
-                      <span className="font-medium">Rodales:</span> {Array.isArray(order.rodales) && order.rodales?.length > 0
-                        ? order.rodales.map((r: any, idx: number) => {
-                            const rodalNum = r.numero ?? r.nombre ?? ''
-                            const hect = r.hectareas ?? r.superficie ?? ''
-                            const isMatch = rodalSearch && rodalNum && String(rodalNum).toLowerCase() === rodalSearch.toLowerCase();
+                      <span className="font-medium">Rodales: </span>
+                      {Array.isArray(order.rodales) && order.rodales?.length > 0
+                        ? (() => {
+                            const MAX_VISIBLE = 4;
+                            const visible = order.rodales.slice(0, MAX_VISIBLE);
+                            const remaining = order.rodales.length - MAX_VISIBLE;
                             return (
-                              <span key={idx} style={isMatch ? { background: '#bbf7d0', color: '#166534', borderRadius: '4px', padding: '0 4px' } : {}}>
-                                {rodalNum}{hect ? ` (${hect} ha)` : ''}
-                                {idx < order.rodales.length - 1 ? ', ' : ''}
+                              <span className="inline-flex flex-wrap gap-x-1 gap-y-0.5 items-center">
+                                {visible.map((r: any, idx: number) => {
+                                  const rodalNum = r.numero ?? r.nombre ?? '';
+                                  const hect = r.hectareas ?? r.superficie ?? '';
+                                  const isMatch = rodalSearch && rodalNum && String(rodalNum).toLowerCase() === rodalSearch.toLowerCase();
+                                  return (
+                                    <span
+                                      key={idx}
+                                      className="whitespace-nowrap"
+                                      style={isMatch ? { background: '#bbf7d0', color: '#166534', borderRadius: '4px', padding: '0 4px' } : {}}
+                                    >
+                                      {rodalNum}{hect ? ` (${hect} ha)` : ''}{idx < visible.length - 1 || remaining > 0 ? ',' : ''}
+                                    </span>
+                                  );
+                                })}
+                                {remaining > 0 && (
+                                  <span className="text-xs font-medium text-muted-foreground bg-muted rounded px-1.5 py-0.5 whitespace-nowrap">
+                                    +{remaining} más
+                                  </span>
+                                )}
                               </span>
                             );
-                          })
-                        : "Sin rodales"}
+                          })()
+                        : <span className="text-muted-foreground">Sin rodales</span>}
                     </div>
 
                     {/* Cantidad */}

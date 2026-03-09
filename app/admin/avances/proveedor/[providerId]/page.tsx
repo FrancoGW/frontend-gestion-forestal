@@ -366,7 +366,7 @@ export default function ProveedorOrdenesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight">Órdenes de {proveedorNombre}</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Órdenes de {proveedorNombre}</h1>
           <p className="text-muted-foreground">
             Gestione y visualice las órdenes de trabajo asignadas a este proveedor
           </p>

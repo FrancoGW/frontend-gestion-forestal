@@ -5,13 +5,14 @@ import { useWorkOrders } from "@/hooks/use-work-orders"
 import { avancesTrabajoAPI } from "@/lib/api-client"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { PageLoader } from "@/components/ui/page-loader"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Clock, CheckCircle2, Calendar, ArrowRight, RefreshCw, FileText } from "lucide-react"
 import { BackendStatusAlert } from "@/components/backend-status-alert"
 import { useToast } from "@/hooks/use-toast"
 import Link from "next/link"
+import { DashboardCharts } from "@/components/admin/dashboard-charts"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export default function AdminDashboard() {
   const { workOrders, loading, error, backendStatus, retryConnection } = useWorkOrders()
@@ -212,10 +213,35 @@ export default function AdminDashboard() {
     }
   }
 
+  // Calcular órdenes en progreso (tiene avances pero no todas terminadas)
+  const inProgressOrders = workOrders.filter((order) => {
+    const statusFromAvances = getOrderStatusFromAvances(order.id)
+    return statusFromAvances === "en_progreso"
+  })
+
   if (loading) {
     return (
       <div className="space-y-6">
-        <PageLoader message="Cargando dashboard..." submessage="Obteniendo estadísticas y órdenes" />
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-9 w-40" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+          <Skeleton className="h-9 w-40" />
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Card key={i}>
+              <CardHeader className="pb-2"><Skeleton className="h-4 w-24" /></CardHeader>
+              <CardContent><Skeleton className="h-8 w-16" /></CardContent>
+            </Card>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Skeleton className="h-80" />
+          <Skeleton className="h-80" />
+        </div>
+        <Skeleton className="h-64" />
       </div>
     )
   }
@@ -224,7 +250,7 @@ export default function AdminDashboard() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
           <p className="text-muted-foreground">Bienvenido al panel de administración</p>
         </div>
         <Button
@@ -239,7 +265,11 @@ export default function AdminDashboard() {
       </div>
 
       {/* Mostrar alerta de estado del backend si hay problemas de conexión */}
-      <BackendStatusAlert status={backendStatus} loading={loading} onRetry={retryConnection} />
+      <BackendStatusAlert
+        status={backendStatus === null || backendStatus?.available ? "connected" : "error"}
+        loading={loading}
+        onRetry={retryConnection}
+      />
 
       {error && (
         <Card className="bg-red-50">
@@ -249,79 +279,29 @@ export default function AdminDashboard() {
         </Card>
       )}
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Órdenes</CardTitle>
-            <FileText className="h-4 w-4 text-blue-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalOrdenes}</div>
-            <p className="text-xs text-muted-foreground">Todas las órdenes del sistema</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Hectáreas Totales</CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalHectareas.toFixed(1)} ha</div>
-            <p className="text-xs text-muted-foreground">Superficie total de todas las órdenes</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Órdenes Pendientes</CardTitle>
-            <Clock className="h-4 w-4 text-yellow-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{pendingOrders.length}</div>
-            <p className="text-xs text-muted-foreground">Sin avances o avances pendientes</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Órdenes del Mes</CardTitle>
-            <Calendar className="h-4 w-4 text-purple-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{currentMonthOrders.length}</div>
-            <p className="text-xs text-muted-foreground">
-              Total de órdenes en {new Date().toLocaleString("es", { month: "long" })}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Órdenes Terminadas</CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{completedOrders.length}</div>
-            <p className="text-xs text-muted-foreground">Órdenes completadas según avances</p>
-          </CardContent>
-        </Card>
+      <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+        {[
+          { label: "Total Órdenes", value: totalOrdenes, color: "text-foreground", accent: "border-l-2 border-l-blue-400", sub: "Todas las órdenes" },
+          { label: "Ha Totales", value: `${totalHectareas.toFixed(1)} ha`, color: "text-emerald-700", accent: "border-l-2 border-l-emerald-400", sub: "Superficie total" },
+          { label: "Pendientes", value: pendingOrders.length, color: "text-yellow-700", accent: "border-l-2 border-l-yellow-400", sub: "Sin iniciar" },
+          { label: "En progreso", value: inProgressOrders.length, color: "text-blue-700", accent: "border-l-2 border-l-blue-400", sub: "En ejecución" },
+          { label: "Terminadas", value: completedOrders.length, color: "text-emerald-700", accent: "border-l-2 border-l-emerald-400", sub: "Completadas" },
+          { label: `Ha en ${new Date().toLocaleString("es", { month: "long" })}`, value: `${currentMonthHectares.toFixed(1)} ha`, color: "text-emerald-700", accent: "border-l-2 border-l-emerald-400", sub: "Este mes" },
+        ].map((s) => (
+          <div key={s.label} className={`border rounded-sm bg-card px-4 py-3 flex flex-col justify-between ${s.accent}`}>
+            <div className={`text-2xl font-semibold tabular-nums ${s.color}`}>{s.value}</div>
+            <div className="text-xs text-muted-foreground mt-1">{s.label}</div>
+          </div>
+        ))}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Hectáreas del Mes</CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{currentMonthHectares.toFixed(1)} ha</div>
-            <p className="text-xs text-muted-foreground">
-              Superficie de avances terminados en {new Date().toLocaleString("es", { month: "long" })}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Gráficos */}
+      <DashboardCharts
+        orders={workOrders}
+        pendientes={pendingOrders.length}
+        terminadas={completedOrders.length}
+        enProgreso={inProgressOrders.length}
+      />
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">

@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { PageLoader } from "@/components/ui/page-loader"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useSupervisorWorkOrders } from "@/hooks/use-supervisor-work-orders"
 import { AlertCircle, FileSpreadsheet, Search, RefreshCcw, X, Hash } from "lucide-react"
@@ -90,11 +90,61 @@ export default function SupervisorOrdersPage() {
     return <Badge variant="outline">{estadoNombre || "Sin estado"}</Badge>
   }
 
-  // Renderizar el estado de carga
   if (loading) {
     return (
       <div className="space-y-6">
-        <PageLoader message="Cargando órdenes..." submessage="Obteniendo tus órdenes de trabajo" />
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-9 w-64" />
+          <Skeleton className="h-9 w-28" />
+        </div>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-5 w-40" />
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="space-y-2">
+                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+        <div className="grid gap-4 md:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i}>
+              <CardHeader className="pb-2">
+                <Skeleton className="h-4 w-24" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-8 w-16" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-48" />
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="p-4 border-b">
+              <div className="grid grid-cols-8 gap-4">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <Skeleton key={i} className="h-4 w-full" />
+                ))}
+              </div>
+            </div>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="grid grid-cols-8 gap-4 p-4 border-b last:border-b-0">
+                {Array.from({ length: 8 }).map((_, j) => (
+                  <Skeleton key={j} className="h-5 w-full" />
+                ))}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
       </div>
     )
   }

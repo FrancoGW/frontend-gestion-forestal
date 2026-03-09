@@ -17,7 +17,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Plus, Edit, Trash2, Users, UserCheck, UserX, AlertTriangle, Database, HardDrive, RefreshCw, Key } from "lucide-react"
+import { Plus, Edit, Trash2, Users, UserCheck, UserX, AlertTriangle, Database, HardDrive, RefreshCw, Key, CheckCircle2, WifiOff, ShieldCheck } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
 import { usuariosAdminAPI } from "@/lib/api-client"
 import { useToast } from "@/hooks/use-toast"
 import type { RolGestionableAdmin } from "@/lib/constants/roles"
@@ -462,228 +463,189 @@ export default function UsuariosPage() {
     loadUsuarios()
   }, [])
 
+  // Badge de rol
+  const roleBadgeClass = (rol: string) => {
+    switch (rol) {
+      case "admin": return "bg-red-100 text-red-800 border-red-200"
+      case "subgerente": return "bg-indigo-100 text-indigo-800 border-indigo-200"
+      case "supervisor": return "bg-blue-100 text-blue-800 border-blue-200"
+      case "provider": return "bg-emerald-100 text-emerald-800 border-emerald-200"
+      case "jda": return "bg-amber-100 text-amber-800 border-amber-200"
+      default: return "bg-gray-100 text-gray-700 border-gray-200"
+    }
+  }
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-4"></div>
-          <p>Cargando usuarios...</p>
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-56" />
+            <Skeleton className="h-4 w-40" />
+          </div>
+          <div className="flex gap-2">
+            <Skeleton className="h-9 w-40" />
+            <Skeleton className="h-9 w-36" />
+          </div>
         </div>
+        <div className="grid grid-cols-7 gap-3">
+          {Array.from({ length: 7 }).map((_, i) => <Skeleton key={i} className="h-20" />)}
+        </div>
+        <Skeleton className="h-16" />
+        <Card>
+          <CardContent className="p-0">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="flex gap-4 px-6 py-3 border-b last:border-b-0">
+                <Skeleton className="h-4 w-12" />
+                <Skeleton className="h-4 w-48" />
+                <Skeleton className="h-4 w-56 ml-auto" />
+              </div>
+            ))}
+          </CardContent>
+        </Card>
       </div>
     )
   }
 
+  // Dialog form (extracted for reuse)
+  const userForm = (
+    <div className="space-y-4 pt-2">
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-1.5">
+          <Label htmlFor="nombre">Nombre</Label>
+          <Input id="nombre" value={formData.nombre} onChange={(e) => setFormData({ ...formData, nombre: e.target.value })} placeholder="Nombre" />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="apellido">Apellido</Label>
+          <Input id="apellido" value={formData.apellido} onChange={(e) => setFormData({ ...formData, apellido: e.target.value })} placeholder="Apellido" />
+        </div>
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="email">Email</Label>
+        <Input id="email" type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="usuario@empresa.com" />
+      </div>
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between">
+          <Label htmlFor="password">Contraseña</Label>
+          <Button type="button" variant="outline" size="sm" onClick={generarPassword} className="h-7 text-xs gap-1">
+            <Key className="w-3 h-3" /> Generar
+          </Button>
+        </div>
+        <Input id="password" type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} placeholder={editingUser ? "Dejar vacío para mantener la actual" : "Contraseña"} />
+        {editingUser && <p className="text-xs text-muted-foreground">Dejar vacío para no cambiar la contraseña actual.</p>}
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="rol">Rol</Label>
+        <Select value={formData.rol} onValueChange={(value: RolGestionableAdmin) => setFormData({ ...formData, rol: value })}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="admin">{ROL_LABEL.admin}</SelectItem>
+            <SelectItem value="subgerente">{ROL_LABEL.subgerente}</SelectItem>
+            <SelectItem value="supervisor">{ROL_LABEL.supervisor}</SelectItem>
+            <SelectItem value="provider">{ROL_LABEL.provider}</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      {formData.rol === "provider" && (
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="cuit">CUIT</Label>
+            <Input id="cuit" value={formData.cuit} onChange={(e) => setFormData({ ...formData, cuit: e.target.value })} placeholder="30-12345678-9" />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="telefono">Teléfono</Label>
+            <Input id="telefono" value={formData.telefono} onChange={(e) => setFormData({ ...formData, telefono: e.target.value })} placeholder="11-1234-5678" />
+          </div>
+        </div>
+      )}
+      {formData.rol === "subgerente" && (
+        <div className="space-y-1.5">
+          <Label>Jefes de área a cargo</Label>
+          <p className="text-xs text-muted-foreground">El subgerente verá en su panel las actividades de estos JDAs, supervisores y proveedores.</p>
+          <div className="border rounded-sm p-3 max-h-48 overflow-y-auto space-y-1">
+            {jefesDeAreaLista.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No hay jefes de área disponibles.</p>
+            ) : (
+              jefesDeAreaLista.map((jda) => {
+                const nombreCompleto = [jda.nombre, jda.apellido].filter(Boolean).join(" ").trim() || jda.nombre
+                const asignado = (formData.jefesDeAreaAsignados || []).some((a) => a.jdaId === jda._id)
+                return (
+                  <label key={jda._id} className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 px-2 py-1.5 rounded-sm">
+                    <input type="checkbox" checked={asignado} onChange={() => toggleJdaAsignado(jda)} className="border-border" />
+                    <span className="text-sm">{nombreCompleto}{jda.email && <span className="text-muted-foreground"> — {jda.email}</span>}</span>
+                  </label>
+                )
+              })
+            )}
+          </div>
+        </div>
+      )}
+      <div className="flex items-center gap-2 pt-1">
+        <input type="checkbox" id="activo" checked={formData.activo} onChange={(e) => setFormData({ ...formData, activo: e.target.checked })} />
+        <Label htmlFor="activo" className="font-normal cursor-pointer">Usuario activo</Label>
+      </div>
+      <div className="flex gap-2 pt-2 border-t">
+        <Button onClick={editingUser ? updateUsuario : createUsuario} className="flex-1">
+          {editingUser ? "Guardar cambios" : "Crear usuario"}
+        </Button>
+        <Button variant="outline" onClick={() => { setIsDialogOpen(false); setEditingUser(null); resetForm() }}>
+          Cancelar
+        </Button>
+      </div>
+    </div>
+  )
+
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="container mx-auto p-6 space-y-5">
+
+      {/* Header */}
+      <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Gestión de Usuarios</h1>
-          <p className="text-gray-600">Administra usuarios del sistema</p>
+          <h1 className="text-2xl font-semibold tracking-tight">Gestión de Usuarios</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Administra los usuarios del sistema</p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={handleSync} disabled={syncing} variant="outline">
+          <Button onClick={handleSync} disabled={syncing} variant="outline" size="sm">
             <RefreshCw className={`w-4 h-4 mr-2 ${syncing ? "animate-spin" : ""}`} />
             {syncing ? "Sincronizando..." : "Sincronizar con GIS"}
           </Button>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={resetForm}>
-              <Plus className="w-4 h-4 mr-2" />
-              Nuevo Usuario
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>{editingUser ? "Editar Usuario" : "Nuevo Usuario"}</DialogTitle>
-              <DialogDescription>
-                {editingUser ? "Modifica los datos del usuario" : "Completa los datos del nuevo usuario"}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="nombre">Nombre</Label>
-                  <Input
-                    id="nombre"
-                    value={formData.nombre}
-                    onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                    placeholder="Nombre"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="apellido">Apellido</Label>
-                  <Input
-                    id="apellido"
-                    value={formData.apellido}
-                    onChange={(e) => setFormData({ ...formData, apellido: e.target.value })}
-                    placeholder="Apellido"
-                  />
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="usuario@empresa.com"
-                />
-              </div>
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <Label htmlFor="password">Contraseña</Label>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={generarPassword}
-                    className="h-7 text-xs"
-                  >
-                    <Key className="w-3 h-3 mr-1" />
-                    Generar
-                  </Button>
-                </div>
-                <Input
-                  id="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  placeholder={editingUser ? "Dejar vacío para mantener la actual" : "Ingrese contraseña"}
-                />
-                {editingUser && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    Dejar vacío para mantener la contraseña actual. Use "Generar" para crear una nueva.
-                  </p>
-                )}
-              </div>
-              <div>
-                <Label htmlFor="rol">Rol</Label>
-                <Select value={formData.rol} onValueChange={(value: RolGestionableAdmin) => setFormData({ ...formData, rol: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="admin">{ROL_LABEL.admin}</SelectItem>
-                    <SelectItem value="subgerente">{ROL_LABEL.subgerente}</SelectItem>
-                    <SelectItem value="supervisor">{ROL_LABEL.supervisor}</SelectItem>
-                    <SelectItem value="provider">{ROL_LABEL.provider}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              {formData.rol === "provider" && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="cuit">CUIT</Label>
-                    <Input
-                      id="cuit"
-                      value={formData.cuit}
-                      onChange={(e) => setFormData({ ...formData, cuit: e.target.value })}
-                      placeholder="30-12345678-9"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="telefono">Teléfono</Label>
-                    <Input
-                      id="telefono"
-                      value={formData.telefono}
-                      onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-                      placeholder="11-1234-5678"
-                    />
-                  </div>
-                </div>
-              )}
-              {formData.rol === "subgerente" && (
-                <div>
-                  <Label>Jefes de área a cargo</Label>
-                  <p className="text-xs text-gray-500 mb-2">
-                    El subgerente verá en su panel todo lo que hacen estos JDAs y sus supervisores y proveedores.
-                  </p>
-                  <div className="border rounded-md p-3 max-h-48 overflow-y-auto space-y-2">
-                    {jefesDeAreaLista.length === 0 ? (
-                      <p className="text-sm text-gray-500">No hay jefes de área cargados. Cargalos desde Jefes de Área.</p>
-                    ) : (
-                      jefesDeAreaLista.map((jda) => {
-                        const nombreCompleto = [jda.nombre, jda.apellido].filter(Boolean).join(" ").trim() || jda.nombre
-                        const asignado = (formData.jefesDeAreaAsignados || []).some((a) => a.jdaId === jda._id)
-                        return (
-                          <label
-                            key={jda._id}
-                            className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={asignado}
-                              onChange={() => toggleJdaAsignado(jda)}
-                              className="rounded border-gray-300"
-                            />
-                            <span className="text-sm">
-                              {nombreCompleto}
-                              {jda.email && <span className="text-gray-500"> ({jda.email})</span>}
-                            </span>
-                          </label>
-                        )
-                      })
-                    )}
-                  </div>
-                </div>
-              )}
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="activo"
-                  checked={formData.activo}
-                  onChange={(e) => setFormData({ ...formData, activo: e.target.checked })}
-                />
-                <Label htmlFor="activo">Usuario activo</Label>
-              </div>
-              <div className="flex gap-2">
-                <Button onClick={editingUser ? updateUsuario : createUsuario} className="flex-1">
-                  {editingUser ? "Actualizar" : "Crear"}
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setIsDialogOpen(false)
-                    setEditingUser(null)
-                    resetForm()
-                  }}
-                >
-                  Cancelar
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+            <DialogTrigger asChild>
+              <Button size="sm" onClick={resetForm}>
+                <Plus className="w-4 h-4 mr-2" />
+                Nuevo Usuario
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>{editingUser ? "Editar Usuario" : "Nuevo Usuario"}</DialogTitle>
+                <DialogDescription>
+                  {editingUser ? "Modificá los datos del usuario seleccionado." : "Completá los datos para crear un nuevo usuario."}
+                </DialogDescription>
+              </DialogHeader>
+              {userForm}
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
+      {/* Alertas */}
       {syncResult && (
-        <Alert>
-          <Database className="w-4 h-4 text-green-600" />
-          <AlertDescription>
-            ✅ Sincronización completada: {syncResult.procesados} procesados, {syncResult.nuevos} nuevos,{" "}
-            {syncResult.actualizados} actualizados
-            {syncResult.errores > 0 && `, ${syncResult.errores} errores`}
+        <Alert className="border-emerald-200 bg-emerald-50">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+          <AlertDescription className="text-emerald-800">
+            Sincronización completada — {syncResult.procesados} procesados, {syncResult.nuevos} nuevos, {syncResult.actualizados} actualizados
+            {syncResult.errores > 0 && `, ${syncResult.errores} con error`}
           </AlertDescription>
         </Alert>
       )}
 
-      {/* Estado del backend */}
-      <Alert>
-        <div className="flex items-center gap-2">
-          {backendAvailable ? (
-            <Database className="w-4 h-4 text-green-600" />
-          ) : (
-            <HardDrive className="w-4 h-4 text-orange-600" />
-          )}
-          <AlertDescription>
-            {backendAvailable
-              ? "✅ Conectado al backend - Datos en tiempo real"
-              : "⚠️ Backend no disponible - Mostrando datos de ejemplo"}
-          </AlertDescription>
-        </div>
-      </Alert>
+      <div className={`flex items-center gap-2 text-sm px-3 py-2 border rounded-sm ${backendAvailable ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-amber-200 bg-amber-50 text-amber-800"}`}>
+        {backendAvailable
+          ? <><CheckCircle2 className="w-4 h-4 shrink-0" /> Conectado al backend — datos en tiempo real</>
+          : <><WifiOff className="w-4 h-4 shrink-0" /> Backend no disponible — mostrando datos de ejemplo</>
+        }
+      </div>
 
       {error && (
         <Alert variant="destructive">
@@ -692,173 +654,120 @@ export default function UsuariosPage() {
         </Alert>
       )}
 
-      {/* Estadísticas */}
-      <div className="grid grid-cols-2 md:grid-cols-7 gap-4">
-        <Card>
-          <CardContent className="p-4 text-center">
-            <Users className="w-8 h-8 mx-auto mb-2 text-blue-600" />
-            <div className="text-2xl font-bold">{stats.total}</div>
-            <div className="text-sm text-gray-600">Total</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-purple-600">{stats.admins}</div>
-            <div className="text-sm text-gray-600">Admins</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-teal-600">{stats.subgerentes}</div>
-            <div className="text-sm text-gray-600">Subgerentes</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-green-600">{stats.supervisors}</div>
-            <div className="text-sm text-gray-600">Supervisores</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-orange-600">{stats.providers}</div>
-            <div className="text-sm text-gray-600">Proveedores</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <UserCheck className="w-8 h-8 mx-auto mb-2 text-green-600" />
-            <div className="text-2xl font-bold">{stats.active}</div>
-            <div className="text-sm text-gray-600">Activos</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <UserX className="w-8 h-8 mx-auto mb-2 text-red-600" />
-            <div className="text-2xl font-bold">{stats.inactive}</div>
-            <div className="text-sm text-gray-600">Inactivos</div>
-          </CardContent>
-        </Card>
+      {/* Stats */}
+      <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+        {[
+          { label: "Total", value: stats.total, color: "text-foreground", accent: "border-l-2 border-l-slate-400" },
+          { label: "Admins", value: stats.admins, color: "text-red-700", accent: "border-l-2 border-l-red-400" },
+          { label: "Subgerentes", value: stats.subgerentes, color: "text-indigo-700", accent: "border-l-2 border-l-indigo-400" },
+          { label: "Supervisores", value: stats.supervisors, color: "text-blue-700", accent: "border-l-2 border-l-blue-400" },
+          { label: "Proveedores", value: stats.providers, color: "text-emerald-700", accent: "border-l-2 border-l-emerald-400" },
+          { label: "Activos", value: stats.active, color: "text-emerald-700", accent: "border-l-2 border-l-emerald-400" },
+          { label: "Inactivos", value: stats.inactive, color: "text-red-700", accent: "border-l-2 border-l-red-400" },
+        ].map((s) => (
+          <div key={s.label} className={`border rounded-sm bg-card px-4 py-3 flex flex-col justify-between ${s.accent}`}>
+            <div className={`text-2xl font-semibold tabular-nums ${s.color}`}>{s.value}</div>
+            <div className="text-xs text-muted-foreground mt-1">{s.label}</div>
+          </div>
+        ))}
       </div>
 
-      {/* Filtros */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Filtros</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-4">
+      {/* Filtros + Tabla */}
+      <Card className="rounded-sm">
+        <CardHeader className="pb-3 border-b">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
             <div className="flex-1">
-              <Label htmlFor="search">Buscar</Label>
               <Input
-                id="search"
                 placeholder="Buscar por nombre, apellido o email..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                className="max-w-sm rounded-sm"
               />
             </div>
-            <div>
-              <Label htmlFor="role-filter">Rol</Label>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground whitespace-nowrap">Rol:</span>
               <Select value={selectedRole} onValueChange={setSelectedRole}>
-                <SelectTrigger className="w-40">
+                <SelectTrigger className="w-44 rounded-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="all">Todos los roles</SelectItem>
                   <SelectItem value="admin">{ROL_LABEL.admin}</SelectItem>
                   <SelectItem value="subgerente">{ROL_LABEL.subgerente}</SelectItem>
                   <SelectItem value="supervisor">{ROL_LABEL.supervisor}</SelectItem>
                   <SelectItem value="provider">{ROL_LABEL.provider}</SelectItem>
                 </SelectContent>
               </Select>
+              <span className="text-sm text-muted-foreground whitespace-nowrap">{filteredUsuarios.length} resultado{filteredUsuarios.length !== 1 ? "s" : ""}</span>
             </div>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Tabla de usuarios */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Usuarios ({filteredUsuarios.length})</CardTitle>
-          <CardDescription>Lista de todos los usuarios del sistema</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>ID</TableHead>
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="w-28 pl-6">ID</TableHead>
                 <TableHead>Nombre</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Rol</TableHead>
                 <TableHead>Estado</TableHead>
-                <TableHead>Fecha Creación</TableHead>
-                <TableHead>Acciones</TableHead>
+                <TableHead>Alta</TableHead>
+                <TableHead className="text-right pr-6">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredUsuarios.map((usuario) => {
-                const usuarioConSync = usuario as Usuario & { sincronizadoDesdeGIS?: boolean }
-                return (
-                  <TableRow key={usuario._id}>
-                    <TableCell className="font-mono">
-                      {typeof usuario._id === "string" && usuario._id.startsWith("supervisor_")
-                        ? usuario._id.replace("supervisor_", "")
-                        : typeof usuario._id === "string" && usuario._id.startsWith("provider_")
-                          ? usuario._id.replace("provider_", "")
-                          : usuario._id}
-                      {usuarioConSync.sincronizadoDesdeGIS && (
-                        <span className="ml-1.5 text-xs text-blue-600" title="Sincronizado desde GIS">
-                          🔄
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">
-                          {usuario.nombre} {usuario.apellido}
-                        </div>
-                        {usuario.cuit && <div className="text-sm text-gray-500">CUIT: {usuario.cuit}</div>}
-                        {usuario.telefono && <div className="text-sm text-gray-500">Tel: {usuario.telefono}</div>}
-                      </div>
-                    </TableCell>
-                  <TableCell>{usuario.email}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        usuario.rol === "admin"
-                          ? "destructive"
-                          : usuario.rol === "subgerente"
-                            ? "default"
-                            : usuario.rol === "supervisor"
-                              ? "default"
-                              : "secondary"
-                      }
-                    >
-                      {ROL_LABEL[usuario.rol]}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={usuario.activo ? "default" : "secondary"}>
-                      {usuario.activo ? "Activo" : "Inactivo"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{new Date(usuario.fechaCreacion).toLocaleDateString()}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm" onClick={() => openEditDialog(usuario)}>
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => deleteUsuario(usuario._id)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
+              {filteredUsuarios.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
+                    No se encontraron usuarios con los filtros aplicados.
                   </TableCell>
                 </TableRow>
+              ) : filteredUsuarios.map((usuario) => {
+                const usuarioConSync = usuario as Usuario & { sincronizadoDesdeGIS?: boolean }
+                const displayId = typeof usuario._id === "string"
+                  ? usuario._id.replace(/^supervisor_|^provider_/, "")
+                  : usuario._id
+                return (
+                  <TableRow key={usuario._id}>
+                    <TableCell className="font-mono text-xs text-muted-foreground pl-6">
+                      <span className="flex items-center gap-1">
+                        {displayId}
+                        {usuarioConSync.sincronizadoDesdeGIS && (
+                          <RefreshCw className="w-3 h-3 text-blue-500 shrink-0" title="Sincronizado desde GIS" />
+                        )}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="font-medium text-sm">{usuario.nombre} {usuario.apellido}</div>
+                      {usuario.cuit && <div className="text-xs text-muted-foreground">CUIT: {usuario.cuit}</div>}
+                      {usuario.telefono && <div className="text-xs text-muted-foreground">Tel: {usuario.telefono}</div>}
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{usuario.email || "—"}</TableCell>
+                    <TableCell>
+                      <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium border rounded-sm ${roleBadgeClass(usuario.rol)}`}>
+                        {ROL_LABEL[usuario.rol]}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <span className={`inline-flex items-center gap-1 text-xs font-medium ${usuario.activo ? "text-emerald-700" : "text-muted-foreground"}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${usuario.activo ? "bg-emerald-500" : "bg-gray-400"}`} />
+                        {usuario.activo ? "Activo" : "Inactivo"}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {new Date(usuario.fechaCreacion).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                    </TableCell>
+                    <TableCell className="text-right pr-6">
+                      <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="sm" onClick={() => openEditDialog(usuario)} className="h-8 w-8 p-0">
+                          <Edit className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => deleteUsuario(usuario._id)} className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
                 )
               })}
             </TableBody>

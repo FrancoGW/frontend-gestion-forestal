@@ -217,7 +217,7 @@ export default function CuadrillaDetailPage() {
           <Button variant="ghost" size="icon" onClick={() => router.push("/admin/cuadrillas")}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-2xl font-bold ml-2">Detalle de Cuadrilla</h1>
+          <h1 className="text-2xl font-semibold tracking-tight ml-2">Detalle de Cuadrilla</h1>
         </div>
         {!isEditing ? (
           <Button onClick={() => setIsEditing(true)}>
