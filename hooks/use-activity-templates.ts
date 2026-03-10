@@ -916,6 +916,43 @@ const DEFAULT_TEMPLATES: ActivityTemplate[] = [
     activo: true,
   },
   {
+    id: "habilitacion-sitios-macheteo-template",
+    nombre: "HABILITACION DE SITIOS - MACHETEO DE REGENERACION",
+    descripcion: "Plantilla para actividades de habilitación de sitios mediante macheteo de regeneración.",
+    categoria: "Manejo Forestal",
+    unidad: "Ha",
+    patronesCoincidencia: [
+      "habilitacion de sitios - macheteo de regeneracion",
+      "habilitación de sitios - macheteo de regeneración",
+      "habilitacion de sitios macheteo de regeneracion",
+      "habilitación de sitios macheteo de regeneración",
+      "macheteo de regeneracion",
+      "macheteo de regeneración",
+      "habilitacion sitios macheteo",
+      "habilitación sitios macheteo",
+      "macheteo regeneracion",
+      "macheteo regeneración",
+    ],
+    campos: [
+      { id: "estado", nombre: "Estado", tipo: "seleccion", requerido: true, orden: 1, opciones: ["Pendiente", "R7 (terminado)"], esDelSistema: true },
+      { id: "fecha", nombre: "Fecha", tipo: "fecha", requerido: true, orden: 2, esDelSistema: true },
+      { id: "predio", nombre: "Predio", tipo: "texto", requerido: true, orden: 3, esDelSistema: true },
+      { id: "rodal", nombre: "Rodal", tipo: "seleccion", requerido: true, orden: 4, esDelSistema: true },
+      { id: "ha", nombre: "Ha", tipo: "numero", requerido: true, orden: 5, unidad: "Ha", esDelSistema: true },
+      {
+        id: "implemento",
+        nombre: "Implemento",
+        tipo: "seleccion",
+        requerido: true,
+        orden: 6,
+        opciones: ["Machete", "Guadaña", "Motosierra", "Desbrozadora"],
+        esDelSistema: true,
+      },
+      { id: "observaciones", nombre: "Observaciones", tipo: "textarea", requerido: false, orden: 7, esDelSistema: false },
+    ],
+    activo: true,
+  },
+  {
     id: "manejo-rebrote-template",
     nombre: "MANEJO REBROTE",
     descripcion: "Plantilla para actividades de manejo de rebrote.",
@@ -975,7 +1012,7 @@ const DEFAULT_TEMPLATES: ActivityTemplate[] = [
   },
 ]
 
-const FRONTEND_VERSION = "2025-01-15-1"; // Cambia este valor en cada deploy relevante
+const FRONTEND_VERSION = "2025-01-15-2"; // Cambia este valor en cada deploy relevante
 
 try {
   const lastVersion = localStorage.getItem("frontend-version");
