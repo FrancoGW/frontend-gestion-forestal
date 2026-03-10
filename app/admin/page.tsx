@@ -7,7 +7,9 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Clock, CheckCircle2, Calendar, ArrowRight, RefreshCw, FileText } from "lucide-react"
+import { Clock, CheckCircle2, Calendar, ArrowRight, RefreshCw, FileText, X } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { BackendStatusAlert } from "@/components/backend-status-alert"
 import { useToast } from "@/hooks/use-toast"
 import Link from "next/link"
@@ -20,6 +22,8 @@ export default function AdminDashboard() {
   const [syncing, setSyncing] = useState(false)
   const [allAvances, setAllAvances] = useState<any[]>([])
   const [loadingAvances, setLoadingAvances] = useState(false)
+  const [dateFrom, setDateFrom] = useState("")
+  const [dateTo, setDateTo] = useState("")
 
   // Cargar todos los avances
   useEffect(() => {
@@ -70,18 +74,28 @@ export default function AdminDashboard() {
     return "pendiente" // Tiene avances pero ninguno terminado
   }
 
+  // Filtrar órdenes por rango de fechas
+  const filteredWorkOrders = workOrders.filter((order) => {
+    if (!dateFrom && !dateTo) return true
+    const orderDate = new Date(order.fecha)
+    if (isNaN(orderDate.getTime())) return true
+    if (dateFrom && orderDate < new Date(dateFrom)) return false
+    if (dateTo && orderDate > new Date(dateTo + "T23:59:59")) return false
+    return true
+  })
+
   // Calcular estadísticas basadas en avances
-  const pendingOrders = workOrders.filter((order) => {
+  const pendingOrders = filteredWorkOrders.filter((order) => {
     const statusFromAvances = getOrderStatusFromAvances(order.id)
     return statusFromAvances === "pendiente"
   })
 
-  const completedOrders = workOrders.filter((order) => {
+  const completedOrders = filteredWorkOrders.filter((order) => {
     const statusFromAvances = getOrderStatusFromAvances(order.id)
     return statusFromAvances === "terminado"
   })
 
-  const approvedOrders = workOrders.filter((order) => order.estado === "aprobado")
+  const approvedOrders = filteredWorkOrders.filter((order) => order.estado === "aprobado")
 
   // Obtener el mes actual
   const currentDate = new Date()
@@ -89,7 +103,7 @@ export default function AdminDashboard() {
   const currentYear = currentDate.getFullYear()
 
   // Filtrar órdenes del mes actual
-  const currentMonthOrders = workOrders.filter((order) => {
+  const currentMonthOrders = filteredWorkOrders.filter((order) => {
     const orderDate = new Date(order.fecha)
     return orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear
   })
@@ -115,11 +129,11 @@ export default function AdminDashboard() {
       return total + (typeof superficie === 'number' ? superficie : Number.parseFloat(String(superficie)) || 0)
     }, 0)
 
-  // Calcular total de órdenes (todas)
-  const totalOrdenes = workOrders.length
+  // Calcular total de órdenes (filtradas)
+  const totalOrdenes = filteredWorkOrders.length
 
-  // Calcular hectáreas totales (todas las órdenes)
-  const totalHectareas = workOrders.reduce((total, order) => {
+  // Calcular hectáreas totales (órdenes filtradas)
+  const totalHectareas = filteredWorkOrders.reduce((total, order) => {
     // Intentar obtener hectáreas de diferentes campos
     let hectares = 0
     if (order.totalHectareas) {
@@ -214,7 +228,7 @@ export default function AdminDashboard() {
   }
 
   // Calcular órdenes en progreso (tiene avances pero no todas terminadas)
-  const inProgressOrders = workOrders.filter((order) => {
+  const inProgressOrders = filteredWorkOrders.filter((order) => {
     const statusFromAvances = getOrderStatusFromAvances(order.id)
     return statusFromAvances === "en_progreso"
   })
@@ -246,22 +260,62 @@ export default function AdminDashboard() {
     )
   }
 
+  const hasDateFilter = dateFrom || dateTo
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">Bienvenido al panel de administración</p>
+          <p className="text-sm text-muted-foreground">
+            {hasDateFilter
+              ? `Mostrando ${filteredWorkOrders.length} de ${workOrders.length} órdenes`
+              : "Bienvenido al panel de administración"}
+          </p>
         </div>
-        <Button
-          onClick={handleSyncOrdenes}
-          disabled={syncing}
-          variant="outline"
-          className="flex items-center gap-2"
-        >
-          <RefreshCw className={`h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
-          {syncing ? "Sincronizando..." : "Sincronizar Órdenes"}
-        </Button>
+        <div className="flex items-end gap-3 flex-wrap">
+          {/* Filtro de fechas */}
+          <div className="flex items-end gap-2">
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">Desde</Label>
+              <Input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="h-9 text-sm rounded-sm w-36"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">Hasta</Label>
+              <Input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="h-9 text-sm rounded-sm w-36"
+              />
+            </div>
+            {hasDateFilter && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 px-2 text-muted-foreground hover:text-foreground"
+                onClick={() => { setDateFrom(""); setDateTo("") }}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+          <Button
+            onClick={handleSyncOrdenes}
+            disabled={syncing}
+            variant="outline"
+            size="sm"
+            className="h-9 flex items-center gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
+            {syncing ? "Sincronizando..." : "Sincronizar Órdenes"}
+          </Button>
+        </div>
       </div>
 
       {/* Mostrar alerta de estado del backend si hay problemas de conexión */}
@@ -297,7 +351,7 @@ export default function AdminDashboard() {
 
       {/* Gráficos */}
       <DashboardCharts
-        orders={workOrders}
+        orders={filteredWorkOrders}
         pendientes={pendingOrders.length}
         terminadas={completedOrders.length}
         enProgreso={inProgressOrders.length}
@@ -333,7 +387,7 @@ export default function AdminDashboard() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {pendingOrders.slice(0, 5).map((order) => (
+                {filteredWorkOrders.filter(o => getOrderStatusFromAvances(o.id) === "pendiente").slice(0, 5).map((order) => (
                   <TableRow key={order.id}>
                     <TableCell className="font-medium">
                       <Link href={`/admin/ordenes/${order.id}`} className="text-blue-600 hover:underline">
@@ -379,7 +433,7 @@ export default function AdminDashboard() {
           </Button>
         </CardHeader>
         <CardContent>
-          {workOrders.length === 0 ? (
+          {filteredWorkOrders.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8">
               <p className="text-muted-foreground text-center">No hay órdenes registradas.</p>
             </div>
@@ -396,7 +450,7 @@ export default function AdminDashboard() {
               </TableHeader>
               <TableBody>
                 {
-                  workOrders
+                  filteredWorkOrders
                     .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
                     .slice(0, 5)
                     .map((order) => {

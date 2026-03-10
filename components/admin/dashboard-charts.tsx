@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useMemo } from "react"
 import {
   Chart,
   ArcElement,
@@ -38,6 +38,8 @@ Chart.register(
 const COLORS = [
   "#16a34a", "#2563eb", "#d97706", "#dc2626",
   "#7c3aed", "#0891b2", "#db2777", "#65a30d",
+  "#ea580c", "#0d9488", "#6366f1", "#b45309",
+  "#be123c", "#1d4ed8", "#15803d", "#7e22ce",
 ]
 
 // ── Doughnut: Estado de órdenes ──────────────────────────────────────────────
@@ -175,14 +177,15 @@ function OrdenesLineChart({ orders }: { orders: any[] }) {
   return <canvas ref={ref} />
 }
 
-// ── Bar: Hectáreas por campo ─────────────────────────────────────────────────
+// ── Bar apilado: Hectáreas por campo con actividades ─────────────────────────
 function HectareasCampoChart({ orders }: { orders: any[] }) {
   const ref = useRef<HTMLCanvasElement>(null)
   const chartRef = useRef<Chart | null>(null)
 
-  useEffect(() => {
-    if (!ref.current) return
-    const hectareas: Record<string, number> = {}
+  // Pre-calcular datos fuera del useEffect
+  const { topCampos, datasets } = useMemo(() => {
+    // Calcular ha por campo
+    const haTotal: Record<string, number> = {}
     orders.forEach((o) => {
       const campo = o.campo || "Sin campo"
       let ha = 0
@@ -197,39 +200,120 @@ function HectareasCampoChart({ orders }: { orders: any[] }) {
         const cantStr = String(o.cantidad).replace(/[^\d.,]/g, "").replace(",", ".")
         ha = parseFloat(cantStr) || 0
       }
-      hectareas[campo] = (hectareas[campo] || 0) + ha
+      haTotal[campo] = (haTotal[campo] || 0) + ha
     })
-    const sorted = Object.entries(hectareas).sort((a, b) => b[1] - a[1]).slice(0, 8)
 
+    // Top 8 campos por ha total
+    const topCampos = Object.entries(haTotal)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8)
+      .map(([campo]) => campo)
+
+    // Calcular ha por campo+actividad (solo para top 8 campos)
+    const haPorCampoActividad: Record<string, Record<string, number>> = {}
+    orders.forEach((o) => {
+      const campo = o.campo || "Sin campo"
+      if (!topCampos.includes(campo)) return
+      const actividad = o.actividad || "Sin actividad"
+      let ha = 0
+      if (o.totalHectareas && Number(o.totalHectareas) > 0) {
+        ha = parseFloat(String(o.totalHectareas)) || 0
+      } else if (Array.isArray(o.rodales) && o.rodales.length > 0) {
+        ha = o.rodales.reduce((sum: number, r: any) => {
+          const sup = r.sup_ha ?? r.supha ?? r.hectareas ?? r.superficie ?? 0
+          return sum + (parseFloat(String(sup)) || 0)
+        }, 0)
+      } else if (o.cantidad) {
+        const cantStr = String(o.cantidad).replace(/[^\d.,]/g, "").replace(",", ".")
+        ha = parseFloat(cantStr) || 0
+      }
+      if (!haPorCampoActividad[campo]) haPorCampoActividad[campo] = {}
+      haPorCampoActividad[campo][actividad] = (haPorCampoActividad[campo][actividad] || 0) + ha
+    })
+
+    // Recolectar todas las actividades únicas y calcular su ha total entre todos los campos top 8
+    const actividadHaTotal: Record<string, number> = {}
+    topCampos.forEach((campo) => {
+      Object.entries(haPorCampoActividad[campo] || {}).forEach(([act, ha]) => {
+        actividadHaTotal[act] = (actividadHaTotal[act] || 0) + ha
+      })
+    })
+
+    // Top actividades (hasta 10), el resto va a "Otras"
+    const MAX_ACTIVIDADES = 10
+    const actividadesOrdenadas = Object.entries(actividadHaTotal)
+      .sort((a, b) => b[1] - a[1])
+    const topActividades = actividadesOrdenadas.slice(0, MAX_ACTIVIDADES).map(([act]) => act)
+    const hayOtras = actividadesOrdenadas.length > MAX_ACTIVIDADES
+
+    // Construir datasets (uno por actividad + uno para "Otras")
+    const datasets = topActividades.map((actividad, idx) => ({
+      label: actividad.length > 30 ? actividad.slice(0, 30) + "…" : actividad,
+      data: topCampos.map((campo) =>
+        parseFloat(((haPorCampoActividad[campo]?.[actividad]) || 0).toFixed(1))
+      ),
+      backgroundColor: COLORS[idx % COLORS.length] + "cc",
+      borderColor: COLORS[idx % COLORS.length],
+      borderWidth: 1,
+      borderRadius: 2,
+    }))
+
+    if (hayOtras) {
+      const otrasActs = actividadesOrdenadas.slice(MAX_ACTIVIDADES).map(([act]) => act)
+      datasets.push({
+        label: "Otras",
+        data: topCampos.map((campo) => {
+          const sum = otrasActs.reduce(
+            (acc, act) => acc + ((haPorCampoActividad[campo]?.[act]) || 0), 0
+          )
+          return parseFloat(sum.toFixed(1))
+        }),
+        backgroundColor: "#94a3b8cc",
+        borderColor: "#94a3b8",
+        borderWidth: 1,
+        borderRadius: 2,
+      })
+    }
+
+    return { topCampos, datasets }
+  }, [orders])
+
+  useEffect(() => {
+    if (!ref.current) return
     chartRef.current?.destroy()
     chartRef.current = new Chart(ref.current, {
       type: "bar",
       data: {
-        labels: sorted.map(([k]) => k),
-        datasets: [{
-          label: "Hectáreas",
-          data: sorted.map(([, v]) => parseFloat(v.toFixed(1))),
-          backgroundColor: COLORS.map((c) => c + "cc"),
-          borderColor: COLORS,
-          borderWidth: 1.5,
-          borderRadius: 6,
-        }],
+        labels: topCampos,
+        datasets,
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { display: false },
-          tooltip: { callbacks: { label: (ctx) => ` ${ctx.parsed.y.toFixed(1)} ha` } },
+          legend: {
+            position: "bottom",
+            labels: { padding: 10, font: { size: 10 }, boxWidth: 12, boxHeight: 10 },
+          },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => ` ${ctx.dataset.label}: ${Number(ctx.parsed.y).toFixed(1)} ha`,
+            },
+          },
         },
         scales: {
-          y: { beginAtZero: true, grid: { color: "#f1f5f9" }, ticks: { callback: (v) => `${v} ha` } },
-          x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+          x: { stacked: true, grid: { display: false }, ticks: { font: { size: 11 } } },
+          y: {
+            stacked: true,
+            beginAtZero: true,
+            grid: { color: "#f1f5f9" },
+            ticks: { callback: (v) => `${v} ha` },
+          },
         },
       },
     })
     return () => chartRef.current?.destroy()
-  }, [orders])
+  }, [topCampos, datasets])
 
   return <canvas ref={ref} />
 }
@@ -282,10 +366,10 @@ export function DashboardCharts({ orders, pendientes, terminadas, enProgreso }: 
 
       <Card className="lg:col-span-2">
         <CardHeader>
-          <CardTitle className="text-base">Hectáreas por Campo (Top 8)</CardTitle>
+          <CardTitle className="text-base">Hectáreas por Campo (Top 8) — por actividad</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-56">
+          <div className="h-80">
             <HectareasCampoChart orders={orders} />
           </div>
         </CardContent>
