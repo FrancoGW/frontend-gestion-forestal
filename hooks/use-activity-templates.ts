@@ -938,17 +938,19 @@ const DEFAULT_TEMPLATES: ActivityTemplate[] = [
       { id: "fecha", nombre: "Fecha", tipo: "fecha", requerido: true, orden: 2, esDelSistema: true },
       { id: "predio", nombre: "Predio", tipo: "texto", requerido: true, orden: 3, esDelSistema: true },
       { id: "rodal", nombre: "Rodal", tipo: "seleccion", requerido: true, orden: 4, esDelSistema: true },
-      { id: "ha", nombre: "Ha", tipo: "numero", requerido: true, orden: 5, unidad: "Ha", esDelSistema: true },
+      { id: "cuadrilla", nombre: "Cuadrilla", tipo: "seleccion", requerido: true, orden: 5, esDelSistema: true },
+      { id: "cantPersonal", nombre: "Cantidad de Operarios", tipo: "numero", requerido: true, orden: 6, esDelSistema: true },
+      { id: "ha", nombre: "Ha", tipo: "numero", requerido: true, orden: 7, unidad: "Ha", esDelSistema: true },
       {
         id: "implemento",
         nombre: "Implemento",
         tipo: "seleccion",
         requerido: true,
-        orden: 6,
+        orden: 8,
         opciones: ["Machete", "Guadaña", "Motosierra", "Desbrozadora"],
         esDelSistema: true,
       },
-      { id: "observaciones", nombre: "Observaciones", tipo: "textarea", requerido: false, orden: 7, esDelSistema: false },
+      { id: "observaciones", nombre: "Observaciones", tipo: "textarea", requerido: false, orden: 9, esDelSistema: false },
     ],
     activo: true,
   },
@@ -1012,7 +1014,7 @@ const DEFAULT_TEMPLATES: ActivityTemplate[] = [
   },
 ]
 
-const FRONTEND_VERSION = "2025-01-15-2"; // Cambia este valor en cada deploy relevante
+const FRONTEND_VERSION = "2025-01-15-3"; // Cambia este valor en cada deploy relevante
 
 try {
   const lastVersion = localStorage.getItem("frontend-version");
